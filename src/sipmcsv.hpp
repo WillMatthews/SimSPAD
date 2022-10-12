@@ -11,6 +11,8 @@
 
 using namespace std;
 
+
+
 // CSV Handling Functions
 int writeCSV(string filename, vector<double> inputVec, SiPM sipm){
     double dt = sipm.dt;
@@ -20,7 +22,7 @@ int writeCSV(string filename, vector<double> inputVec, SiPM sipm){
     double t = 0;
     for (int i=0; i<inputVec.size(); i++){
         csv << t << "," << inputVec[i] << "\n";
-        //cout << t << "," << inputVec[i] << "\n";
+        cout << t << "," << inputVec[i] << "\n";
         t += dt;
     }
     csv.close();
@@ -103,6 +105,8 @@ class CSVRange
 };
 
 tuple<vector<double>, double> readCSV(string filename){
+
+    cout << "readCSV" << endl;
     ifstream file(filename);
 
     vector<double> time = {};
@@ -116,9 +120,9 @@ tuple<vector<double>, double> readCSV(string filename){
         if (rowcnt <= 1){
             continue;
         }
-        t = stod((string) row[0]);
-        photon = stod((string) row[1]);
-        //cout << t << "\t" << photon << "\t" << endl;
+        t = (double) stod((string) row[0]);
+        photon = (double) stod((string) row[1]);
+        //cout << t << "   \t" << photon << "\t" << endl;
         time.push_back(t);
         photons_per_dt.push_back(photon);
     }

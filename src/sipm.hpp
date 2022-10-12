@@ -1,53 +1,74 @@
 
-#include <thread>
-#define NUM_THREADS 4
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cmath>
+#include <random>
+
+// Progress bar defines
+#define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
+#define PBWIDTH 60
 
 using namespace std;
 
-class SiPM {
-    #define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
-    #define PBWIDTH 60
-    public:
-        int numMicrocell = 14410;
-        double vbias = 27.5;
-        double vbr = 24.5;
-        double vover = vbias-vbr;
-        double dt; // get from input
-        double tauRecovery = 2.2*14E-9;
-        double digitalThreshhold = 0;
-        double ccell = 1;
 
+
+class SiPM {
+    // Progress bar defines
+
+    public:
+        int numMicrocell;   // Number of Microcells
+        double vbias;       // Bias Voltage
+        double vbr;         // Breakdown Voltage
+        double vover;       // Overvoltage (internally calculated - make private)
+        double tauRecovery; // Microcell Recharge RC Time Constant
+        double digitalThreshhold;   // Output Digital Threshhold for readout (0 for analog)
+        double ccell;       // Microcell Capacitance
+        double dt;          // Simulation Timestep
+
+        // constructor
+        SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in, double digitalThreshhold_in, double ccell_in){
+            numMicrocell = numMicrocell_in;
+            vbias = vbias_in;
+            vbr   = vbr_in;
+            tauRecovery = tauRecovery_in;
+            digitalThreshhold = digitalThreshhold_in;
+            ccell = ccell_in;
+            vover = vbias_in-vbr_in;
+            microcellTimes=vector<double>(numMicrocell, 0.0);
+            microcellVoltages=vector<double>(numMicrocell, 0.0); 
+            cout << "Created SiPM" << endl;
+            initLUT();
+        }
+
+        // convert overvoltage to PDE
         inline double pde_fcn(double overvoltage){
             return 0.46*(1-exp(-(overvoltage/vbr)/0.083));
         }
 
+        // convert time since last detection to PDE
         inline double pde_from_time(double time){
             double v = volt_from_time(time);
             return pde_fcn(v);
         }
 
+        // convert time since last detection to microcell voltage
         inline double volt_from_time(double time){
             return vover * (1-exp(-time/tauRecovery));
         }
 
-
-
-        int getNumMicrocell(void){
-            return numMicrocell;
-        }
-
+        // Simulation function - takes as an argument a 'light' vector
+        // light vector is the expected number of photons to strike the SiPM in simulation timestep dt.
         vector<double> simulate(vector<double> light){
-
-            vector<double> qFired;
+            vector<double> qFired = {};
             double l;
             double pctdone;
-
             init_spads();
             for (int i=0; i<light.size(); i++){
-                /*if (i%100 == 0){
+                if (i%100 == 0){
                     pctdone = (double)i/(double)light.size();
                     print_progress(pctdone);
-                }*/
+                }
                 l = light[i];
                 qFired.push_back(recharge_illuminate(l));
             }
@@ -55,8 +76,10 @@ class SiPM {
             return qFired;
         }
 
-    static const size_t LUTSize = 15;
 
+
+    static const size_t LUTSize = 15;
+ 
     double tVecLUT[LUTSize]   = { 0 };
     double pdeVecLUT[LUTSize] = { 0 };
     double vVecLUT[LUTSize]   = { 0 };
@@ -74,8 +97,9 @@ class SiPM {
 
     //private:
     //
-        vector<double> microcellTimes=vector<double>(numMicrocell, 0.0);
-        vector<double> microcellVoltages=vector<double>(numMicrocell, 0.0); 
+        vector<double> microcellTimes;
+        vector<double> microcellVoltages;
+
 
         double randab(double a, double b){
             return (a + static_cast <double> (rand()) / ( static_cast <double> (RAND_MAX/(b-a))));
@@ -176,6 +200,4 @@ class SiPM {
         dy = ys[i+1] - ys[i];
         return ys[i] + (x - xs[i]) * dy / dx;
     }
-
 };
-
