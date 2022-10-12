@@ -30,22 +30,22 @@ int writeCSV(string filename, vector<double> inputVec, SiPM sipm){
 class CSVRow
 {
     public:
-        std::string_view operator[](std::size_t index) const
+        string_view operator[](size_t index) const
         {
-            return std::string_view(&m_line[m_data[index] + 1], m_data[index + 1] -  (m_data[index] + 1));
+            return string_view(&m_line[m_data[index] + 1], m_data[index + 1] -  (m_data[index] + 1));
         }
-        std::size_t size() const
+        size_t size() const
         {
             return m_data.size() - 1;
         }
-        void readNextRow(std::istream& str)
+        void readNextRow(istream& str)
         {
-            std::getline(str, m_line);
+            getline(str, m_line);
 
             m_data.clear();
             m_data.emplace_back(-1);
-            std::string::size_type pos = 0;
-            while((pos = m_line.find(',', pos)) != std::string::npos)
+            string::size_type pos = 0;
+            while((pos = m_line.find(',', pos)) != string::npos)
             {
                 m_data.emplace_back(pos);
                 ++pos;
@@ -55,11 +55,11 @@ class CSVRow
             m_data.emplace_back(pos);
         }
     private:
-        std::string         m_line;
-        std::vector<int>    m_data;
+        string         m_line;
+        vector<int>    m_data;
 };
 
-std::istream& operator>>(std::istream& str, CSVRow& data)
+istream& operator>>(istream& str, CSVRow& data)
 {
     data.readNextRow(str);
     return str;
