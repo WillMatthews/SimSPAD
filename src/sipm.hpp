@@ -37,7 +37,6 @@ class SiPM {
             vover = vbias_in-vbr_in;
             microcellTimes=vector<double>(numMicrocell, 0.0);
             microcellVoltages=vector<double>(numMicrocell, 0.0); 
-            cout << "Created SiPM" << endl;
             initLUT();
         }
 

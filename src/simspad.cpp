@@ -23,10 +23,8 @@ auto sim_lambda = [](string fname){
     vector<double> in = {};
     double dt;
 
-    cout << "test" << endl;
     cout.flush();
     SiPM j30020(14410, 27.5, 24.5, 2.2*14E-9, 0.0, 4.6e-14);
-    cout << "About to read CSV" << endl;
     cout.flush();
     tie(in,dt) = readCSV(fname+".csv");
     j30020.dt = dt;
@@ -43,7 +41,7 @@ auto sim_lambda = [](string fname){
 int main(int argc, char *argv[]){
 
     unsigned int time_ui = static_cast<unsigned int>( time(NULL) );
-    srand( time_ui );
+    srand(time_ui);
 
     ios::sync_with_stdio(0);
     cin.tie(0);
