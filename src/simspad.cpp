@@ -6,35 +6,41 @@
 #include <cmath>
 #include <random>
 #include <chrono>
+#include <thread>
 #include <time.h>
 #include "sipmcsv.hpp"
 
 using namespace std;
-//
-// SiPM create_j30020(void){
-//     SiPM ;
-//     return device; 
-// }
-//
+
 // create lambda expression for a simulation run (input csv -> output csv).
 // might be helpful if multithreading in the future
 auto sim_lambda = [](string fname){
     vector<double> out = {};
-    vector<double> in = {};
-    double dt;
+    vector<double> in(200000,10) ;;
+    double dt = 1E-10;
 
-    cout.flush();
     SiPM j30020(14410, 27.5, 24.5, 2.2*14E-9, 0.0, 4.6e-14);
-    cout.flush();
-    tie(in,dt) = readCSV(fname+".csv");
+    //tie(in,dt) = readCSV(fname+".csv");
     j30020.dt = dt;
+
+    auto start = chrono::steady_clock::now();
+
     out = j30020.simulate(in);
 
+    auto end = chrono::steady_clock::now();
+    chrono::duration<double> elapsed = end-start;
+
+    cout << "\nElapsed Time:\t " << elapsed.count() << "s" <<  endl;
+    cout << "Simulated Time:\t " << dt*in.size() << "s" << endl;
+    cout << "Resolution:\t " << dt << "s" << endl;
+
+    /*
     for (int i = 0; i< in.size(); i++){
         cout << in[i] << "\t\t" << out[i] << endl;
     }
+    */
 
-    //writeCSV(fname+"_out.csv", out, j30020);
+    writeCSV(fname+"_out.csv", out, j30020);
 };
 
 // Run simulation and time
@@ -46,7 +52,6 @@ int main(int argc, char *argv[]){
     ios::sync_with_stdio(0);
     cin.tie(0);
 
-    auto start = std::chrono::steady_clock::now();
     sim_lambda("siminput");
     
     /*
@@ -60,9 +65,6 @@ int main(int argc, char *argv[]){
     }
     */
 
-    auto end = std::chrono::steady_clock::now();
-    std::chrono::duration<double> elapsed = end-start;
 
-    cout << "\nElapsed Time: " << elapsed.count() << "s" <<  endl;
     return EXIT_SUCCESS;
 }

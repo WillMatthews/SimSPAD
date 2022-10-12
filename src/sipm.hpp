@@ -63,6 +63,7 @@ class SiPM {
             double l;
             double pctdone;
             init_spads();
+            // O(light.size()* numMicrocell)
             for (int i=0; i<light.size(); i++){
                 if (i%100 == 0){
                     pctdone = (double)i/(double)light.size();
@@ -75,27 +76,26 @@ class SiPM {
             return qFired;
         }
 
+    private:
 
+        static const size_t LUTSize = 15;
+     
+        double tVecLUT[LUTSize]   = { 0 };
+        double pdeVecLUT[LUTSize] = { 0 };
+        double vVecLUT[LUTSize]   = { 0 };
 
-    static const size_t LUTSize = 15;
- 
-    double tVecLUT[LUTSize]   = { 0 };
-    double pdeVecLUT[LUTSize] = { 0 };
-    double vVecLUT[LUTSize]   = { 0 };
-
-    void initLUT(void){
-        int numpoint = (int) LUTSize;
-        double maxt = 5.3*tauRecovery;
-        double ddt  = (double)maxt/numpoint;
-        for (int i=0; i<numpoint; i++){
-            tVecLUT[i] = i*ddt;
-            vVecLUT[i] = vover * (1-exp(-tVecLUT[i]/tauRecovery));
-            pdeVecLUT[i] = pde_fcn(vVecLUT[i]);
+        void initLUT(void){
+            int numpoint = (int) LUTSize;
+            double maxt = 5.3*tauRecovery;
+            double ddt  = (double)maxt/numpoint;
+            for (int i=0; i<numpoint; i++){
+                tVecLUT[i] = i*ddt;
+                vVecLUT[i] = vover * (1-exp(-tVecLUT[i]/tauRecovery));
+                pdeVecLUT[i] = pde_fcn(vVecLUT[i]);
+            }
         }
-    }
 
-    //private:
-    //
+
         vector<double> microcellTimes;
         vector<double> microcellVoltages;
 
@@ -126,77 +126,77 @@ class SiPM {
             return output;
         }
 
-    void print_progress(double percentage) {
-        int val = (int) (percentage * 100);
-        int lpad = (int) (percentage * PBWIDTH);
-        int rpad = PBWIDTH - lpad;
-        printf("\r%3d%% [%.*s%*s]", val, lpad, PBSTR, rpad, "");
-        fflush(stdout);
-    }
-
-
-    double pdeLUT(double x){
-        double* xs = tVecLUT;
-        double* ys = pdeVecLUT;
-        // number of elements in the array 
-        const int count = (const int) LUTSize;
-
-        int i;
-        double dx, dy;
-
-        if (x < xs[0]) {
-            //x is less than the minimum element
-            // handle error here if you want 
-            return ys[0]; // return minimum element 
+        void print_progress(double percentage) {
+            int val = (int) (percentage * 100);
+            int lpad = (int) (percentage * PBWIDTH);
+            int rpad = PBWIDTH - lpad;
+            printf("\r%3d%% [%.*s%*s]", val, lpad, PBSTR, rpad, "");
+            fflush(stdout);
         }
 
-        if (x > xs[count-1]) {
-            return ys[count-1]; // return maximum 
-        }
 
-        // find i, such that xs[i] <= x < xs[i+1] 
-        for (i = 0; i < count-1; i++) {
-            if (xs[i+1] > x) {
-                break;
+        double pdeLUT(double x){
+            double* xs = tVecLUT;
+            double* ys = pdeVecLUT;
+            // number of elements in the array 
+            const int count = (const int) LUTSize;
+
+            int i;
+            double dx, dy;
+
+            if (x < xs[0]) {
+                //x is less than the minimum element
+                // handle error here if you want 
+                return ys[0]; // return minimum element 
             }
-        }
 
-        // interpolate 
-        dx = xs[i+1] - xs[i];
-        dy = ys[i+1] - ys[i];
-        return ys[i] + (x - xs[i]) * dy / dx;
-    }
-
-    double voltLUT(double x){
-        double* xs = tVecLUT;
-        double* ys = vVecLUT;
-
-        // number of elements in the array 
-        const int count = (const int) LUTSize;
-
-        int i;
-        double dx, dy;
-
-        if (x < xs[0]) {
-            //x is less than the minimum element
-            // handle error here if you want 
-            return ys[0]; // return minimum element 
-        }
-
-        if (x > xs[count-1]) {
-            return ys[count-1]; // return maximum 
-        }
-
-        // find i, such that xs[i] <= x < xs[i+1] 
-        for (i = 0; i < count-1; i++) {
-            if (xs[i+1] > x) {
-                break;
+            if (x > xs[count-1]) {
+                return ys[count-1]; // return maximum 
             }
+
+            // find i, such that xs[i] <= x < xs[i+1] 
+            for (i = 0; i < count-1; i++) {
+                if (xs[i+1] > x) {
+                    break;
+                }
+            }
+
+            // interpolate 
+            dx = xs[i+1] - xs[i];
+            dy = ys[i+1] - ys[i];
+            return ys[i] + (x - xs[i]) * dy / dx;
         }
 
-        // interpolate 
-        dx = xs[i+1] - xs[i];
-        dy = ys[i+1] - ys[i];
-        return ys[i] + (x - xs[i]) * dy / dx;
-    }
+        double voltLUT(double x){
+            double* xs = tVecLUT;
+            double* ys = vVecLUT;
+
+            // number of elements in the array 
+            const int count = (const int) LUTSize;
+
+            int i;
+            double dx, dy;
+
+            if (x < xs[0]) {
+                //x is less than the minimum element
+                // handle error here if you want 
+                return ys[0]; // return minimum element 
+            }
+
+            if (x > xs[count-1]) {
+                return ys[count-1]; // return maximum 
+            }
+
+            // find i, such that xs[i] <= x < xs[i+1] 
+            for (i = 0; i < count-1; i++) {
+                if (xs[i+1] > x) {
+                    break;
+                }
+            }
+
+            // interpolate 
+            dx = xs[i+1] - xs[i];
+            dy = ys[i+1] - ys[i];
+            return ys[i] + (x - xs[i]) * dy / dx;
+        }
 };

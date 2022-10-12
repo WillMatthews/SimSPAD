@@ -22,7 +22,7 @@ int writeCSV(string filename, vector<double> inputVec, SiPM sipm){
     double t = 0;
     for (int i=0; i<inputVec.size(); i++){
         csv << t << "," << inputVec[i] << "\n";
-        cout << t << "," << inputVec[i] << "\n";
+        //cout << t << "," << inputVec[i] << "\n";
         t += dt;
     }
     csv.close();
@@ -67,66 +67,64 @@ istream& operator>>(istream& str, CSVRow& data)
     return str;
 }
 
-class CSVIterator
-{   
-    public:
-        typedef input_iterator_tag     iterator_category;
-        typedef CSVRow                      value_type;
-        typedef size_t                 difference_type;
-        typedef CSVRow*                     pointer;
-        typedef CSVRow&                     reference;
+    class CSVIterator
+    {   
+        public:
+            typedef input_iterator_tag     iterator_category;
+            typedef CSVRow                      value_type;
+            typedef size_t                 difference_type;
+            typedef CSVRow*                     pointer;
+            typedef CSVRow&                     reference;
 
-        CSVIterator(istream& str)  :m_str(str.good()?&str:nullptr) { ++(*this); }
-        CSVIterator()                   :m_str(nullptr) {}
+            CSVIterator(istream& str)  :m_str(str.good()?&str:nullptr) { ++(*this); }
+            CSVIterator()                   :m_str(nullptr) {}
 
-        // Pre Increment
-        CSVIterator& operator++()               {if (m_str) { if (!((*m_str) >> m_row)){m_str = nullptr;}}return *this;}
-        // Post increment
-        CSVIterator operator++(int)             {CSVIterator    tmp(*this);++(*this);return tmp;}
-        CSVRow const& operator*()   const       {return m_row;}
-        CSVRow const* operator->()  const       {return &m_row;}
+            // Pre Increment
+            CSVIterator& operator++()               {if (m_str) { if (!((*m_str) >> m_row)){m_str = nullptr;}}return *this;}
+            // Post increment
+            CSVIterator operator++(int)             {CSVIterator    tmp(*this);++(*this);return tmp;}
+            CSVRow const& operator*()   const       {return m_row;}
+            CSVRow const* operator->()  const       {return &m_row;}
 
-        bool operator==(CSVIterator const& rhs) {return ((this == &rhs) || ((this->m_str == nullptr) && (rhs.m_str == nullptr)));}
-        bool operator!=(CSVIterator const& rhs) {return !((*this) == rhs);}
-    private:
-        istream*       m_str;
-        CSVRow              m_row;
-};
+            bool operator==(CSVIterator const& rhs) {return ((this == &rhs) || ((this->m_str == nullptr) && (rhs.m_str == nullptr)));}
+            bool operator!=(CSVIterator const& rhs) {return !((*this) == rhs);}
+        private:
+            istream*       m_str;
+            CSVRow              m_row;
+    };
 
-class CSVRange
-{
-    istream&   stream;
-    public:
-        CSVRange(istream& str)
-            : stream(str)
-        {}
-        CSVIterator begin() const {return CSVIterator{stream};}
-        CSVIterator end()   const {return CSVIterator{};}
-};
-
-tuple<vector<double>, double> readCSV(string filename){
-
-    cout << "readCSV" << endl;
-    ifstream file(filename);
-
-    vector<double> time = {};
-    vector<double> photons_per_dt = {};
-    double t;
-    double photon;
-    long rowcnt = 0;
-    for(auto& row: CSVRange(file))
+    class CSVRange
     {
-        rowcnt +=1;
-        if (rowcnt <= 1){
-            continue;
-        }
-        t = (double) stod((string) row[0]);
-        photon = (double) stod((string) row[1]);
-        //cout << t << "   \t" << photon << "\t" << endl;
-        time.push_back(t);
-        photons_per_dt.push_back(photon);
-    }
-    double dt = (time[20]-time[10])/10;
-    return make_tuple(photons_per_dt, dt);
-}
+        istream&   stream;
+        public:
+            CSVRange(istream& str)
+                : stream(str)
+            {}
+            CSVIterator begin() const {return CSVIterator{stream};}
+            CSVIterator end()   const {return CSVIterator{};}
+    };
 
+
+    tuple<vector<double>, double> readCSV(string filename){
+        ifstream file(filename);
+
+        vector<double> time = {};
+        vector<double> photons_per_dt = {};
+        double t;
+        double photon;
+        long rowcnt = 0;
+        for(auto& row: CSVRange(file))
+        {
+            rowcnt +=1;
+            if (rowcnt <= 1){
+                continue;
+            }
+            t = (double) stod((string) row[0]);
+            photon = (double) stod((string) row[1]);
+            //cout << t << "   \t" << photon << "\t" << endl;
+            time.push_back(t);
+            photons_per_dt.push_back(photon);
+        }
+        double dt = (time[20]-time[10])/10;
+        return make_tuple(photons_per_dt, dt);
+    }
