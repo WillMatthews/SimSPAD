@@ -125,42 +125,17 @@ class SiPM {
 
         // photon detection efficiency as a function of time lookup table
         double pdeLUT(double x){
-            double* xs = tVecLUT;
-            double* ys = pdeVecLUT;
-            // number of elements in the array 
-            const int count = (const int) LUTSize;
-
-            int i;
-            double dx, dy;
-
-            if (x < xs[0]) {
-                //x is less than the minimum element
-                // handle error here if you want 
-                return ys[0]; // return minimum element 
-            }
-
-            if (x > xs[count-1]) {
-                return ys[count-1]; // return maximum 
-            }
-
-            // find i, such that xs[i] <= x < xs[i+1] 
-            for (i = 0; i < count-1; i++) {
-                if (xs[i+1] > x) {
-                    break;
-                }
-            }
-
-            // interpolate 
-            dx = xs[i+1] - xs[i];
-            dy = ys[i+1] - ys[i];
-            return ys[i] + (x - xs[i]) * dy / dx;
+            return LUT(x, pdeVecLUT);
+        }
+        // ucell voltage as a function of time lookup table
+        double voltLUT(double x){
+            return LUT(x, vVecLUT);
         }
 
-        // voltage as a function of time lookup table
-        double voltLUT(double x){
+        // define a generic lookup table that works on with the time vector
+        double LUT(double x, double* workingVector){
             double* xs = tVecLUT;
-            double* ys = vVecLUT;
-
+            double* ys = workingVector;
             // number of elements in the array 
             const int count = (const int) LUTSize;
 
