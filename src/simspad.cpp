@@ -16,7 +16,7 @@ using namespace std;
 // might be helpful if multithreading in the future
 auto sim_lambda = [](string fname){
     vector<double> out = {};
-    vector<double> in(200000,10) ;;
+    vector<double> in(10000,10) ;;
     double dt = 1E-10;
 
     SiPM j30020(14410, 27.5, 24.5, 2.2*14E-9, 0.0, 4.6e-14);
@@ -33,6 +33,7 @@ auto sim_lambda = [](string fname){
     cout << "\nElapsed Time:\t " << elapsed.count() << "s" <<  endl;
     cout << "Simulated Time:\t " << dt*in.size() << "s" << endl;
     cout << "Resolution:\t " << dt << "s" << endl;
+    cout << "Time Steps:\t " << in.size() << endl;
 
     /*
     for (int i = 0; i< in.size(); i++){

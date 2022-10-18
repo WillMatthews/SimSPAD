@@ -14,7 +14,6 @@ using namespace std;
 
 
 class SiPM {
-    // Progress bar defines
 
     public:
         int numMicrocell;   // Number of Microcells
@@ -65,8 +64,8 @@ class SiPM {
             init_spads();
             // O(light.size()* numMicrocell)
             for (int i=0; i<light.size(); i++){
-                if (i%100 == 0){
-                    pctdone = (double)i/(double)light.size();
+                if (i%100 == 0 || i==(light.size()-1)){
+                    pctdone = (double)i/(double)(light.size()-1);
                     print_progress(pctdone);
                 }
                 l = light[i];
