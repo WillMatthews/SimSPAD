@@ -65,7 +65,6 @@ class SiPM {
         // Simulation function - takes as an argument a 'light' vector
         // light vector is the expected number of photons to strike the SiPM in simulation timestep dt.
         vector<double> simulate(vector<double> light){
-            cout << RAND_MAX << endl;
             vector<double> qFired = {};
             double l;
             double pctdone;
@@ -260,7 +259,7 @@ class SiPM {
 
         //// LOOKUP TABLE PARAMS AND FUNCTIONS
         
-        static const size_t LUTSize = 20;
+        static const size_t LUTSize = 15;
         double tVecLUT[LUTSize]   = { 0 };
         double pdeVecLUT[LUTSize] = { 0 };
         double vVecLUT[LUTSize]   = { 0 };

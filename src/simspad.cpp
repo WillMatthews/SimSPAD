@@ -13,6 +13,30 @@
 
 using namespace std;
 
+
+tuple<string, double> exponent_val(double num){
+    int floor_prefix = floor(log10(num));
+    string prefixes[9] = {"f", "p", "n", "u", "m", "", "k", "M", "G"};
+    bool triggered = false;
+    int idx_prefix;
+    int k = 0;
+    for (int i=-15; i<10; i=i+3){
+        if (floor_prefix < i){
+            triggered = true;
+            idx_prefix = k-1;
+            break;
+        };
+        k = k+1;
+    }
+    if (!triggered){
+        return make_tuple("", num);
+    }
+    double pot = (double) -(idx_prefix * 3 - 15);
+    return make_tuple(prefixes[idx_prefix], num*pow(10,pot)); 
+}
+
+
+
 // create lambda expression for a simulation run (input csv -> output csv).
 // might be helpful if multithreading in the future
 auto sim_lambda = [](string fname){
@@ -37,13 +61,20 @@ auto sim_lambda = [](string fname){
     auto end = chrono::steady_clock::now();
     chrono::duration<double> elapsed = end-start;
 
-    cout << "\nElapsed Time:\t " << elapsed.count() << "s" <<  endl;
-    cout << "Simulated Time:\t " << dt*in.size() << "s" << endl;
-    cout << "Resolution:\t " << dt << "s" << endl;
-    cout << "Time Steps:\t " << in.size() << endl;
+    string prefix;
+    double val;
+    tie(prefix, val) = exponent_val(elapsed.count());
+    cout << "\nElapsed Time:\t " << val << prefix << "s" <<  endl;
+    tie(prefix, val) = exponent_val(dt*in.size());
+    cout << "Simulated Time:\t " << val << prefix << "s" << endl;
+    tie(prefix, val) = exponent_val(dt);
+    cout << "Resolution:\t " << val << prefix << "s" << endl;
+    cout << "Time Steps:\t " << in.size() << "Sa" <<  endl;
     double time_per_iter = ( (double) elapsed.count()) / ( (double) in.size());
-    cout << "Computer Time Per Step:\t " << time_per_iter*1E6 << "uS" << endl;
-    cout << "Computer Time Per uCell Step:\t " << time_per_iter*1E12/j30020.numMicrocell << "pS" << endl;
+    tie(prefix, val) = exponent_val(time_per_iter);
+    cout << "Computer Time Per Step:\t " << val << prefix << "s" << endl;
+    tie(prefix, val) = exponent_val(time_per_iter/j30020.numMicrocell);
+    cout << "Computer Time Per uCell Step:\t " << val << prefix  << "s" << endl;
 
     double sumOut = 0;
     for (int i = 0; i< in.size(); i++){
@@ -54,6 +85,7 @@ auto sim_lambda = [](string fname){
 
     writeCSV(fname+"_sim_out.csv", out, j30020);
 };
+
 
 // Run simulation and time
 int main(int argc, char *argv[]){
