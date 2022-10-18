@@ -24,7 +24,7 @@ auto sim_lambda = [](string fname){
     vector<double> in(ber_run_samples,10);
     dt = 1E-10;
 
-    SiPM j30020(14410, 27.5, 24.5, 2.2*14E-9, 0.0, 4.6e-14);
+    SiPM j30020(14410, 27.5, 24.5, 2.2*14E-9, 0.0, 4.6e-14, 2.04, 0.46);
     //tie(in,dt) = readCSV(fname+".csv");
     j30020.dt = dt;
 
