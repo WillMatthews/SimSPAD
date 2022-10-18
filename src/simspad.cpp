@@ -45,7 +45,7 @@ auto sim_lambda = [](string fname){
     double dt;
     
     int ber_run_samples = 844759;
-    vector<double> in(ber_run_samples,10);
+    vector<double> in(ber_run_samples,10); // DC light source
     dt = 1E-10;
 
     SiPM j30020(14410, 27.5, 24.5, 2.2*14E-9, 0.0, 4.6e-14, 2.04, 0.46);
@@ -54,8 +54,8 @@ auto sim_lambda = [](string fname){
 
     auto start = chrono::steady_clock::now();
 
-    //out = j30020.simulate_full(in);
     out = j30020.simulate(in);
+    //out = j30020.simulate_full(in);
     //j30020.test_rand_funcs();
 
     auto end = chrono::steady_clock::now();
@@ -98,16 +98,5 @@ int main(int argc, char *argv[]){
 
     sim_lambda("siminput");
     
-    /*
-    // Need a better way of parallelising - every function O(n), but all are memory intensivve -- am I limited by memory bandwidth?
-    vector<thread> some_threads;
-    for (int i=0; i<1; i++){
-        some_threads.push_back(thread(sim_lambda,"siminput"));
-    }
-    for (auto& a: some_threads){
-        a.join();
-    }
-    */
-
     return EXIT_SUCCESS;
 }
