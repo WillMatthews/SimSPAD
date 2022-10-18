@@ -17,8 +17,12 @@ using namespace std;
 // might be helpful if multithreading in the future
 auto sim_lambda = [](string fname){
     vector<double> out = {};
-    vector<double> in(8447,10);
-    double dt = 1E-10;
+    //vector<double> in = {};
+    double dt;
+    
+    int ber_run_samples = 844759;
+    vector<double> in(ber_run_samples,10);
+    dt = 1E-10;
 
     SiPM j30020(14410, 27.5, 24.5, 2.2*14E-9, 0.0, 4.6e-14);
     //tie(in,dt) = readCSV(fname+".csv");
@@ -41,7 +45,6 @@ auto sim_lambda = [](string fname){
     cout << "Computer Time Per Step:\t " << time_per_iter*1E6 << "uS" << endl;
     cout << "Computer Time Per uCell Step:\t " << time_per_iter*1E12/j30020.numMicrocell << "pS" << endl;
 
-
     double sumOut = 0;
     for (int i = 0; i< in.size(); i++){
         sumOut += out[i];
@@ -49,7 +52,7 @@ auto sim_lambda = [](string fname){
     double Ibias = sumOut/(in.size() * j30020.dt);
     cout << "Ibias:  " << Ibias*1E3 << "mA" << endl;
 
-    writeCSV(fname+"_out.csv", out, j30020);
+    writeCSV(fname+"_sim_out.csv", out, j30020);
 };
 
 // Run simulation and time
@@ -73,7 +76,6 @@ int main(int argc, char *argv[]){
         a.join();
     }
     */
-
 
     return EXIT_SUCCESS;
 }

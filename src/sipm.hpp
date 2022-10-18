@@ -98,54 +98,16 @@ class SiPM {
             return qFired;
         }
 
-        void test_rand_funcs(){
 
-            const int nstars=100;     // maximum number of stars to distribute
-            const int nintervals=10; // number of intervals
-            int iters = 10000;
 
-            cout << "\n\n***** UNIFORM *****\n" << endl;
-            double s1;
-            double test1 = 0;
-            int p1[nintervals]={};
-            for (int i = 0; i<iters; i++){
-                s1 = unif_rand_double(0,1);
-                test1+=s1;
-                ++p1[int(nintervals*s1)];
-            }
-            cout << "mean dist 1: " << test1/iters << endl;
-
-            for (int i=0; i<nintervals; ++i) {
-                std::cout << float(i)/nintervals << "-" << float(i+1)/nintervals << "\t: ";
-                std::cout << std::string(p1[i]*nstars/iters,'*') << std::endl;
-            }
-
-            double lambda = 3.5;
-            const int poiss_nintervals = 20;
-            int p2[poiss_nintervals]={};
-            int s2;
-            for (int i=0; i < iters; i++){
-                poisson_distribution<int> distribution(5);
-                s2 = distribution(poiss_generator);
-                ++p2[int(s2)];
-            }
-
-            cout << "\n\n***** POISSON *****\n" << endl;
-            for (int i=0; i<poiss_nintervals; ++i) {
-                std::cout << i << "\t: ";
-                std::cout << std::string(p2[i]*nstars/iters,'*') << std::endl;
-            }
-        }
 
     private:
+        // "Hidden Variables" of live SiPM state
+        vector<double> microcellTimes;    // Times since last detected photon
+        vector<double> microcellVoltages; // Instantaneous Voltage for each microcell
 
-        vector<double> microcellTimes; // times since last detected photon
-        vector<double> microcellVoltages; // voltage for each microcell
-
-
-        // lookup table parameters
+        // Lookup table parameters & Functions
         static const size_t LUTSize = 20;
-     
         double tVecLUT[LUTSize]   = { 0 };
         double pdeVecLUT[LUTSize] = { 0 };
         double vVecLUT[LUTSize]   = { 0 };
@@ -159,111 +121,6 @@ class SiPM {
                 vVecLUT[i] = vover * (1-exp(-tVecLUT[i]/tauRecovery));
                 pdeVecLUT[i] = pde_from_volt(vVecLUT[i]);
             }
-        }
-
-
-        // RANDOM NUMBER GENERATORS
-        default_random_engine poiss_generator;  // generator for Poisson Distribution
-        mt19937_64 unif_random_engine;
-        uniform_real_distribution<double> unif;
-
-        void init_rand_gen(void){
-            random_device rd; // get random device
-            mt19937 e2(rd()); // init mersenne twister for unif dist
-        }
-
-        // random double between range a and b
-        double unif_rand_double(double a, double b){
-            return unif(unif_random_engine)*(b-a)+a;
-        }
-
-        double unif_rand_double2(double a, double b){
-            return (a + static_cast <double> (rand()) / ( static_cast <double> (RAND_MAX/(b-a))));
-        }
-
-        int unif_rand_int(double a, double b){
-            return (int) (a + static_cast <double> (rand()) / ( static_cast <double> (RAND_MAX/(b-a))));
-        }
-
-        void init_spads(void){
-            for (int i=0; i<numMicrocell; i++){
-                microcellTimes[i] = tauRecovery*unif_rand_double(0,10);
-            }
-        }
-
-        double selective_recharge_illuminate_LUT(double photonsPerSecond){
-            double output = 0;
-            double volt = 0;
-
-            // randomly sample poisson parameter lambda input to number of incoming photons
-            poisson_distribution<int> distribution(photonsPerSecond);
-            int poissPhotons = distribution(poiss_generator);
-
-            // generate n random microcells to strike - n random microcells
-            vector<int> struckMicrocells = {};
-            for (int i=0; i<poissPhotons; i++){
-                struckMicrocells.push_back(unif_rand_int(0,numMicrocell));
-            }
-
-            // recharge all microcells
-            for (int i=0; i<numMicrocell; i++){
-                microcellTimes[i] += dt;
-            }
-
-            for (auto &i : struckMicrocells){
-                if (unif_rand_double(0,1) < (pdeLUT(microcellTimes[i]))){
-                    volt = voltLUT(microcellTimes[i]);
-                    microcellTimes[i] = 0;
-                    if (volt > digitalThreshhold * vover){
-                        output += volt*ccell;
-                    }
-                }
-            }
-            return output;
-        }
-
-        // full simulation - does not use Poisson Stats, approximates with a uniform distribution
-        double recharge_illuminate_LUT(double photonsPerSecond){
-            double output = 0;
-            double volt = 0;
-            for (int i=0; i<numMicrocell; i++){
-                microcellTimes[i] += dt;
-                if (unif_rand_double(0,1) < (pdeLUT(microcellTimes[i])*(photonsPerSecond/numMicrocell))){
-                    volt = voltLUT(microcellTimes[i]);
-                    microcellTimes[i] = 0;
-                    if (volt > digitalThreshhold * vover){
-                        output += volt*ccell;
-                    }
-                }
-            }
-            return output;
-        }
-
-        // full simulation - does not use Poisson Stats, approximates with a uniform distribution
-        // no lookup table
-        double recharge_illuminate(double photonsPerSecond){
-            double output = 0;
-            double volt = 0;
-            for (int i=0; i<numMicrocell; i++){
-                microcellTimes[i] += dt;
-                volt = volt_from_time(microcellTimes[i]);
-                if (unif_rand_double(0,1) < (pde_from_volt(volt)*(photonsPerSecond/numMicrocell))){
-                    microcellTimes[i] = 0;
-                    if (volt > digitalThreshhold * vover){
-                        output += volt*ccell;
-                    }
-                }
-            }
-            return output;
-        }
-
-        // progress bar
-        void print_progress(double percentage) {
-            int val = (int) (percentage * 100);
-            int lpad = (int) (percentage * PBWIDTH);
-            int rpad = PBWIDTH - lpad;
-            printf("\r%3d%% [%.*s%*s]", val, lpad, PBSTR, rpad, "");
-            fflush(stdout);
         }
 
         // photon detection efficiency as a function of time lookup table
@@ -332,4 +189,158 @@ class SiPM {
             dy = ys[i+1] - ys[i];
             return ys[i] + (x - xs[i]) * dy / dx;
         }
+
+
+        // RANDOM NUMBER GENERATORS
+        default_random_engine poiss_generator;  // generator for Poisson Distribution
+        mt19937_64 unif_random_engine;
+        uniform_real_distribution<double> unif;
+
+        void init_rand_gen(void){
+            random_device rd; // get random device
+            mt19937 e2(rd()); // init mersenne twister for unif dist
+        }
+
+        // random double between range a and b
+        double unif_rand_double(double a, double b){
+            return unif(unif_random_engine)*(b-a)+a;
+        }
+
+        // Do not change - this is fast
+        int unif_rand_int(int a, int b){
+            return (int) (a + static_cast <double> (rand()) / ( static_cast <double> (RAND_MAX/(b-a))));
+        }
+
+
+
+        // Simulation methods
+
+        void init_spads(void){
+            for (int i=0; i<numMicrocell; i++){
+                microcellTimes[i] = tauRecovery*unif_rand_double(0,10);
+            }
+        }
+
+        double selective_recharge_illuminate_LUT(double photonsPerSecond){
+            double output = 0;
+            double volt = 0;
+
+            // randomly sample poisson parameter lambda input to number of incoming photons
+            poisson_distribution<int> distribution(photonsPerSecond);
+            int poissPhotons = distribution(poiss_generator);
+
+            // generate n random microcells to strike - n random microcells
+            vector<int> struckMicrocells = {};
+            for (int i=0; i<poissPhotons; i++){
+                struckMicrocells.push_back(unif_rand_int(0,numMicrocell));
+            }
+
+            // recharge all microcells
+            for (int i=0; i<numMicrocell; i++){
+                microcellTimes[i] += dt;
+            }
+
+            for (auto &i : struckMicrocells){
+                if (unif_rand_double(0,1) < (pdeLUT(microcellTimes[i]))){
+                    volt = voltLUT(microcellTimes[i]);
+                    microcellTimes[i] = 0;
+                    if (volt > digitalThreshhold * vover){
+                        output += volt*ccell;
+                    }
+                }
+            }
+            return output;
+        }
+
+        // "full simulation" - does not use Poisson Stats, approximates with a uniform distribution
+        double recharge_illuminate_LUT(double photonsPerSecond){
+            double output = 0;
+            double volt = 0;
+            for (int i=0; i<numMicrocell; i++){
+                microcellTimes[i] += dt;
+                if (unif_rand_double(0,1) < (pdeLUT(microcellTimes[i])*(photonsPerSecond/numMicrocell))){
+                    volt = voltLUT(microcellTimes[i]);
+                    microcellTimes[i] = 0;
+                    if (volt > digitalThreshhold * vover){
+                        output += volt*ccell;
+                    }
+                }
+            }
+            return output;
+        }
+
+        // "full simulation" - does not use Poisson Stats, approximates with a uniform distribution
+        // no lookup table
+        double recharge_illuminate(double photonsPerSecond){
+            double output = 0;
+            double volt = 0;
+            for (int i=0; i<numMicrocell; i++){
+                microcellTimes[i] += dt;
+                volt = volt_from_time(microcellTimes[i]);
+                if (unif_rand_double(0,1) < (pde_from_volt(volt)*(photonsPerSecond/numMicrocell))){
+                    microcellTimes[i] = 0;
+                    if (volt > digitalThreshhold * vover){
+                        output += volt*ccell;
+                    }
+                }
+            }
+            return output;
+        }
+
+
+
+        // utility functions
+
+        // progress bar
+        void print_progress(double percentage) {
+            int val = (int) (percentage * 100);
+            int lpad = (int) (percentage * PBWIDTH);
+            int rpad = PBWIDTH - lpad;
+            printf("\r%3d%% [%.*s%*s]", val, lpad, PBSTR, rpad, "");
+            fflush(stdout);
+        }
+
+        void test_rand_funcs(){
+            const int nstars=100;     // maximum number of stars to distribute
+            const int nintervals=10; // number of intervals
+            int iters = 10000;
+
+            cout << "\n\n***** UNIFORM *****\n" << endl;
+            double s1;
+            double test1 = 0;
+            int p1[nintervals]={};
+            for (int i = 0; i<iters; i++){
+                s1 = unif_rand_double(0,1);
+                test1+=s1;
+                ++p1[int(nintervals*s1)];
+            }
+            cout << "mean dist 1: " << test1/iters << endl;
+
+            for (int i=0; i<nintervals; ++i) {
+                std::cout << float(i)/nintervals << "-" << float(i+1)/nintervals << "\t: ";
+                std::cout << std::string(p1[i]*nstars/iters,'*') << std::endl;
+            }
+
+            double lambda = 3.5;
+            const int poiss_nintervals = 20;
+            int p2[poiss_nintervals]={};
+            int s2;
+            for (int i=0; i < iters; i++){
+                poisson_distribution<int> distribution(5);
+                s2 = distribution(poiss_generator);
+                ++p2[int(s2)];
+            }
+
+            cout << "\n\n***** POISSON *****\n" << endl;
+            for (int i=0; i<poiss_nintervals; ++i) {
+                std::cout << i << "\t: ";
+                std::cout << std::string(p2[i]*nstars/iters,'*') << std::endl;
+            }
+        }
+
+
+
+
+
+
 };
