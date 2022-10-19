@@ -23,6 +23,7 @@
 #include <string>
 #include <iterator>
 #include <stdlib.h>
+#include "sipm.hpp"
 
 using namespace std;
 

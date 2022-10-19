@@ -15,6 +15,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+//#define NO_OUTPUT
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -24,13 +27,9 @@
 #include <chrono>
 //#include <thread>
 #include <ctime>
-
-//#define NO_OUTPUT
-
 #include "sipm.hpp"
 #include "sipmcsv.hpp"
 #include "utilities.hpp"
-//#include "writeoutput.hpp"
 
 using namespace std;
 

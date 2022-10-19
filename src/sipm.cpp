@@ -138,12 +138,6 @@ class SiPM {
         uniform_real_distribution<double> unif;
 
 
-        void init_rand_gen(void){
-            random_device rd; // get random device
-            mt19937 e2(rd()); // init mersenne twister for unif dist
-        }
-
-
         // random double between range a and b
         double unif_rand_double(double a, double b){
             return unif(unifRandomEngine)*(b-a)+a;
@@ -269,8 +263,8 @@ class SiPM {
             cout << "mean dist 1: " << test1/iters << endl;
 
             for (int i=0; i<nintervals; i++) {
-                std::cout << float(i)/nintervals << "-" << float(i+1)/nintervals << "\t: ";
-                std::cout << std::string(p1[i]*nstars/iters,'*') << std::endl;
+                cout << float(i)/nintervals << "-" << float(i+1)/nintervals << "\t: ";
+                cout << string(p1[i]*nstars/iters,'*') << endl;
             }
 
             double lambda = 3.5;
@@ -285,8 +279,8 @@ class SiPM {
 
             cout << "\n\n***** POISSON *****\n" << endl;
             for (int i=0; i<poiss_nintervals; i++) {
-                std::cout << i << "\t: ";
-                std::cout << std::string(p2[i]*nstars/iters,'*') << std::endl;
+                cout << i << "\t: ";
+                cout << string(p2[i]*nstars/iters,'*') << endl;
             }
         }
 
