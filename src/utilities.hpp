@@ -26,7 +26,8 @@
 
 using namespace std;
 
-/*
+
+
 void write_vector_to_file(const vector<double>& myVector, string filename)
 {
 
@@ -46,7 +47,7 @@ void write_vector_to_file(const vector<double>& myVector, string filename)
     const char* endByte = (char*)&myVector.back() + sizeof(double);
     copy(beginByte, endByte, osi);
 }
-*/
+
 
 tuple<wstring, double> exponent_val(double num){
     int floor_prefix = floor(log10(num));

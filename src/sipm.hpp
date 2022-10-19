@@ -30,6 +30,7 @@
 using namespace std;
 
 
+
 class SiPM {
 
     public:
@@ -61,16 +62,19 @@ class SiPM {
             precalculate_LUT();
         }
 
+
         // convert overvoltage to PDE
         inline double pde_from_volt(double overvoltage){
             return PDE_max*(1-exp(-(overvoltage/Vchr)));
         }
+
 
         // convert time since last detection to PDE
         inline double pde_from_time(double time){
             double v = volt_from_time(time);
             return pde_from_volt(v);
         }
+
 
         // convert time since last detection to microcell voltage
         inline double volt_from_time(double time){
@@ -97,6 +101,7 @@ class SiPM {
             return qFired;
         }
 
+
         // "Full" simulation function - takes as an argument a 'light' vector
         // "Full" simulation simulates every single microcell rather than using a Poisson PDE to randomly distribute photons. Slow and obselete.
         // light vector is the expected number of photons to strike the SiPM in simulation timestep dt.
@@ -117,7 +122,9 @@ class SiPM {
             return qFired;
         }
 
+
     private:
+
 
         // "Hidden Variables" of live SiPM state
         vector<double> microcellTimes;    // Times since last detected photon
@@ -130,20 +137,24 @@ class SiPM {
         mt19937_64 unifRandomEngine;
         uniform_real_distribution<double> unif;
 
+
         void init_rand_gen(void){
             random_device rd; // get random device
             mt19937 e2(rd()); // init mersenne twister for unif dist
         }
+
 
         // random double between range a and b
         double unif_rand_double(double a, double b){
             return unif(unifRandomEngine)*(b-a)+a;
         }
 
+
         // Uniform random integer. Do not change - this is fast
         int unif_rand_int(int a, int b){
             return (int) (a + static_cast <double> (rand()) / ( static_cast <double> (RAND_MAX/(b-a))));
         }
+
 
 
         //// SIMULATION METHODS
@@ -153,6 +164,7 @@ class SiPM {
                 microcellTimes[i] = tauRecovery*unif_rand_double(0,10);
             }
         }
+
 
         double selective_recharge_illuminate_LUT(double photonsPerSecond){
             double output = 0;
@@ -185,6 +197,7 @@ class SiPM {
             return output;
         }
 
+
         // "full simulation" - does not use Poisson Stats, approximates with a uniform distribution
         double recharge_illuminate_LUT(double photonsPerSecond){
             double output = 0;
@@ -201,6 +214,7 @@ class SiPM {
             }
             return output;
         }
+
 
         // "full simulation" - does not use Poisson Stats, approximates with a uniform distribution
         // no lookup table
@@ -221,8 +235,9 @@ class SiPM {
         }
 
 
+
         //// UTILITY FUNCTIONS
-        //
+        
         // progress bar
         void print_progress(double percentage) {
             int val = (int) (percentage * 100);
@@ -232,8 +247,8 @@ class SiPM {
             fflush(stdout);
         }
 
-        // Sanity check random number generation as used in the program
 
+        // Sanity check random number generation as used in the program
         void test_rand_funcs(){
             const int nstars=100;     // maximum number of stars to distribute
             const int nintervals=10; // number of intervals
@@ -273,6 +288,7 @@ class SiPM {
         }
 
 
+
         //// LOOKUP TABLE PARAMS AND FUNCTIONS
         
         static const size_t LUTSize = 15;
@@ -291,14 +307,18 @@ class SiPM {
             }
         }
 
+
         // photon detection efficiency as a function of time lookup table
         double pde_LUT(double x){
             return LUT(x, pdeVecLUT);
         }
+
+
         // ucell voltage as a function of time lookup table
         double volt_LUT(double x){
             return LUT(x, vVecLUT);
         }
+
 
         // define a generic lookup table that works on with the time vector
         double LUT(double x, double* workingVector){
@@ -306,7 +326,6 @@ class SiPM {
             double* ys = workingVector;
             // number of elements in the array 
             const int count = (const int) LUTSize;
-
             int i;
             double dx, dy;
 
@@ -315,18 +334,15 @@ class SiPM {
                 // handle error here if you want 
                 return ys[0]; // return minimum element 
             }
-
             if (x > xs[count-1]) {
                 return ys[count-1]; // return maximum 
             }
-
             // find i, such that xs[i] <= x < xs[i+1] 
             for (i = 0; i < count-1; i++) {
                 if (xs[i+1] > x) {
                     break;
                 }
             }
-
             // o.t.w. interpolate 
             dx = xs[i+1] - xs[i];
             dy = ys[i+1] - ys[i];

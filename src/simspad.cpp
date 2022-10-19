@@ -31,16 +31,20 @@
 
 using namespace std;
 
+
+
 // create lambda expression for a simulation run (input csv -> output csv).
 // might be helpful if multithreading in the future
 auto sim_lambda = [](string fname){
     vector<double> out = {};
     //vector<double> in = {};
     double dt;
-    
+   
+    // Generate Dummy Input for Testing //
     int ber_run_samples = 844759;
     vector<double> in(ber_run_samples,10); // DC light source
     dt = 1E-10;
+    //////////////////////////////////////
 
     SiPM j30020(14410, 27.5, 24.5, 2.2*14E-9, 0.0, 4.6e-14, 2.04, 0.46);
     //tie(in,dt) = readCSV(fname+".csv");
@@ -64,8 +68,7 @@ auto sim_lambda = [](string fname){
 
 // Run simulation and time
 int main(int argc, char *argv[]){
-
-    unsigned int time_ui = static_cast<unsigned int>( time(NULL) );
+    unsigned int time_ui = static_cast<unsigned int>(time(NULL));
     srand(time_ui);
 
     ios::sync_with_stdio(0);
