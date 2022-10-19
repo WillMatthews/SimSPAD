@@ -1,7 +1,7 @@
-/* 
+/*
  * This file is part of the SimSPAD distribution (http://github.com/WillMatthews/SimSPAD).
  * Copyright (c) 2022 William Matthews.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3.
@@ -32,71 +32,69 @@
 
 using namespace std;
 
+class SiPM
+{
 
+public:
+    int numMicrocell;         // Number of Microcells
+    double vbias;             // Bias Voltage
+    double vbr;               // Breakdown Voltage
+    double vover;             // Overvoltage (internally calculated - make private)
+    double tauRecovery;       // Microcell Recharge RC Time Constant
+    double digitalThreshhold; // Output Digital Threshhold for readout (0 for analog)
+    double ccell;             // Microcell Capacitance
+    double dt;                // Simulation Timestep
+    double Vchr;              // Characteristic Voltage for PDE vs Vover curve
+    double PDE_max;           // PDE_max parameter for PDE vs Vover curve
 
-class SiPM {
+    SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in, double digitalThreshhold_in, double ccell_in, double Vchr_in, double PDE_max_in);
 
-    public:
-        int numMicrocell;   // Number of Microcells
-        double vbias;       // Bias Voltage
-        double vbr;         // Breakdown Voltage
-        double vover;       // Overvoltage (internally calculated - make private)
-        double tauRecovery; // Microcell Recharge RC Time Constant
-        double digitalThreshhold;   // Output Digital Threshhold for readout (0 for analog)
-        double ccell;       // Microcell Capacitance
-        double dt;          // Simulation Timestep
-        double Vchr;        // Characteristic Voltage for PDE vs Vover curve
-        double PDE_max;     // PDE_max parameter for PDE vs Vover curve
+    inline double pde_from_volt(double overvoltage);
 
-        SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in, double digitalThreshhold_in, double ccell_in, double Vchr_in, double PDE_max_in);
+    inline double pde_from_time(double time);
 
-        inline double pde_from_volt(double overvoltage);
+    inline double volt_from_time(double time);
 
-        inline double pde_from_time(double time);
+    vector<double> simulate(vector<double> light);
 
-        inline double volt_from_time(double time);
+    vector<double> simulate_full(vector<double> light);
 
-        vector<double> simulate(vector<double> light);
+private:
+    vector<double> microcellTimes;
+    vector<double> microcellVoltages;
 
-        vector<double> simulate_full(vector<double> light);
+    default_random_engine poissonEngine;
+    mt19937_64 unifRandomEngine;
+    uniform_real_distribution<double> unif;
 
-    private:
+    double unif_rand_double(double a, double b);
 
-        vector<double> microcellTimes;
-        vector<double> microcellVoltages;
+    int unif_rand_int(int a, int b);
 
-        default_random_engine poissonEngine;
-        mt19937_64 unifRandomEngine;
-        uniform_real_distribution<double> unif;
+    void init_spads(void);
 
-        double unif_rand_double(double a, double b);
+    double selective_recharge_illuminate_LUT(double photonsPerSecond);
 
-        int unif_rand_int(int a, int b);
+    double recharge_illuminate_LUT(double photonsPerSecond);
 
-        void init_spads(void);
+    double recharge_illuminate(double photonsPerSecond);
 
-        double selective_recharge_illuminate_LUT(double photonsPerSecond);
+    void print_progress(double percentage);
 
-        double recharge_illuminate_LUT(double photonsPerSecond);
+    void test_rand_funcs();
 
-        double recharge_illuminate(double photonsPerSecond);
+    static const size_t LUTSize;
+    double tVecLUT;
+    double pdeVecLUT;
+    double vVecLUT;
 
-        void print_progress(double percentage);
+    void precalculate_LUT(void);
 
-        void test_rand_funcs();
+    double pde_LUT(double x);
 
-        static const size_t LUTSize;
-        double tVecLUT;
-        double pdeVecLUT;
-        double vVecLUT;
+    double volt_LUT(double x);
 
-        void precalculate_LUT(void);
-
-        double pde_LUT(double x);
-
-        double volt_LUT(double x);
-
-        double LUT(double x, double* workingVector);
+    double LUT(double x, double *workingVector);
 };
 
 #endif // SIPM_H

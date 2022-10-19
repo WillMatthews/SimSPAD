@@ -1,7 +1,7 @@
-/* 
+/*
  * This file is part of the SimSPAD distribution (http://github.com/WillMatthews/SimSPAD).
  * Copyright (c) 2022 William Matthews.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3.
@@ -27,7 +27,6 @@
 #include <ctime>
 #include <tuple>
 
-
 using namespace std;
 
 /*
@@ -36,6 +35,6 @@ void write_vector_to_file(const vector<double>& vectorToSave, , string filename)
 
 tuple<wstring, double> exponent_val(double num);
 
-void print_info(chrono::duration<double> elapsed, double dt, vector<double>outvec, int numMicrocell);
+void print_info(chrono::duration<double> elapsed, double dt, vector<double> outvec, int numMicrocell);
 
 #endif // UTILITIES_H
