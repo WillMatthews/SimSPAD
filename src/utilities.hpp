@@ -48,9 +48,9 @@ void write_vector_to_file(const vector<double>& myVector, string filename)
 }
 */
 
-tuple<string, double> exponent_val(double num){
+tuple<wstring, double> exponent_val(double num){
     int floor_prefix = floor(log10(num));
-    string prefixes[9] = {"f", "p", "n", "u", "m", "", "k", "M", "G"};
+    wstring prefixes[9] = {L"f", L"p", L"n", L"μ", L"m", L"", L"k", L"M", L"G"};
     bool triggered = false;
     int idx_prefix;
     int k = 0;
@@ -63,7 +63,7 @@ tuple<string, double> exponent_val(double num){
         k = k+1;
     }
     if (!triggered){
-        return make_tuple("", num);
+        return make_tuple(prefixes[5], num);
     }
     double pot = (double) -(idx_prefix * 3 - 15);
     return make_tuple(prefixes[idx_prefix], num*pow(10,pot)); 
@@ -77,22 +77,25 @@ void print_info(chrono::duration<double> elapsed, double dt, vector<double>outve
 
     int inputsize = outvec.size();
 
+    locale::global(locale("en_US.utf8"));
+    wcout.imbue(locale());
+
     cout << "\n\nSimulation Run at: " << timeStr << endl;
 
-    string prefix;
+    wstring prefix;
     double val;
     tie(prefix, val) = exponent_val(elapsed.count());
-    cout << "Elapsed Time:\t " << val << prefix << "s" <<  endl;
+    wcout << "Elapsed Time:\t " << val << prefix << "s" <<  endl;
     tie(prefix, val) = exponent_val(dt*inputsize);
-    cout << "Simulated Time:\t " << val << prefix << "s" << endl;
+    wcout << "Simulated Time:\t " << val << prefix << "s" << endl;
     tie(prefix, val) = exponent_val(dt);
-    cout << "Resolution:\t " << val << prefix << "s" << endl;
+    wcout << "Resolution:\t " << val << prefix << "s" << endl;
     cout << "Time Steps:\t " << inputsize << "Sa" <<  endl;
     double time_per_iter = ( (double) elapsed.count()) / ( (double) inputsize);
     tie(prefix, val) = exponent_val(time_per_iter);
-    cout << "Computer Time Per Step:\t " << val << prefix << "s" << endl;
+    wcout << "Computer Time Per Step:\t " << val << prefix << "s" << endl;
     tie(prefix, val) = exponent_val(time_per_iter/numMicrocell);
-    cout << "Computer Time Per uCell Step:\t " << val << prefix  << "s" << endl;
+    wcout << "Computer Time Per uCell Step:\t " << val << prefix  << "s" << endl;
 
     double sumOut = 0;
     for (int i = 0; i< inputsize; i++){
