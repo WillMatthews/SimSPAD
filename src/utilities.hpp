@@ -16,10 +16,37 @@
  */
 
 #include <iostream>
+#include <fstream>
+#include <vector>
 #include <string>
 #include <cmath>
+#include <chrono>
+#include <ctime>
+
 
 using namespace std;
+
+/*
+void write_vector_to_file(const vector<double>& myVector, string filename)
+{
+
+    chrono::system_clock::time_point currentTime = chrono::system_clock::now();
+    time_t tt;
+    tt = chrono::system_clock::to_time_t(currentTime);
+    string timeStr = ctime(tt);
+
+    ofstream ofs(filename, ios::out | ofstream::binary);
+    ofs << "SIMSPAD OUTPUT\n";
+    ofs << "dt:" << dt << "\n";
+    ofs << ";
+
+    ostream_iterator<char> osi{ ofs };
+
+    const char* beginByte = (char*)&myVector[0];
+    const char* endByte = (char*)&myVector.back() + sizeof(double);
+    copy(beginByte, endByte, osi);
+}
+*/
 
 tuple<string, double> exponent_val(double num){
     int floor_prefix = floor(log10(num));

@@ -1,2 +1,2 @@
-simspad: ./src/simspad.cpp ./src/sipm.hpp ./src/sipmcsv.hpp ./src/writeoutput.hpp ./src/utilities.hpp
+simspad: ./src/simspad.cpp ./src/sipm.hpp ./src/sipmcsv.hpp ./src/utilities.hpp
 	g++ --std=c++17 -O3 -ffast-math -funsafe-math-optimizations -msse4.2 -pthread ./src/simspad.cpp -o simspad
