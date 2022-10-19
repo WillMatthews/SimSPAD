@@ -86,17 +86,17 @@ class SiPM {
         // light vector is the expected number of photons to strike the SiPM in simulation timestep dt.
         vector<double> simulate(vector<double> light){
             vector<double> qFired = {};
-            double l;
             double pctdone;
             init_spads();
             // O(light.size()* numMicrocell)
             for (int i=0; i<light.size(); i++){
-                if (i%100 == 0 || i==(light.size()-1)){
+                #ifndef NO_OUTPUT
+                if ((i%100 == 0 || i==(light.size()-1))){
                     pctdone = (double)i/(double)(light.size()-1);
                     print_progress(pctdone);
                 }
-                l = light[i];
-                qFired.push_back(selective_recharge_illuminate_LUT(l));
+                #endif
+                qFired.push_back(selective_recharge_illuminate_LUT(light[i]));
             }
             return qFired;
         }
@@ -189,7 +189,7 @@ class SiPM {
                 if (unif_rand_double(0,1) < (pde_LUT(microcellTimes[i]))){
                     volt = volt_LUT(microcellTimes[i]);
                     microcellTimes[i] = 0;
-                    if (volt > digitalThreshhold * vover){
+                    if (volt > digitalThreshhold*vover){
                         output += volt*ccell;
                     }
                 }
@@ -207,7 +207,7 @@ class SiPM {
                 if (unif_rand_double(0,1) < (pde_LUT(microcellTimes[i])*(photonsPerSecond/numMicrocell))){
                     volt = volt_LUT(microcellTimes[i]);
                     microcellTimes[i] = 0;
-                    if (volt > digitalThreshhold * vover){
+                    if (volt > digitalThreshhold*vover){
                         output += volt*ccell;
                     }
                 }
@@ -240,32 +240,35 @@ class SiPM {
         
         // progress bar
         void print_progress(double percentage) {
-            int val = (int) (percentage * 100);
-            int lpad = (int) (percentage * PBWIDTH);
+            int val = (int) (percentage*100);
+            int lpad = (int) (percentage*PBWIDTH);
             int rpad = PBWIDTH - lpad;
             printf("\r%3d%% [%.*s%*s]", val, lpad, PBSTR, rpad, "");
             fflush(stdout);
+            if (val == 100){
+                cout << "\n" << endl;
+            }
         }
 
 
         // Sanity check random number generation as used in the program
         void test_rand_funcs(){
-            const int nstars=100;     // maximum number of stars to distribute
-            const int nintervals=10; // number of intervals
+            const int nstars = 100;     // maximum number of stars to distribute
+            const int nintervals = 10; // number of intervals
             int iters = 10000;
 
             cout << "\n\n***** UNIFORM *****\n" << endl;
             double s1;
             double test1 = 0;
-            int p1[nintervals]={};
-            for (int i = 0; i<iters; i++){
+            int p1[nintervals] = {};
+            for (int i=0; i<iters; i++){
                 s1 = unif_rand_double(0,1);
-                test1+=s1;
+                test1 += s1;
                 ++p1[int(nintervals*s1)];
             }
             cout << "mean dist 1: " << test1/iters << endl;
 
-            for (int i=0; i<nintervals; ++i) {
+            for (int i=0; i<nintervals; i++) {
                 std::cout << float(i)/nintervals << "-" << float(i+1)/nintervals << "\t: ";
                 std::cout << std::string(p1[i]*nstars/iters,'*') << std::endl;
             }
@@ -281,7 +284,7 @@ class SiPM {
             }
 
             cout << "\n\n***** POISSON *****\n" << endl;
-            for (int i=0; i<poiss_nintervals; ++i) {
+            for (int i=0; i<poiss_nintervals; i++) {
                 std::cout << i << "\t: ";
                 std::cout << std::string(p2[i]*nstars/iters,'*') << std::endl;
             }

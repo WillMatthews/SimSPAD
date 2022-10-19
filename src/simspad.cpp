@@ -24,6 +24,9 @@
 #include <chrono>
 //#include <thread>
 #include <ctime>
+
+//#define NO_OUTPUT
+
 #include "sipm.hpp"
 #include "sipmcsv.hpp"
 #include "utilities.hpp"
@@ -62,7 +65,9 @@ auto sim_lambda = [](string fname){
 
     //writeCSV(fname+"_sim_out.csv", out, j30020);
     //write_vector_to_file(const std::vector<double>& myVector, std::string filename)
+    #ifndef NO_OUTPUT
     print_info(elapsed, dt, out, j30020.numMicrocell);
+    #endif
 };
 
 
