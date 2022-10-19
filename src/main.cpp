@@ -1,7 +1,7 @@
-/* 
+/*
  * This file is part of the SimSPAD distribution (http://github.com/WillMatthews/SimSPAD).
  * Copyright (c) 2022 William Matthews.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3.
@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 
 //#define NO_OUTPUT
 
@@ -33,45 +32,44 @@
 
 using namespace std;
 
-
-
 // create lambda expression for a simulation run (input csv -> output csv).
 // might be helpful if multithreading in the future
-auto sim_lambda = [](string fname){
+auto sim_lambda = [](string fname)
+{
     vector<double> out = {};
-    //vector<double> in = {};
+    // vector<double> in = {};
     double dt;
-   
+
     // Generate Dummy Input for Testing //
     int ber_run_samples = 844759;
-    vector<double> in(ber_run_samples,10); // DC light source
+    vector<double> in(ber_run_samples, 10); // DC light source
     dt = 1E-10;
     //////////////////////////////////////
 
-    SiPM j30020(14410, 27.5, 24.5, 2.2*14E-9, 0.0, 4.6e-14, 2.04, 0.46);
-    //tie(in,dt) = readCSV(fname+".csv");
+    SiPM j30020(14410, 27.5, 24.5, 2.2 * 14E-9, 0.0, 4.6e-14, 2.04, 0.46);
+    // tie(in,dt) = readCSV(fname+".csv");
     j30020.dt = dt;
 
     auto start = chrono::steady_clock::now();
 
     out = j30020.simulate(in);
-    //out = j30020.simulate_full(in);
+    // out = j30020.simulate_full(in);
 
-    //j30020.test_rand_funcs();
+    // j30020.test_rand_funcs();
 
     auto end = chrono::steady_clock::now();
-    chrono::duration<double> elapsed = end-start;
+    chrono::duration<double> elapsed = end - start;
 
-    //writeCSV(fname+"_sim_out.csv", out, j30020);
-    //write_vector_to_file(const std::vector<double>& myVector, std::string filename)
-    #ifndef NO_OUTPUT
+// writeCSV(fname+"_sim_out.csv", out, j30020);
+// write_vector_to_file(const std::vector<double>& myVector, std::string filename)
+#ifndef NO_OUTPUT
     print_info(elapsed, dt, out, j30020.numMicrocell);
-    #endif
+#endif
 };
 
-
 // Run simulation and time
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
     unsigned int time_ui = static_cast<unsigned int>(time(NULL));
     srand(time_ui);
 
@@ -79,6 +77,6 @@ int main(int argc, char *argv[]){
     cin.tie(0);
 
     sim_lambda("siminput");
-    
+
     return EXIT_SUCCESS;
 }
