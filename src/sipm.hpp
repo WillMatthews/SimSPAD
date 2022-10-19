@@ -20,8 +20,8 @@
 #include <string>
 #include <cmath>
 #include <random>
-#include <thread>
-#include <mutex>
+//#include <thread>
+//#include <mutex>
 
 // Progress bar defines
 #define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"

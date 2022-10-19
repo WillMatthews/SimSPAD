@@ -22,35 +22,14 @@
 #include <cmath>
 #include <random>
 #include <chrono>
-#include <thread>
-#include <time.h>
+//#include <thread>
+#include <ctime>
 #include "sipm.hpp"
 #include "sipmcsv.hpp"
+#include "utilities.hpp"
+//#include "writeoutput.hpp"
 
 using namespace std;
-
-
-tuple<string, double> exponent_val(double num){
-    int floor_prefix = floor(log10(num));
-    string prefixes[9] = {"f", "p", "n", "u", "m", "", "k", "M", "G"};
-    bool triggered = false;
-    int idx_prefix;
-    int k = 0;
-    for (int i=-15; i<10; i=i+3){
-        if (floor_prefix < i){
-            triggered = true;
-            idx_prefix = k-1;
-            break;
-        };
-        k = k+1;
-    }
-    if (!triggered){
-        return make_tuple("", num);
-    }
-    double pot = (double) -(idx_prefix * 3 - 15);
-    return make_tuple(prefixes[idx_prefix], num*pow(10,pot)); 
-}
-
 
 // create lambda expression for a simulation run (input csv -> output csv).
 // might be helpful if multithreading in the future
@@ -71,34 +50,15 @@ auto sim_lambda = [](string fname){
 
     out = j30020.simulate(in);
     //out = j30020.simulate_full(in);
+
     //j30020.test_rand_funcs();
 
     auto end = chrono::steady_clock::now();
     chrono::duration<double> elapsed = end-start;
 
-    string prefix;
-    double val;
-    tie(prefix, val) = exponent_val(elapsed.count());
-    cout << "\nElapsed Time:\t " << val << prefix << "s" <<  endl;
-    tie(prefix, val) = exponent_val(dt*in.size());
-    cout << "Simulated Time:\t " << val << prefix << "s" << endl;
-    tie(prefix, val) = exponent_val(dt);
-    cout << "Resolution:\t " << val << prefix << "s" << endl;
-    cout << "Time Steps:\t " << in.size() << "Sa" <<  endl;
-    double time_per_iter = ( (double) elapsed.count()) / ( (double) in.size());
-    tie(prefix, val) = exponent_val(time_per_iter);
-    cout << "Computer Time Per Step:\t " << val << prefix << "s" << endl;
-    tie(prefix, val) = exponent_val(time_per_iter/j30020.numMicrocell);
-    cout << "Computer Time Per uCell Step:\t " << val << prefix  << "s" << endl;
-
-    double sumOut = 0;
-    for (int i = 0; i< in.size(); i++){
-        sumOut += out[i];
-    }
-    double Ibias = sumOut/(in.size() * j30020.dt);
-    cout << "Ibias:  " << Ibias*1E3 << "mA" << endl;
-
-    writeCSV(fname+"_sim_out.csv", out, j30020);
+    //writeCSV(fname+"_sim_out.csv", out, j30020);
+    //write_vector_to_file(const std::vector<double>& myVector, std::string filename)
+    print_info(elapsed, dt, out, j30020.numMicrocell);
 };
 
 
