@@ -58,7 +58,6 @@ public:
 
 private:
     std::vector<double> microcellTimes;
-    std::vector<double> microcellVoltages;
 
     std::default_random_engine poissonEngine;
     std::mt19937_64 unifRandomEngine;

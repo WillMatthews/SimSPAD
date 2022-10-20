@@ -42,7 +42,6 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecove
     Vchr = Vchr_in; // characteristic voltage for PDE-Vover curve
     PDE_max = PDE_max_in; // PDE_max characteristic for PDE-Vover curve
     microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live tiem since last detection vector
-    microcellVoltages = vector<double>(numMicrocell, 0.0); // microcell live voltage vector
 
     LUTSize = 15;
     tVecLUT = new double[LUTSize];
