@@ -81,10 +81,10 @@ vector<double> SiPM::simulate(vector<double> light)
     double pctdone;
     init_spads();
     // O(light.size()* numMicrocell)
-    for (int i = 0; i < light.size(); i++)
+    for (int i = 0; i < (int) light.size(); i++)
     {
 #ifndef NO_OUTPUT
-        if ((i % 100 == 0 || i == (light.size() - 1)))
+        if ((i % 100 == 0 || i == (int) (light.size() - 1)))
         {
             pctdone = (double)i / (double)(light.size() - 1);
             print_progress(pctdone);
@@ -105,9 +105,9 @@ vector<double> SiPM::simulate_full(vector<double> light)
     double pctdone;
     init_spads();
     // O(light.size()* numMicrocell)
-    for (int i = 0; i < light.size(); i++)
+    for (int i = 0; i < (int) light.size(); i++)
     {
-        if (i % 100 == 0 || i == (light.size() - 1))
+        if (i % 100 == 0 || i == ((int) light.size() - 1))
         {
             pctdone = (double)i / (double)(light.size() - 1);
             print_progress(pctdone);
@@ -134,7 +134,7 @@ int SiPM::unif_rand_int(int a, int b)
 
 void SiPM::init_spads(void)
 {
-    for (int i = 0; i < numMicrocell; i++)
+    for (int i = 0; (int) i < numMicrocell; i++)
     {
         microcellTimes[i] = tauRecovery * unif_rand_double(0, 10);
     }
@@ -151,7 +151,7 @@ double SiPM::selective_recharge_illuminate_LUT(double photonsPerSecond)
 
     // generate n random microcells to strike - n random microcells
     vector<int> struckMicrocells = {};
-    for (int i = 0; i < poissPhotons; i++)
+    for (int i = 0; (int) i < poissPhotons; i++)
     {
         struckMicrocells.push_back(unif_rand_int(0, numMicrocell));
     }
@@ -269,7 +269,7 @@ void SiPM::test_rand_funcs()
     int s2;
     for (int i = 0; i < iters; i++)
     {
-        poisson_distribution<int> distribution(5);
+        poisson_distribution<int> distribution(lambda);
         s2 = distribution(poissonEngine);
         ++p2[int(s2)];
     }
@@ -321,7 +321,7 @@ double SiPM::LUT(double x, double *workingVector)
     double *xs = tVecLUT;
     double *ys = workingVector;
     // number of elements in the array
-    const int count = (const int)LUTSize;
+    const int count = LUTSize;
     int i;
     double dx, dy;
 

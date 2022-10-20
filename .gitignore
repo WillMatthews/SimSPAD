@@ -1,5 +1,4 @@
-old/*
-simspad
+build/*
 *.csv
 callgrind.*
 *.swp
