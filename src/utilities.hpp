@@ -27,14 +27,12 @@
 #include <ctime>
 #include <tuple>
 
-using namespace std;
-
 /*
 void write_vector_to_file(const vector<double>& vectorToSave, , string filename);
 */
 
-tuple<wstring, double> exponent_val(double num);
+std::tuple<std::wstring, double> exponent_val(double num);
 
-void print_info(chrono::duration<double> elapsed, double dt, vector<double> outvec, int numMicrocell);
+void print_info(std::chrono::duration<double> elapsed, double dt, std::vector<double> outvec, int numMicrocell);
 
 #endif // UTILITIES_H

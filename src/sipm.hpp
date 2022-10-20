@@ -30,22 +30,19 @@
 #define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
 #define PBWIDTH 60
 
-using namespace std;
-
 class SiPM
 {
-
 public:
-    int numMicrocell;         // Number of Microcells
-    double vbias;             // Bias Voltage
-    double vbr;               // Breakdown Voltage
-    double vover;             // Overvoltage (internally calculated - make private)
-    double tauRecovery;       // Microcell Recharge RC Time Constant
-    double digitalThreshhold; // Output Digital Threshhold for readout (0 for analog)
-    double ccell;             // Microcell Capacitance
-    double dt;                // Simulation Timestep
-    double Vchr;              // Characteristic Voltage for PDE vs Vover curve
-    double PDE_max;           // PDE_max parameter for PDE vs Vover curve
+    int numMicrocell;
+    double vbias;
+    double vbr;
+    double vover;
+    double tauRecovery;
+    double digitalThreshhold;
+    double ccell;
+    double dt;
+    double Vchr;
+    double PDE_max;
 
     SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in, double digitalThreshhold_in, double ccell_in, double Vchr_in, double PDE_max_in);
 
@@ -55,17 +52,17 @@ public:
 
     inline double volt_from_time(double time);
 
-    vector<double> simulate(vector<double> light);
+    std::vector<double> simulate(std::vector<double> light);
 
-    vector<double> simulate_full(vector<double> light);
+    std::vector<double> simulate_full(std::vector<double> light);
 
 private:
-    vector<double> microcellTimes;
-    vector<double> microcellVoltages;
+    std::vector<double> microcellTimes;
+    std::vector<double> microcellVoltages;
 
-    default_random_engine poissonEngine;
-    mt19937_64 unifRandomEngine;
-    uniform_real_distribution<double> unif;
+    std::default_random_engine poissonEngine;
+    std::mt19937_64 unifRandomEngine;
+    std::uniform_real_distribution<double> unif;
 
     double unif_rand_double(double a, double b);
 
@@ -83,10 +80,11 @@ private:
 
     void test_rand_funcs();
 
-    static const size_t LUTSize;
-    double tVecLUT;
-    double pdeVecLUT;
-    double vVecLUT;
+    //static const size_t LUTSize;
+    int LUTSize;
+    double* tVecLUT;
+    double* pdeVecLUT;
+    double* vVecLUT;
 
     void precalculate_LUT(void);
 

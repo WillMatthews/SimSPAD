@@ -27,7 +27,7 @@
 //#include <thread>
 #include <ctime>
 #include "sipm.hpp"
-#include "sipmcsv.hpp"
+//#include "sipmcsv.hpp"
 #include "utilities.hpp"
 
 using namespace std;
@@ -72,6 +72,7 @@ int main(int argc, char *argv[])
 {
     unsigned int time_ui = static_cast<unsigned int>(time(NULL));
     srand(time_ui);
+
 
     ios::sync_with_stdio(0);
     cin.tie(0);

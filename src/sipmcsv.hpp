@@ -28,8 +28,6 @@
 #include <stdlib.h>
 #include "sipm.hpp"
 
-using namespace std;
-
 int writeCSV(string filename, vector<double> inputVec, SiPM sipm);
 
 class CSVRow
