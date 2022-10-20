@@ -81,11 +81,11 @@ private:
 
     void test_rand_funcs();
 
-    //static const size_t LUTSize;
+    // static const size_t LUTSize;
     int LUTSize;
-    double* tVecLUT;
-    double* pdeVecLUT;
-    double* vVecLUT;
+    double *tVecLUT;
+    double *pdeVecLUT;
+    double *vVecLUT;
 
     void precalculate_LUT(void);
 

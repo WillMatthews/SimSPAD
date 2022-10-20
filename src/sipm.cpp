@@ -32,27 +32,26 @@ using namespace std;
 
 SiPM::SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in, double digitalThreshhold_in, double ccell_in, double Vchr_in, double PDE_max_in)
 {
-    numMicrocell = numMicrocell_in; // number of microcells in SiPM
-    vbias = vbias_in; // supplied SiPM bias voltage
-    vbr = vbr_in; // SiPM breakdown voltage
-    tauRecovery = tauRecovery_in; // recharge recovery time tau RC
-    digitalThreshhold = digitalThreshhold_in; // readout threshhold (typically 0 for analog)
-    ccell = ccell_in; // microcell capacitance
-    vover = vbias_in - vbr_in; // overvoltage
-    Vchr = Vchr_in; // characteristic voltage for PDE-Vover curve
-    PDE_max = PDE_max_in; // PDE_max characteristic for PDE-Vover curve
+    numMicrocell = numMicrocell_in;                     // number of microcells in SiPM
+    vbias = vbias_in;                                   // supplied SiPM bias voltage
+    vbr = vbr_in;                                       // SiPM breakdown voltage
+    tauRecovery = tauRecovery_in;                       // recharge recovery time tau RC
+    digitalThreshhold = digitalThreshhold_in;           // readout threshhold (typically 0 for analog)
+    ccell = ccell_in;                                   // microcell capacitance
+    vover = vbias_in - vbr_in;                          // overvoltage
+    Vchr = Vchr_in;                                     // characteristic voltage for PDE-Vover curve
+    PDE_max = PDE_max_in;                               // PDE_max characteristic for PDE-Vover curve
     microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live tiem since last detection vector
 
     LUTSize = 20;
     tVecLUT = new double[LUTSize];
-    pdeVecLUT= new double[LUTSize];
-    vVecLUT= new double[LUTSize];
+    pdeVecLUT = new double[LUTSize];
+    vVecLUT = new double[LUTSize];
 
     precalculate_LUT();
 }
 
 SiPM::~SiPM(){};
-
 
 // convert overvoltage to PDE
 inline double SiPM::pde_from_volt(double overvoltage)
@@ -81,10 +80,10 @@ vector<double> SiPM::simulate(vector<double> light)
     double pctdone;
     init_spads();
     // O(light.size()* numMicrocell)
-    for (int i = 0; i < (int) light.size(); i++)
+    for (int i = 0; i < (int)light.size(); i++)
     {
 #ifndef NO_OUTPUT
-        if ((i % 100 == 0 || i == (int) (light.size() - 1)))
+        if ((i % 100 == 0 || i == (int)(light.size() - 1)))
         {
             pctdone = (double)i / (double)(light.size() - 1);
             print_progress(pctdone);
@@ -105,9 +104,9 @@ vector<double> SiPM::simulate_full(vector<double> light)
     double pctdone;
     init_spads();
     // O(light.size()* numMicrocell)
-    for (int i = 0; i < (int) light.size(); i++)
+    for (int i = 0; i < (int)light.size(); i++)
     {
-        if (i % 100 == 0 || i == ((int) light.size() - 1))
+        if (i % 100 == 0 || i == ((int)light.size() - 1))
         {
             pctdone = (double)i / (double)(light.size() - 1);
             print_progress(pctdone);
@@ -134,7 +133,7 @@ int SiPM::unif_rand_int(int a, int b)
 
 void SiPM::init_spads(void)
 {
-    for (int i = 0; (int) i < numMicrocell; i++)
+    for (int i = 0; (int)i < numMicrocell; i++)
     {
         microcellTimes[i] = tauRecovery * unif_rand_double(0, 10);
     }
@@ -151,7 +150,7 @@ double SiPM::selective_recharge_illuminate_LUT(double photonsPerSecond)
 
     // generate n random microcells to strike - n random microcells
     vector<int> struckMicrocells = {};
-    for (int i = 0; (int) i < poissPhotons; i++)
+    for (int i = 0; (int)i < poissPhotons; i++)
     {
         struckMicrocells.push_back(unif_rand_int(0, numMicrocell));
     }
@@ -285,10 +284,10 @@ void SiPM::test_rand_funcs()
 
 //// LOOKUP TABLE PARAMS AND FUNCTIONS
 
-//static const size_t LUTSize = 15;
-//double tVecLUT[LUTSize] = {0};
-//double pdeVecLUT[LUTSize] = {0};
-//double vVecLUT[LUTSize] = {0};
+// static const size_t LUTSize = 15;
+// double tVecLUT[LUTSize] = {0};
+// double pdeVecLUT[LUTSize] = {0};
+// double vVecLUT[LUTSize] = {0};
 
 void SiPM::precalculate_LUT(void)
 {

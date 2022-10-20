@@ -49,12 +49,14 @@ void write_vector_to_file(const vector<double>& vectorToSave, , string filename)
 }
 */
 
-tuple<vector<double>, double> readCSV(string fname){
+// package CSV ingest code for use with simulator - only need dt and exp. num of photons per time step
+tuple<vector<double>, double> readCSV(string fname)
+{
     rapidcsv::Document doc(fname);
     vector<double> photonVec = doc.GetColumn<double>("meanPhotons");
     vector<double> timeVec = doc.GetColumn<double>("time");
     cout << "Read " << photonVec.size() << " values." << endl;
-    double dt = (timeVec[timeVec.size()-1]-timeVec[0])/(timeVec.size()-1);
+    double dt = (timeVec[timeVec.size() - 1] - timeVec[0]) / (timeVec.size() - 1);
     return make_tuple(photonVec, dt);
 }
 
