@@ -12,7 +12,9 @@ SiPMs unfortunately experience recovery-time based nonlinearity, which is due to
 
 Simulation also allows for more complicated experiments to be performed in a contained environment where transmitter effects, thermal noise and more can be eliminated.
 
-This is a work in progress, and more documentation will follow. This work has been published in:
+The simulation was originally written in MATLAB to interface with existing bit error rate detection code, but has since been migrated to c++ to enable the simulator to work (much, oh so much) faster.
+
+This is an *experimental work in progress*, and more documentation will follow. This work has been published in:
 
 1. PRIME 2022 (Using Original MATLAB Simulation)
 2. Photonics (Using Original MATLAB Simulation)
