@@ -46,6 +46,8 @@ public:
 
     SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in, double digitalThreshhold_in, double ccell_in, double Vchr_in, double PDE_max_in);
 
+    ~SiPM();
+
     inline double pde_from_volt(double overvoltage);
 
     inline double pde_from_time(double time);

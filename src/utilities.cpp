@@ -23,6 +23,7 @@
 #include <chrono>
 #include <ctime>
 #include <tuple>
+#include "../lib/rapidcsv/src/rapidcsv.h"
 
 using namespace std;
 
@@ -47,6 +48,17 @@ void write_vector_to_file(const vector<double>& vectorToSave, , string filename)
     copy(beginByte, endByte, osi);
 }
 */
+
+tuple<vector<double>, double> readCSV(string fname){
+    rapidcsv::Document doc(fname);
+    vector<double> photonVec = doc.GetColumn<double>("meanPhotons");
+    vector<double> timeVec = doc.GetColumn<double>("time");
+    cout << "Read " << photonVec.size() << " values." << endl;
+    double dt = (timeVec[timeVec.size()-1]-timeVec[0])/(timeVec.size()-1);
+    cout << dt << "\t" << timeVec[0] << "\t" << timeVec.size() << "\t" << timeVec[timeVec.size()-1] << endl;
+
+    return make_tuple(photonVec, dt);
+}
 
 // Given a number `num` scale to engineering notation (nearest power of three) and return the unit prefix associated with the unit
 tuple<wstring, double> exponent_val(double num)

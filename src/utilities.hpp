@@ -26,10 +26,13 @@
 #include <chrono>
 #include <ctime>
 #include <tuple>
+#include "../lib/rapidcsv/src/rapidcsv.h"
 
 /*
 void write_vector_to_file(const vector<double>& vectorToSave, , string filename);
 */
+
+std::tuple<std::vector<double>, double> readCSV(std::string fname);
 
 std::tuple<std::wstring, double> exponent_val(double num);
 

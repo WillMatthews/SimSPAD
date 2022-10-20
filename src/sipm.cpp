@@ -51,6 +51,9 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecove
     precalculate_LUT();
 }
 
+SiPM::~SiPM(){};
+
+
 // convert overvoltage to PDE
 inline double SiPM::pde_from_volt(double overvoltage)
 {
