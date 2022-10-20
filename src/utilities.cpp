@@ -55,8 +55,6 @@ tuple<vector<double>, double> readCSV(string fname){
     vector<double> timeVec = doc.GetColumn<double>("time");
     cout << "Read " << photonVec.size() << " values." << endl;
     double dt = (timeVec[timeVec.size()-1]-timeVec[0])/(timeVec.size()-1);
-    cout << dt << "\t" << timeVec[0] << "\t" << timeVec.size() << "\t" << timeVec[timeVec.size()-1] << endl;
-
     return make_tuple(photonVec, dt);
 }
 
