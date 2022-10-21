@@ -23,7 +23,7 @@
 #include <chrono>
 #include <ctime>
 #include <tuple>
-#include "../lib/rapidcsv/src/rapidcsv.h"
+//#include "../lib/rapidcsv/src/rapidcsv.h"
 
 using namespace std;
 
@@ -49,6 +49,7 @@ void write_vector_to_file(const vector<double>& vectorToSave, , string filename)
 }
 */
 
+/*
 // package CSV ingest code for use with simulator - only need dt and exp. num of photons per time step
 tuple<vector<double>, double> readCSV(string fname)
 {
@@ -59,6 +60,7 @@ tuple<vector<double>, double> readCSV(string fname)
     double dt = (timeVec[timeVec.size() - 1] - timeVec[0]) / (timeVec.size() - 1);
     return make_tuple(photonVec, dt);
 }
+*/
 
 // Given a number `num` scale to engineering notation (nearest power of three) and return the unit prefix associated with the unit
 tuple<wstring, double> exponent_val(double num)
