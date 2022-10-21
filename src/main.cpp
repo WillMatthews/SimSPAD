@@ -36,17 +36,18 @@ using namespace std;
 auto sim_lambda = [](string fname)
 {
     vector<double> out = {};
-    vector<double> in = {};
+    // vector<double> in = {};
     double dt;
 
     // Generate Dummy Input for Testing //
-    // int ber_run_samples = 844759;
-    // vector<double> in(ber_run_samples, 10); // DC light source
+    int ber_run_samples = 844759;
+    vector<double> in(ber_run_samples, 10); // DC light source
     dt = 1E-10;
+    (void)fname;
     //////////////////////////////////////
 
     SiPM j30020(14410, 27.5, 24.5, 2.2 * 14E-9, 0.0, 4.6e-14, 2.04, 0.46);
-    tie(in, dt) = readCSV(fname + ".csv");
+    // tie(in, dt) = readCSV(i + ".csv");
     j30020.dt = dt;
 
     auto start = chrono::steady_clock::now();

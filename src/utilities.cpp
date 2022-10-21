@@ -60,6 +60,70 @@ tuple<vector<double>, double> readCSV(string fname)
     return make_tuple(photonVec, dt);
 }
 
+/*
+// output convolve to pulse shape using a gaussian approximation
+vector<double> conv1d(vector<double> inputVec, vector<double> kernel)
+{
+
+    if (kernel.size() <= 1)
+    {
+        return inputVec;
+    }
+
+    int kernelsize = (int)kernel.size();
+
+    if (kernelsize == 1)
+    {
+        return inputVec;
+    }
+
+    vector<double> outputVec = {};
+
+    for (int i = 0; i < (int)inputVec.size(); i++)
+    {
+        outputVec.push_back(0.0);
+        for (int j = 0; j < kernelsize; j++)
+        {
+            if (!((i - j) < 0 || (i - j) > (long)inputVec.size()))
+            {
+                outputVec[i - kernelsize / 2] += kernel[j] * inputVec[i + j - kernelsize / 2];
+            }
+        }
+    }
+    return outputVec;
+}
+
+vector<double> get_gaussian(double dt, double tauFwhm)
+{
+
+    // generate gaussian kernel
+    double gauconst = (double)(1 / sqrt(2 * M_PI));
+    const double fwhmConversionConst = sqrt(2 * log(2));
+
+    double sigma = dt * tauFwhm / fwhmConversionConst;
+    const double numSigma = 3.5;
+
+    int gau_numpoint = (int)ceil(numSigma * sigma / dt);
+
+    double gaupower;
+    double x;
+    vector<double> kernel = {};
+    if (gau_numpoint == 1)
+    {
+        kernel.push_back(1);
+        return kernel;
+    }
+
+    for (int i = -(gau_numpoint - 1); i < (gau_numpoint - 1); i++)
+    {
+        x = dt * (double)(i - gau_numpoint);
+        gaupower = -pow(x / sigma, 2) / 2;
+        kernel.push_back(gauconst * exp(gaupower));
+    }
+    return kernel;
+}
+*/
+
 // Given a number `num` scale to engineering notation (nearest power of three) and return the unit prefix associated with the unit
 tuple<wstring, double> exponent_val(double num)
 {

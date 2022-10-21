@@ -34,6 +34,10 @@ void write_vector_to_file(const vector<double>& vectorToSave, , string filename)
 
 std::tuple<std::vector<double>, double> readCSV(std::string fname);
 
+// std::vector<double> conv1d(std::vector<double> inputVec, std::vector<double> kernel);
+
+// std::vector<double> get_gaussian(double dt, double tauFwhm);
+
 std::tuple<std::wstring, double> exponent_val(double num);
 
 void print_info(std::chrono::duration<double> elapsed, double dt, std::vector<double> outvec, int numMicrocell);
