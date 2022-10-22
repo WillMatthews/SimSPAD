@@ -16,7 +16,10 @@
  */
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
+//#include <iterator>  // added - check if slows execution
+//#include <algorithm> // added - check if slows execution
 #include <vector>
 #include <string>
 #include <cmath>
@@ -24,8 +27,48 @@
 #include <ctime>
 #include <tuple>
 //#include "../lib/rapidcsv/src/rapidcsv.h"
+#include "sipm.hpp"
 
 using namespace std;
+
+// load experimental run data from a binary file (packaged from MATLAB)
+/*
+FILE FORMAT:
+    double dt = x(0);
+    double num_microcell = x(1);
+    double vbias = x(2);
+    double vbr = x(3);
+    double recovery = x(4);
+    double pde_Max = x(5);
+    double pde_vchr = x(6);
+    double ccell = x(7);
+    double pulse_fwhm = x(8);
+    double digital_threshholds = x(9);
+
+    vector<double> optical_input = x(10:end);
+*/
+tuple<vector<double>, SiPM> loadBinary(string filename)
+{
+    vector<double> optical_input = {};
+    ifstream fin(filename, ios::binary);
+    vector<double> sipmvars = {};
+    int i = 0;
+    for (double read; fin.read(reinterpret_cast<char *>(&read), sizeof(read));)
+    {
+        ++i;
+        if (i < 10)
+        {
+            sipmvars.push_back(read);
+            cout << read << endl;
+        }
+        else
+        {
+            optical_input.push_back(read);
+        }
+    }
+
+    return make_tuple(optical_input, SiPM(sipmvars));
+}
 
 /*
 void write_vector_to_file(const vector<double>& vectorToSave, , string filename)

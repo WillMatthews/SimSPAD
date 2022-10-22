@@ -19,6 +19,7 @@
 #define UTILITIES_H
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <vector>
 #include <string>
@@ -27,6 +28,8 @@
 #include <ctime>
 #include <tuple>
 #include "../lib/rapidcsv/src/rapidcsv.h"
+
+std::tuple<std::vector<double>, SiPM> loadBinary(string filename);
 
 /*
 void write_vector_to_file(const vector<double>& vectorToSave, , string filename);

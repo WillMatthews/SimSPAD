@@ -51,6 +51,30 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecove
     precalculate_LUT();
 }
 
+SiPM::SiPM(vector<double> svars)
+{
+    dt = svars[0];
+    numMicrocell = svars[1];
+    vbias = svars[2];
+    vbr = svars[3];
+    tauRecovery = svars[4];
+    PDE_max = svars[5];
+    Vchr = svars[6];
+    ccell = svars[7];
+    // pulse_fwhm = svars[8];
+    digitalThreshhold = svars[9];
+
+    vover = vbias - vbr;
+    microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live tiem since last detection vector
+
+    LUTSize = 20;
+    tVecLUT = new double[LUTSize];
+    pdeVecLUT = new double[LUTSize];
+    vVecLUT = new double[LUTSize];
+
+    precalculate_LUT();
+}
+
 SiPM::~SiPM(){};
 
 // convert overvoltage to PDE
