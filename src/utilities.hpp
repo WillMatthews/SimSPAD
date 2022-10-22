@@ -29,7 +29,7 @@
 #include <tuple>
 #include "../lib/rapidcsv/src/rapidcsv.h"
 
-std::tuple<std::vector<double>, SiPM> loadBinary(string filename);
+std::tuple<std::vector<double>, SiPM> loadBinary(std::string filename);
 
 /*
 void write_vector_to_file(const vector<double>& vectorToSave, , string filename);
