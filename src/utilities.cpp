@@ -55,20 +55,28 @@ tuple<vector<double>, SiPM> loadBinary(string filename)
     int i = 0;
     for (double read; fin.read(reinterpret_cast<char *>(&read), sizeof(read));)
     {
-        ++i;
         if (i < 10)
         {
             sipmvars.push_back(read);
-            cout << read << endl;
         }
         else
         {
             optical_input.push_back(read);
         }
+        ++i;
     }
 
     return make_tuple(optical_input, SiPM(sipmvars));
 }
+
+/*
+void writeBinary(string filename, SiPM sipm, vector<double> response){
+    ofstream fout(filename, ios::binary);
+
+}
+*/
+
+
 
 /*
 void write_vector_to_file(const vector<double>& vectorToSave, , string filename)

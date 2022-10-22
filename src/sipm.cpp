@@ -54,7 +54,7 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecove
 SiPM::SiPM(vector<double> svars)
 {
     dt = svars[0];
-    numMicrocell = svars[1];
+    numMicrocell = (int) svars[1];
     vbias = svars[2];
     vbr = svars[3];
     tauRecovery = svars[4];

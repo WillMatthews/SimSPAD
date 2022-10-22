@@ -47,7 +47,6 @@ auto sim_lambda = [](string fname)
     // SiPM j30020(14410, 27.5, 24.5, 2.2 * 14E-9, 0.0, 4.6e-14, 2.04, 0.46);
 
     SiPM sipm;
-
     tie(in, sipm) = loadBinary(fname + ".bin");
 
     auto start = chrono::steady_clock::now();
@@ -60,6 +59,8 @@ auto sim_lambda = [](string fname)
     chrono::duration<double> elapsed = end - start;
 
     // write_vector_to_file(const std::vector<double>& myVector, std::string filename)
+
+    //writeBinary(fname + "_out.bin");
 
 #ifndef NO_OUTPUT
     print_info(elapsed, sipm.dt, out, sipm.numMicrocell);
