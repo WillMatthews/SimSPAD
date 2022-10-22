@@ -48,6 +48,8 @@ public:
 
     SiPM(std::vector<double> svars);
 
+    SiPM();
+
     ~SiPM();
 
     inline double pde_from_volt(double overvoltage);
