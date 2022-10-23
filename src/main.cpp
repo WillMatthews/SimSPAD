@@ -36,34 +36,33 @@ using namespace std;
 auto sim_lambda = [](string fname)
 {
     vector<double> out = {};
-    // vector<double> in = {};
-    double dt;
+    vector<double> in = {};
 
-    // Generate Dummy Input for Testing //
+    /*
+    // Generate Dummy Input for Testing
     int ber_run_samples = 844759;
-    vector<double> in(ber_run_samples, 10); // DC light source
+    vector<double> in2(ber_run_samples, 10); // DC light source
     dt = 1E-10;
-    (void)fname;
-    //////////////////////////////////////
+    SiPM sipm(14410, 27.5, 24.5, 2.2 * 14E-9, 0.0, 4.6e-14, 2.04, 0.46);
+    */
 
-    SiPM j30020(14410, 27.5, 24.5, 2.2 * 14E-9, 0.0, 4.6e-14, 2.04, 0.46);
-    // tie(in, dt) = readCSV(i + ".csv");
-    j30020.dt = dt;
+    SiPM sipm;
+
+    tie(in, sipm) = loadBinary(fname + ".bin");
 
     auto start = chrono::steady_clock::now();
 
-    out = j30020.simulate(in);
-    // out = j30020.simulate_full(in);
-
-    // j30020.test_rand_funcs();
+    out = sipm.simulate(in);
+    // out = sipm.simulate_full(in);
+    // sipm.test_rand_funcs();
 
     auto end = chrono::steady_clock::now();
     chrono::duration<double> elapsed = end - start;
 
-// writeCSV(fname+"_sim_out.csv", out, j30020);
-// write_vector_to_file(const std::vector<double>& myVector, std::string filename)
+    writeBinary(fname + "_out.bin", sipm, out);
+
 #ifndef NO_OUTPUT
-    print_info(elapsed, dt, out, j30020.numMicrocell);
+    print_info(elapsed, sipm.dt, out, sipm.numMicrocell);
 #endif
 };
 
@@ -79,7 +78,7 @@ int main(int argc, char *argv[])
     ios::sync_with_stdio(0);
     cin.tie(0);
 
-    sim_lambda("siminput");
+    sim_lambda("sipm");
 
     return EXIT_SUCCESS;
 }

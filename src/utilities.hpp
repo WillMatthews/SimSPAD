@@ -22,17 +22,14 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include <cmath>
 #include <chrono>
 #include <ctime>
 #include <tuple>
-#include "../lib/rapidcsv/src/rapidcsv.h"
+#include "sipm.hpp"
 
-/*
-void write_vector_to_file(const vector<double>& vectorToSave, , string filename);
-*/
+std::tuple<std::vector<double>, SiPM> loadBinary(std::string filename);
 
-std::tuple<std::vector<double>, double> readCSV(std::string fname);
+void writeBinary(std::string filename, SiPM sipm, std::vector<double> response);
 
 // std::vector<double> conv1d(std::vector<double> inputVec, std::vector<double> kernel);
 

@@ -49,6 +49,10 @@ public:
 
     SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in, double digitalThreshhold_in, double ccell_in, double Vchr_in, double PDE_max_in);
 
+    SiPM(std::vector<double> svars);
+
+    SiPM();
+
     ~SiPM();
 
     inline double pde_from_volt(double overvoltage);
@@ -80,7 +84,7 @@ private:
 
     double recharge_illuminate(double photonsPerSecond);
 
-    void print_progress(double percentage);
+    void print_progress(double percentage) const;
 
     void test_rand_funcs();
 
@@ -96,11 +100,11 @@ private:
 
     void precalculate_LUT(void);
 
-    double pde_LUT(double x);
+    double pde_LUT(double x) const;
 
-    double volt_LUT(double x);
+    double volt_LUT(double x) const;
 
-    double LUT(double x, double *workingVector);
+    double LUT(double x, double *workingVector) const;
 };
 
 #endif // SIPM_H
