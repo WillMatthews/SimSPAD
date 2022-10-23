@@ -31,19 +31,19 @@
 
 using namespace std;
 
-SiPM::SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in,
-           double tFwhm_in, double digitalThreshhold_in, double ccell_in, double Vchr_in, double PDE_max_in)
+SiPM::SiPM(int numMicrocell_in, double vbias_in, double vBr_in, double tauRecovery_in,
+           double tFwhm_in, double digitalThreshhold_in, double cCell_in, double vChr_in, double pdeMax_in)
 {
     numMicrocell = numMicrocell_in;                     // number of microcells in SiPM
     vBias = vbias_in;                                   // supplied SiPM bias voltage
-    vBr = vbr_in;                                       // SiPM breakdown voltage
+    vBr = vBr_in;                                       // SiPM breakdown voltage
     tauRecovery = tauRecovery_in;                       // recharge recovery time tau RC
     tauFwhm = tFwhm_in;                                 // full width half max output pulse time
     digitalThreshhold = digitalThreshhold_in;           // readout threshhold (typically 0 for analog)
-    cCell = ccell_in;                                   // microcell capacitance
-    vOver = vbias_in - vbr_in;                          // overvoltage
-    vChr = Vchr_in;                                     // characteristic voltage for PDE-Vover curve
-    pdeMax = PDE_max_in;                                // pdeMax characteristic for PDE-Vover curve
+    cCell = cCell_in;                                   // microcell capacitance
+    vOver = vbias_in - vBr_in;                          // overvoltage
+    vChr = vChr_in;                                     // characteristic voltage for PDE-vOver curve
+    pdeMax = pdeMax_in;                                 // pdeMax characteristic for PDE-vOver curve
     microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live tiem since last detection vector
 
     LUTSize = 20;
@@ -54,19 +54,19 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecove
     precalculate_LUT();
 }
 
-SiPM::SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in,
-           double digitalThreshhold_in, double ccell_in, double Vchr_in, double PDE_max_in)
+SiPM::SiPM(int numMicrocell_in, double vbias_in, double vBr_in, double tauRecovery_in,
+           double digitalThreshhold_in, double cCell_in, double vChr_in, double pdeMax_in)
 {
     numMicrocell = numMicrocell_in;                     // number of microcells in SiPM
     vBias = vbias_in;                                   // supplied SiPM bias voltage
-    vBr = vbr_in;                                       // SiPM breakdown voltage
+    vBr = vBr_in;                                       // SiPM breakdown voltage
     tauRecovery = tauRecovery_in;                       // recharge recovery time tau RC
     tauFwhm = 0;                                        // full width half max output pulse time
     digitalThreshhold = digitalThreshhold_in;           // readout threshhold (typically 0 for analog)
-    cCell = ccell_in;                                   // microcell capacitance
-    vOver = vbias_in - vbr_in;                          // overvoltage
-    vChr = Vchr_in;                                     // characteristic voltage for PDE-Vover curve
-    pdeMax = PDE_max_in;                                // pdeMax characteristic for PDE-Vover curve
+    cCell = cCell_in;                                   // microcell capacitance
+    vOver = vbias_in - vBr_in;                          // overvoltage
+    vChr = vChr_in;                                     // characteristic voltage for PDE-vOver curve
+    pdeMax = pdeMax_in;                                 // pdeMax characteristic for PDE-vOver curve
     microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live tiem since last detection vector
 
     LUTSize = 20;
@@ -81,16 +81,16 @@ SiPM::SiPM(vector<double> svars)
 {
     dt = svars[0];
     numMicrocell = (int)svars[1];
-    vbias = svars[2];
-    vbr = svars[3];
+    vBias = svars[2];
+    vBr = svars[3];
     tauRecovery = svars[4];
-    PDE_max = svars[5];
-    Vchr = svars[6];
-    ccell = svars[7];
+    pdeMax = svars[5];
+    vChr = svars[6];
+    cCell = svars[7];
     // pulse_fwhm = svars[8];
     digitalThreshhold = svars[9];
 
-    vover = vbias - vbr;
+    vOver = vBias - vBr;
     microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live tiem since last detection vector
 
     LUTSize = 20;

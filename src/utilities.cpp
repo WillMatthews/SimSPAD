@@ -79,12 +79,12 @@ void writeBinary(string filename, SiPM sipm, vector<double> response)
     vector<double> sipm_params = {};
     sipm_params.push_back(sipm.dt);
     sipm_params.push_back((double)sipm.numMicrocell);
-    sipm_params.push_back(sipm.vbias);
-    sipm_params.push_back(sipm.vbr);
+    sipm_params.push_back(sipm.vBias);
+    sipm_params.push_back(sipm.vBr);
     sipm_params.push_back(sipm.tauRecovery);
-    sipm_params.push_back(sipm.PDE_max);
-    sipm_params.push_back(sipm.Vchr);
-    sipm_params.push_back(sipm.ccell);
+    sipm_params.push_back(sipm.pdeMax);
+    sipm_params.push_back(sipm.vChr);
+    sipm_params.push_back(sipm.cCell);
     sipm_params.push_back(0);
     // pulse_fwhm = svars[8];
     sipm_params.push_back(sipm.digitalThreshhold);
