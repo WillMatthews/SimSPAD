@@ -23,8 +23,7 @@
 #include <string>
 #include <cmath>
 #include <random>
-//#include <thread>
-//#include <mutex>
+//#include "utilities.hpp"
 
 // Progress bar defines
 #define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
@@ -65,6 +64,8 @@ public:
 
     std::vector<double> simulate_full(std::vector<double> light);
 
+    std::vector<double> shape_output(std::vector<double> inputVec);
+
 private:
     std::vector<double> microcellTimes;
 
@@ -80,15 +81,11 @@ private:
 
     double selective_recharge_illuminate_LUT(double photonsPerSecond);
 
-    double recharge_illuminate_LUT(double photonsPerSecond);
-
     double recharge_illuminate(double photonsPerSecond);
 
     void print_progress(double percentage) const;
 
     void test_rand_funcs();
-
-    std::vector<double> shape_output(std::vector<double> inputVec);
 
     // vector<double> SiPM::get_gaussian();
 

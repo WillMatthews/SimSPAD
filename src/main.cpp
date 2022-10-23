@@ -24,7 +24,6 @@
 #include <cmath>
 #include <random>
 #include <chrono>
-//#include <thread>
 #include <ctime>
 #include "sipm.hpp"
 #include "utilities.hpp"
@@ -35,9 +34,6 @@ using namespace std;
 // might be helpful if multithreading in the future
 auto sim_lambda = [](string fname)
 {
-    vector<double> out = {};
-    vector<double> in = {};
-
     /*
     // Generate Dummy Input for Testing
     int ber_run_samples = 844759;
@@ -46,6 +42,8 @@ auto sim_lambda = [](string fname)
     SiPM sipm(14410, 27.5, 24.5, 2.2 * 14E-9, 0.0, 4.6e-14, 2.04, 0.46);
     */
 
+    vector<double> out = {};
+    vector<double> in = {};
     SiPM sipm;
 
     tie(in, sipm) = loadBinary(fname + ".bin");
@@ -55,8 +53,10 @@ auto sim_lambda = [](string fname)
     out = sipm.simulate(in);
     // out = sipm.simulate_full(in);
     // sipm.test_rand_funcs();
-
     auto end = chrono::steady_clock::now();
+
+    vector<double> out2 = sipm.shape_output(out);
+
     chrono::duration<double> elapsed = end - start;
 
     writeBinary(fname + "_out.bin", sipm, out);

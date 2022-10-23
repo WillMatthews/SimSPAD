@@ -22,7 +22,6 @@
 #include <chrono>
 #include <ctime>
 #include <tuple>
-//#include "../lib/rapidcsv/src/rapidcsv.h"
 #include "sipm.hpp"
 
 using namespace std;
@@ -65,6 +64,7 @@ tuple<vector<double>, SiPM> loadBinary(string filename)
     return make_tuple(optical_input, SiPM(sipmvars));
 }
 
+// write binary file from simulation settings and output
 void writeBinary(string filename, SiPM sipm, vector<double> response)
 {
     ofstream fout(filename, ios::out | ios::binary);
@@ -95,7 +95,6 @@ void writeBinary(string filename, SiPM sipm, vector<double> response)
     fout.close();
 }
 
-/*
 // output convolve to pulse shape using a gaussian approximation
 vector<double> conv1d(vector<double> inputVec, vector<double> kernel)
 {
@@ -113,35 +112,34 @@ vector<double> conv1d(vector<double> inputVec, vector<double> kernel)
     }
 
     vector<double> outputVec = {};
+    int inpoint;
 
     for (int i = 0; i < (int)inputVec.size(); i++)
     {
         outputVec.push_back(0.0);
         for (int j = 0; j < kernelsize; j++)
         {
-            if (!((i - j) < 0 || (i - j) > (long)inputVec.size()))
+            inpoint = i + j - kernelsize / 2;
+            if (!(inpoint < 0 || (inpoint > (long)inputVec.size())))
             {
-                outputVec[i - kernelsize / 2] += kernel[j] * inputVec[i + j - kernelsize / 2];
+                outputVec[i] += kernel[j] * inputVec[inpoint];
             }
         }
     }
     return outputVec;
 }
 
+// generate gaussian kernel
+// TODO check if the pulse width is correct!
 vector<double> get_gaussian(double dt, double tauFwhm)
 {
+    const double gauconst = (double)(1 / sqrt(2 * M_PI));
+    const double fwhmConversionConst = sqrt(2 * log(2)) / 2;
+    const double sigma = (tauFwhm / dt) / fwhmConversionConst;
+    const double numSigma = 4.0;
 
-    // generate gaussian kernel
-    double gauconst = (double)(1 / sqrt(2 * M_PI));
-    const double fwhmConversionConst = sqrt(2 * log(2));
+    int gau_numpoint = (int)ceil(numSigma * sigma);
 
-    double sigma = dt * tauFwhm / fwhmConversionConst;
-    const double numSigma = 3.5;
-
-    int gau_numpoint = (int)ceil(numSigma * sigma / dt);
-
-    double gaupower;
-    double x;
     vector<double> kernel = {};
     if (gau_numpoint == 1)
     {
@@ -149,15 +147,15 @@ vector<double> get_gaussian(double dt, double tauFwhm)
         return kernel;
     }
 
+    double gaupower;
+
     for (int i = -(gau_numpoint - 1); i < (gau_numpoint - 1); i++)
     {
-        x = dt * (double)(i - gau_numpoint);
-        gaupower = -pow(x / sigma, 2) / 2;
+        gaupower = -pow((double)i / sigma, 2) / 2;
         kernel.push_back(gauconst * exp(gaupower));
     }
     return kernel;
 }
-*/
 
 // Given a number `num` scale to engineering notation (nearest power of three) and return the unit prefix associated with the unit
 tuple<wstring, double> exponent_val(double num)
