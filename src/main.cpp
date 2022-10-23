@@ -41,7 +41,7 @@ auto sim_lambda = [](string fname)
     /*
     // Generate Dummy Input for Testing
     int ber_run_samples = 844759;
-    vector<double> in(ber_run_samples, 10); // DC light source
+    vector<double> in2(ber_run_samples, 10); // DC light source
     dt = 1E-10;
     SiPM sipm(14410, 27.5, 24.5, 2.2 * 14E-9, 0.0, 4.6e-14, 2.04, 0.46);
     */

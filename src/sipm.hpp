@@ -62,8 +62,6 @@ public:
 
     std::vector<double> simulate_full(std::vector<double> light);
 
-    std::vector<double> get_params();
-
 private:
     std::vector<double> microcellTimes;
 
@@ -83,7 +81,7 @@ private:
 
     double recharge_illuminate(double photonsPerSecond);
 
-    void print_progress(double percentage);
+    void print_progress(double percentage) const;
 
     void test_rand_funcs();
 
@@ -95,11 +93,11 @@ private:
 
     void precalculate_LUT(void);
 
-    double pde_LUT(double x);
+    double pde_LUT(double x) const;
 
-    double volt_LUT(double x);
+    double volt_LUT(double x) const;
 
-    double LUT(double x, double *workingVector);
+    double LUT(double x, double *workingVector) const;
 };
 
 #endif // SIPM_H

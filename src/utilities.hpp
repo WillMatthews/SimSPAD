@@ -19,24 +19,17 @@
 #define UTILITIES_H
 
 #include <iostream>
-#include <iomanip>
 #include <fstream>
 #include <vector>
 #include <string>
-#include <cmath>
 #include <chrono>
 #include <ctime>
 #include <tuple>
-// #include "../lib/rapidcsv/src/rapidcsv.h"
 #include "sipm.hpp"
 
 std::tuple<std::vector<double>, SiPM> loadBinary(std::string filename);
 
 void writeBinary(std::string filename, SiPM sipm, std::vector<double> response);
-
-// void write_vector_to_file(const vector<double>& vectorToSave, , string filename);
-
-// std::tuple<std::vector<double>, double> readCSV(std::string fname);
 
 std::tuple<std::wstring, double> exponent_val(double num);
 

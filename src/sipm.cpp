@@ -145,24 +145,6 @@ vector<double> SiPM::simulate_full(vector<double> light)
     return qFired;
 }
 
-vector<double> SiPM::get_params()
-{
-    vector<double> params = {};
-    params.push_back(dt);
-    params.push_back((double)numMicrocell);
-    params.push_back(vbias);
-    params.push_back(vbr);
-    params.push_back(tauRecovery);
-    params.push_back(PDE_max);
-    params.push_back(Vchr);
-    params.push_back(ccell);
-    params.push_back(0);
-    // pulse_fwhm = svars[8];
-    params.push_back(digitalThreshhold);
-
-    return params;
-}
-
 // random double between range a and b
 double SiPM::unif_rand_double(double a, double b)
 {
@@ -268,7 +250,7 @@ double SiPM::recharge_illuminate(double photonsPerSecond)
 //// UTILITY FUNCTIONS
 
 // progress bar
-void SiPM::print_progress(double percentage)
+void SiPM::print_progress(double percentage) const
 {
     int val = (int)(percentage * 100);
     int lpad = (int)(percentage * PBWIDTH);
@@ -349,19 +331,19 @@ void SiPM::precalculate_LUT(void)
 }
 
 // photon detection efficiency as a function of time lookup table
-double SiPM::pde_LUT(double x)
+double SiPM::pde_LUT(double x) const
 {
     return LUT(x, pdeVecLUT);
 }
 
 // ucell voltage as a function of time lookup table
-double SiPM::volt_LUT(double x)
+double SiPM::volt_LUT(double x) const
 {
     return LUT(x, vVecLUT);
 }
 
 // define a generic lookup table that works on with the time vector
-double SiPM::LUT(double x, double *workingVector)
+double SiPM::LUT(double x, double *workingVector) const
 {
     double *xs = tVecLUT;
     double *ys = workingVector;

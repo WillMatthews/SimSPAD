@@ -16,13 +16,9 @@
  */
 
 #include <iostream>
-#include <iomanip>
 #include <fstream>
-//#include <iterator>  // added - check if slows execution
-//#include <algorithm> // added - check if slows execution
 #include <vector>
 #include <string>
-#include <cmath>
 #include <chrono>
 #include <ctime>
 #include <tuple>
@@ -73,48 +69,31 @@ void writeBinary(string filename, SiPM sipm, vector<double> response)
 {
     ofstream fout(filename, ios::out | ios::binary);
 
-    vector<double> sipm_params = sipm.get_params();
+    /*
+    chrono::system_clock::time_point currentTime = chrono::system_clock::now();
+    time_t tt;
+    tt = chrono::system_clock::to_time_t(currentTime);
+    string timeStr = ctime(tt);
+    */
+
+    vector<double> sipm_params = {};
+    sipm_params.push_back(sipm.dt);
+    sipm_params.push_back((double)sipm.numMicrocell);
+    sipm_params.push_back(sipm.vbias);
+    sipm_params.push_back(sipm.vbr);
+    sipm_params.push_back(sipm.tauRecovery);
+    sipm_params.push_back(sipm.PDE_max);
+    sipm_params.push_back(sipm.Vchr);
+    sipm_params.push_back(sipm.ccell);
+    sipm_params.push_back(0);
+    // pulse_fwhm = svars[8];
+    sipm_params.push_back(sipm.digitalThreshhold);
 
     sipm_params.insert(sipm_params.end(), response.begin(), response.end());
 
     fout.write((char *)(&sipm_params[0]), sizeof(sipm_params) * sipm_params.size());
     fout.close();
 }
-
-/*
-void write_vector_to_file(const vector<double>& vectorToSave, , string filename)
-{
-
-    chrono::system_clock::time_point currentTime = chrono::system_clock::now();
-    time_t tt;
-    tt = chrono::system_clock::to_time_t(currentTime);
-    string timeStr = ctime(tt);
-
-    ofstream ofs(filename, ios::out | ofstream::binary);
-    ofs << "SIMSPAD OUTPUT\n";
-    ofs << "dt:" << dt << "\n";
-    ofs << ";
-
-    ostream_iterator<char> osi{ ofs };
-
-    const char* beginByte = (char*)&vectorToSave[0];
-    const char* endByte = (char*)&vectorToSave.back() + sizeof(double);
-    copy(beginByte, endByte, osi);
-}
-*/
-
-/*
-// package CSV ingest code for use with simulator - only need dt and exp. num of photons per time step
-tuple<vector<double>, double> readCSV(string fname)
-{
-    rapidcsv::Document doc(fname);
-    vector<double> photonVec = doc.GetColumn<double>("meanPhotons");
-    vector<double> timeVec = doc.GetColumn<double>("time");
-    cout << "Read " << photonVec.size() << " values." << endl;
-    double dt = (timeVec[timeVec.size() - 1] - timeVec[0]) / (timeVec.size() - 1);
-    return make_tuple(photonVec, dt);
-}
-*/
 
 // Given a number `num` scale to engineering notation (nearest power of three) and return the unit prefix associated with the unit
 tuple<wstring, double> exponent_val(double num)
