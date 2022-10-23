@@ -62,6 +62,8 @@ public:
 
     std::vector<double> simulate_full(std::vector<double> light);
 
+    std::vector<double> get_params();
+
 private:
     std::vector<double> microcellTimes;
 

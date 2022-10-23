@@ -38,29 +38,28 @@ auto sim_lambda = [](string fname)
     vector<double> out = {};
     vector<double> in = {};
 
-    // Generate Dummy Input for Testing //
-    // int ber_run_samples = 844759;
-    // vector<double> in(ber_run_samples, 10); // DC light source
-    // dt = 1E-10;
-    //////////////////////////////////////
-
-    // SiPM j30020(14410, 27.5, 24.5, 2.2 * 14E-9, 0.0, 4.6e-14, 2.04, 0.46);
+    /*
+    // Generate Dummy Input for Testing
+    int ber_run_samples = 844759;
+    vector<double> in(ber_run_samples, 10); // DC light source
+    dt = 1E-10;
+    SiPM sipm(14410, 27.5, 24.5, 2.2 * 14E-9, 0.0, 4.6e-14, 2.04, 0.46);
+    */
 
     SiPM sipm;
+
     tie(in, sipm) = loadBinary(fname + ".bin");
 
     auto start = chrono::steady_clock::now();
 
     out = sipm.simulate(in);
-    // out = j30020.simulate_full(in);
-    // j30020.test_rand_funcs();
+    // out = sipm.simulate_full(in);
+    // sipm.test_rand_funcs();
 
     auto end = chrono::steady_clock::now();
     chrono::duration<double> elapsed = end - start;
 
-    // write_vector_to_file(const std::vector<double>& myVector, std::string filename)
-
-    //writeBinary(fname + "_out.bin");
+    writeBinary(fname + "_out.bin", sipm, out);
 
 #ifndef NO_OUTPUT
     print_info(elapsed, sipm.dt, out, sipm.numMicrocell);

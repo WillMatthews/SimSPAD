@@ -4,3 +4,4 @@ callgrind.*
 *.swp
 simspad
 *.bin
+*.vscode

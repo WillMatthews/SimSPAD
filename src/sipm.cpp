@@ -54,7 +54,7 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecove
 SiPM::SiPM(vector<double> svars)
 {
     dt = svars[0];
-    numMicrocell = (int) svars[1];
+    numMicrocell = (int)svars[1];
     vbias = svars[2];
     vbr = svars[3];
     tauRecovery = svars[4];
@@ -74,7 +74,6 @@ SiPM::SiPM(vector<double> svars)
 
     precalculate_LUT();
 }
-
 
 SiPM::SiPM()
 {
@@ -112,7 +111,7 @@ vector<double> SiPM::simulate(vector<double> light)
     for (int i = 0; i < (int)light.size(); i++)
     {
 #ifndef NO_OUTPUT
-        if ((i % 100 == 0 || i == (int)(light.size() - 1)))
+        if ((i % 10000 == 0 || i == (int)(light.size() - 1)))
         {
             pctdone = (double)i / (double)(light.size() - 1);
             print_progress(pctdone);
@@ -144,6 +143,24 @@ vector<double> SiPM::simulate_full(vector<double> light)
         qFired.push_back(recharge_illuminate_LUT(l));
     }
     return qFired;
+}
+
+vector<double> SiPM::get_params()
+{
+    vector<double> params = {};
+    params.push_back(dt);
+    params.push_back((double)numMicrocell);
+    params.push_back(vbias);
+    params.push_back(vbr);
+    params.push_back(tauRecovery);
+    params.push_back(PDE_max);
+    params.push_back(Vchr);
+    params.push_back(ccell);
+    params.push_back(0);
+    // pulse_fwhm = svars[8];
+    params.push_back(digitalThreshhold);
+
+    return params;
 }
 
 // random double between range a and b
@@ -320,9 +337,9 @@ void SiPM::test_rand_funcs()
 
 void SiPM::precalculate_LUT(void)
 {
-    int numpoint = (int)LUTSize;
-    double maxt = 5.3 * tauRecovery;
-    double ddt = (double)maxt / numpoint;
+    const int numpoint = (int)LUTSize;
+    const double maxt = 5.3 * tauRecovery;
+    const double ddt = (double)maxt / numpoint;
     for (int i = 0; i < numpoint; i++)
     {
         tVecLUT[i] = i * ddt;

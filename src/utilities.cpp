@@ -69,14 +69,17 @@ tuple<vector<double>, SiPM> loadBinary(string filename)
     return make_tuple(optical_input, SiPM(sipmvars));
 }
 
-/*
-void writeBinary(string filename, SiPM sipm, vector<double> response){
-    ofstream fout(filename, ios::binary);
+void writeBinary(string filename, SiPM sipm, vector<double> response)
+{
+    ofstream fout(filename, ios::out | ios::binary);
 
+    vector<double> sipm_params = sipm.get_params();
+
+    sipm_params.insert(sipm_params.end(), response.begin(), response.end());
+
+    fout.write((char *)(&sipm_params[0]), sizeof(sipm_params) * sipm_params.size());
+    fout.close();
 }
-*/
-
-
 
 /*
 void write_vector_to_file(const vector<double>& vectorToSave, , string filename)
