@@ -51,6 +51,34 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecove
     precalculate_LUT();
 }
 
+SiPM::SiPM(vector<double> svars)
+{
+    dt = svars[0];
+    numMicrocell = (int)svars[1];
+    vbias = svars[2];
+    vbr = svars[3];
+    tauRecovery = svars[4];
+    PDE_max = svars[5];
+    Vchr = svars[6];
+    ccell = svars[7];
+    // pulse_fwhm = svars[8];
+    digitalThreshhold = svars[9];
+
+    vover = vbias - vbr;
+    microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live tiem since last detection vector
+
+    LUTSize = 20;
+    tVecLUT = new double[LUTSize];
+    pdeVecLUT = new double[LUTSize];
+    vVecLUT = new double[LUTSize];
+
+    precalculate_LUT();
+}
+
+SiPM::SiPM()
+{
+}
+
 SiPM::~SiPM(){};
 
 // convert overvoltage to PDE
@@ -83,7 +111,7 @@ vector<double> SiPM::simulate(vector<double> light)
     for (int i = 0; i < (int)light.size(); i++)
     {
 #ifndef NO_OUTPUT
-        if ((i % 100 == 0 || i == (int)(light.size() - 1)))
+        if ((i % 10000 == 0 || i == (int)(light.size() - 1)))
         {
             pctdone = (double)i / (double)(light.size() - 1);
             print_progress(pctdone);
@@ -222,7 +250,7 @@ double SiPM::recharge_illuminate(double photonsPerSecond)
 //// UTILITY FUNCTIONS
 
 // progress bar
-void SiPM::print_progress(double percentage)
+void SiPM::print_progress(double percentage) const
 {
     int val = (int)(percentage * 100);
     int lpad = (int)(percentage * PBWIDTH);
@@ -291,9 +319,9 @@ void SiPM::test_rand_funcs()
 
 void SiPM::precalculate_LUT(void)
 {
-    int numpoint = (int)LUTSize;
-    double maxt = 5.3 * tauRecovery;
-    double ddt = (double)maxt / numpoint;
+    const int numpoint = (int)LUTSize;
+    const double maxt = 5.3 * tauRecovery;
+    const double ddt = (double)maxt / numpoint;
     for (int i = 0; i < numpoint; i++)
     {
         tVecLUT[i] = i * ddt;
@@ -303,19 +331,19 @@ void SiPM::precalculate_LUT(void)
 }
 
 // photon detection efficiency as a function of time lookup table
-double SiPM::pde_LUT(double x)
+double SiPM::pde_LUT(double x) const
 {
     return LUT(x, pdeVecLUT);
 }
 
 // ucell voltage as a function of time lookup table
-double SiPM::volt_LUT(double x)
+double SiPM::volt_LUT(double x) const
 {
     return LUT(x, vVecLUT);
 }
 
 // define a generic lookup table that works on with the time vector
-double SiPM::LUT(double x, double *workingVector)
+double SiPM::LUT(double x, double *workingVector) const
 {
     double *xs = tVecLUT;
     double *ys = workingVector;

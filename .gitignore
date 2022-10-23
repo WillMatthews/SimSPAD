@@ -2,3 +2,6 @@ build/*
 *.csv
 callgrind.*
 *.swp
+simspad
+*.bin
+*.vscode

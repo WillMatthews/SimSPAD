@@ -19,45 +19,80 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include <cmath>
 #include <chrono>
 #include <ctime>
 #include <tuple>
-#include "../lib/rapidcsv/src/rapidcsv.h"
+//#include "../lib/rapidcsv/src/rapidcsv.h"
+#include "sipm.hpp"
 
 using namespace std;
 
+// load experimental run data from a binary file (packaged from MATLAB)
 /*
-void write_vector_to_file(const vector<double>& vectorToSave, , string filename)
-{
+FILE FORMAT:
+    double dt = x(0);
+    double num_microcell = x(1);
+    double vbias = x(2);
+    double vbr = x(3);
+    double recovery = x(4);
+    double pde_Max = x(5);
+    double pde_vchr = x(6);
+    double ccell = x(7);
+    double pulse_fwhm = x(8);
+    double digital_threshholds = x(9);
 
+    vector<double> optical_input = x(10:end);
+*/
+tuple<vector<double>, SiPM> loadBinary(string filename)
+{
+    vector<double> optical_input = {};
+    ifstream fin(filename, ios::binary);
+    vector<double> sipmvars = {};
+    int i = 0;
+    for (double read; fin.read(reinterpret_cast<char *>(&read), sizeof(read));)
+    {
+        if (i < 10)
+        {
+            sipmvars.push_back(read);
+        }
+        else
+        {
+            optical_input.push_back(read);
+        }
+        ++i;
+    }
+
+    return make_tuple(optical_input, SiPM(sipmvars));
+}
+
+void writeBinary(string filename, SiPM sipm, vector<double> response)
+{
+    ofstream fout(filename, ios::out | ios::binary);
+
+    /*
     chrono::system_clock::time_point currentTime = chrono::system_clock::now();
     time_t tt;
     tt = chrono::system_clock::to_time_t(currentTime);
     string timeStr = ctime(tt);
+    */
 
-    ofstream ofs(filename, ios::out | ofstream::binary);
-    ofs << "SIMSPAD OUTPUT\n";
-    ofs << "dt:" << dt << "\n";
-    ofs << ";
+    vector<double> sipm_params = {};
+    sipm_params.push_back(sipm.dt);
+    sipm_params.push_back((double)sipm.numMicrocell);
+    sipm_params.push_back(sipm.vbias);
+    sipm_params.push_back(sipm.vbr);
+    sipm_params.push_back(sipm.tauRecovery);
+    sipm_params.push_back(sipm.PDE_max);
+    sipm_params.push_back(sipm.Vchr);
+    sipm_params.push_back(sipm.ccell);
+    sipm_params.push_back(0);
+    // pulse_fwhm = svars[8];
+    sipm_params.push_back(sipm.digitalThreshhold);
 
-    ostream_iterator<char> osi{ ofs };
+    sipm_params.insert(sipm_params.end(), response.begin(), response.end());
 
-    const char* beginByte = (char*)&vectorToSave[0];
-    const char* endByte = (char*)&vectorToSave.back() + sizeof(double);
-    copy(beginByte, endByte, osi);
-}
-*/
-
-// package CSV ingest code for use with simulator - only need dt and exp. num of photons per time step
-tuple<vector<double>, double> readCSV(string fname)
-{
-    rapidcsv::Document doc(fname);
-    vector<double> photonVec = doc.GetColumn<double>("meanPhotons");
-    vector<double> timeVec = doc.GetColumn<double>("time");
-    cout << "Read " << photonVec.size() << " values." << endl;
-    double dt = (timeVec[timeVec.size() - 1] - timeVec[0]) / (timeVec.size() - 1);
-    return make_tuple(photonVec, dt);
+    fout.write((char *)(&sipm_params[0]), sizeof(sipm_params) * sipm_params.size());
+    fout.close();
 }
 
 // Given a number `num` scale to engineering notation (nearest power of three) and return the unit prefix associated with the unit
