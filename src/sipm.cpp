@@ -100,9 +100,7 @@ SiPM::SiPM(vector<double> svars)
     precalculate_LUT();
 }
 
-SiPM::SiPM()
-{
-}
+SiPM::SiPM(){};
 
 SiPM::~SiPM(){};
 
