@@ -58,7 +58,7 @@ public:
 
     inline double volt_from_time(double time);
 
-    std::vector<double> simulate(std::vector<double> light);
+    std::vector<double> simulate(std::vector<double> light, bool silent);
 
     std::vector<double> simulate_full(std::vector<double> light);
 
