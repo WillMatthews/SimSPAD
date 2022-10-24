@@ -1,6 +1,7 @@
 # SimSPAD
 Silicon Photomultiplier Simulator (Core Detection Code)
 
+**SimSPAD** is a simple input output converter which takes an expected number of photons per time step, and various simulation parameters, and simulates the output of a silicon photomultiplier.
 
 Silicon Photomultipliers (SiPMs) are solid-state single-photon-sensitive optical receivers.
 SiPMs use a vast array of single photon avalanche diodes (SPADs) to enable single photon detection at an exceptionally high count rate.
@@ -14,8 +15,10 @@ Simulation also allows for more complicated experiments to be performed in a con
 
 The simulation was originally written in MATLAB to interface with existing bit error rate detection code, but has since been migrated to c++ to enable the simulator to work (much, oh so much) faster.
 
-This is an *experimental work in progress*, and more documentation will follow. This work has been published in:
+This is an **experimental work in progress**, and more documentation will follow. This work has been/will be published in:
 
 1. PRIME 2022 (Using Original MATLAB Simulation)
-2. Photonics (Using Original MATLAB Simulation)
-3. xxx
+2. Photonics (Submitted, pending...) (Using Original MATLAB Simulation)
+3. Upcoming Paper (Pending... Equaliser based)
+5. Upcoming Paper (Pending... OFDM based)
+4. My Thesis (Pending...)

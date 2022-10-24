@@ -23,8 +23,7 @@
 #include <string>
 #include <cmath>
 #include <random>
-//#include <thread>
-//#include <mutex>
+//#include "utilities.hpp"
 
 // Progress bar defines
 #define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
@@ -34,15 +33,18 @@ class SiPM
 {
 public:
     int numMicrocell;
-    double vbias;
-    double vbr;
-    double vover;
+    double vBias;
+    double vBr;
+    double vOver;
     double tauRecovery;
     double digitalThreshhold;
-    double ccell;
+    double cCell;
     double dt;
-    double Vchr;
-    double PDE_max;
+    double vChr;
+    double pdeMax;
+    double tauFwhm;
+
+    SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in, double tauFwhm_in, double digitalThreshhold_in, double ccell_in, double Vchr_in, double PDE_max_in);
 
     SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in, double digitalThreshhold_in, double ccell_in, double Vchr_in, double PDE_max_in);
 
@@ -62,6 +64,8 @@ public:
 
     std::vector<double> simulate_full(std::vector<double> light);
 
+    std::vector<double> shape_output(std::vector<double> inputVec);
+
 private:
     std::vector<double> microcellTimes;
 
@@ -77,13 +81,13 @@ private:
 
     double selective_recharge_illuminate_LUT(double photonsPerSecond);
 
-    double recharge_illuminate_LUT(double photonsPerSecond);
-
     double recharge_illuminate(double photonsPerSecond);
 
     void print_progress(double percentage) const;
 
     void test_rand_funcs();
+
+    // vector<double> SiPM::get_gaussian();
 
     // static const size_t LUTSize;
     int LUTSize;

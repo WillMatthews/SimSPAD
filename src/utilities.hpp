@@ -31,6 +31,10 @@ std::tuple<std::vector<double>, SiPM> loadBinary(std::string filename);
 
 void writeBinary(std::string filename, SiPM sipm, std::vector<double> response);
 
+std::vector<double> conv1d(std::vector<double> inputVec, std::vector<double> kernel);
+
+std::vector<double> get_gaussian(double dt, double tauFwhm);
+
 std::tuple<std::wstring, double> exponent_val(double num);
 
 void print_info(std::chrono::duration<double> elapsed, double dt, std::vector<double> outvec, int numMicrocell);
