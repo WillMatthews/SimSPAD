@@ -125,7 +125,7 @@ inline double SiPM::volt_from_time(double time)
 
 // Simulation function - takes as an argument a 'light' vector
 // light vector is the expected number of photons to strike the SiPM in simulation timestep dt.
-vector<double> SiPM::simulate(vector<double> light)
+vector<double> SiPM::simulate(vector<double> light, bool silent)
 {
     vector<double> qFired = {};
     double pctdone;
@@ -133,13 +133,11 @@ vector<double> SiPM::simulate(vector<double> light)
     // O(light.size()* numMicrocell)
     for (int i = 0; i < (int)light.size(); i++)
     {
-#ifndef NO_OUTPUT
-        if ((i % 10000 == 0 || i == (int)(light.size() - 1)))
+        if ((!silent) & (i % 10000 == 0 || i == (int)(light.size() - 1)))
         {
             pctdone = (double)i / (double)(light.size() - 1);
             print_progress(pctdone);
         }
-#endif
         qFired.push_back(selective_recharge_illuminate_LUT(light[i]));
     }
     return qFired;
