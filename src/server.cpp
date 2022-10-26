@@ -168,26 +168,11 @@ int main(void)
     sipm_output.insert(sipm_output.end(), response.begin(), response.end());
 
     string outputstring = "";
-    //char buf_out[8];
-    //unsigned char* bytes_out;
-
-    //bytes_out = reinterpret_cast<unsigned char*>(&buf_out);
-    //sim_output[i] = *reinterpret_cast<double*>(bytes_out);
-
-    //union tconv {
-    //  double d;
-    //  char c[8];
-    //};
 
     char c[8];
     for (int i = 0; i < (int) sipm_output.size(); i++){
-      //unsigned char * bytes_out = reinterpret_cast<unsigned char *>(&sipm_output[i]);
-
-      //double d;
-      //memcpy( &d, array, sizeof( d ) );
 
       memcpy(&c, &sipm_output[i], sizeof(c));
-      cout << c << endl;
 
       outputstring.push_back(c[0]);
       outputstring.push_back(c[1]);
@@ -198,10 +183,6 @@ int main(void)
       outputstring.push_back(c[6]);
       outputstring.push_back(c[7]);
     }
-    cout << "Bytes in Result: " << sizeof(sipm_output[0])*sipm_output.size() << endl;
-    cout << "Bytes in Output: " << sizeof(outputstring[0])*outputstring.size() << endl;
-
-
 
 
     res.set_content(outputstring, "text/plain"); });
