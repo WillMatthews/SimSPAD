@@ -169,5 +169,5 @@ int main(void)
 
              res.set_content(outputstring, "text/plain"); });
 
-  srv.listen("localhost", 33232);
+  srv.listen("127.0.0.1", 33232);
 }
