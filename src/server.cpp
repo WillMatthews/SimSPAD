@@ -17,7 +17,7 @@ std::string welcome()
 
 int main(void)
 {
-  std::cout << "Server Running" << std::endl;
+  std::cout << "SimSPAD Server Running" << std::endl;
 
   using namespace httplib;
 
@@ -51,9 +51,9 @@ int main(void)
 
              vector<double> optical_input = {};
              vector<double> sipmvars = {};
-             unsigned char *bytes;
-             double recv;
-             char buf[8];
+             unsigned char *bytes; // uchar* buffer for intermediate step converting char* to double
+             double recv; // received double
+             char buf[8]; // char buffer (incoming chars to be converted to floats)
              // decode 8 chars to a double precision float
              for (size_t i = 0; i < numbits / 8; i++)
              {
@@ -68,7 +68,7 @@ int main(void)
                {
                  sipmvars.push_back(recv);
                }
-               else // remainder are expected number of photons per dt striking array
+               else // remainder of values are expected number of photons per dt striking array
                {
                  optical_input.push_back(recv);
                }

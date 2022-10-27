@@ -1,5 +1,5 @@
 CXX		 := -g++
-CXXFLAGS := -pedantic-errors -Wall -Wextra -Werror --std=c++17 -O3 -ffast-math -funsafe-math-optimizations -msse4.2 -pthread 
+CXXFLAGS := -pedantic-errors -Wall -Wextra -Werror --std=c++17 -O3 -ffast-math -funsafe-math-optimizations -msse4.2 -pthread
 LDFLAGS	 := -L/usr/lib -lstdc++ -lm
 BUILD	 := ./build
 OBJ_DIR	 := $(BUILD)/objects
@@ -7,8 +7,8 @@ APP_DIR	 := $(BUILD)/apps
 TARGET	 := simspad
 TARGET_SERVER	 := server
 INCLUDE	 := -Ilib/
-SRC		 :=						 \
-   $(wildcard src/*.cpp)		 \
+SRC_ALL	 := $(wildcard src/*.cpp)
+SRC		 := $(filter-out src/server.cpp, $(SRC_ALL))
 
 OBJECTS	 := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 DEPENDENCIES \

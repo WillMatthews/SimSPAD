@@ -129,6 +129,7 @@ vector<double> SiPM::simulate(vector<double> light, bool silent)
 {
     vector<double> qFired = {};
     double pctdone;
+    double l;
     init_spads();
     // O(light.size()* numMicrocell)
     for (int i = 0; i < (int)light.size(); i++)
@@ -138,7 +139,12 @@ vector<double> SiPM::simulate(vector<double> light, bool silent)
             pctdone = (double)i / (double)(light.size() - 1);
             print_progress(pctdone);
         }
-        qFired.push_back(selective_recharge_illuminate_LUT(light[i]));
+        l = light[i];
+        if (l < 0)
+        {
+            l = 0;
+        }
+        qFired.push_back(selective_recharge_illuminate_LUT(l));
     }
     return qFired;
 }
@@ -162,6 +168,10 @@ vector<double> SiPM::simulate_full(vector<double> light)
             print_progress(pctdone);
         }
         l = light[i];
+        if (l < 0)
+        {
+            l = 0;
+        }
         qFired.push_back(recharge_illuminate(l));
     }
     return qFired;
