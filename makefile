@@ -1,13 +1,14 @@
 CXX		 := -g++
-CXXFLAGS := -pedantic-errors -Wall -Wextra -Werror --std=c++17 -O3 -ffast-math -funsafe-math-optimizations -msse4.2 -pthread 
+CXXFLAGS := -pedantic-errors -Wall -Wextra -Werror --std=c++17 -O3 -ffast-math -funsafe-math-optimizations -msse4.2 -pthread
 LDFLAGS	 := -L/usr/lib -lstdc++ -lm
 BUILD	 := ./build
 OBJ_DIR	 := $(BUILD)/objects
 APP_DIR	 := $(BUILD)/apps
 TARGET	 := simspad
+TARGET_SERVER	 := server
 INCLUDE	 := -Ilib/
-SRC		 :=						 \
-   $(wildcard src/*.cpp)		 \
+SRC_ALL	 := $(wildcard src/*.cpp)
+SRC		 := $(filter-out src/server.cpp, $(SRC_ALL))
 
 OBJECTS	 := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 DEPENDENCIES \
@@ -47,9 +48,9 @@ info:
 	@echo "[*] Sources:			${SRC}		   "
 	@echo "[*] Objects:			${OBJECTS}	   "
 	@echo "[*] Dependencies:	${DEPENDENCIES}"
-					   
 
-
+server: ./src/server.cpp #./src/sipm.cpp ./src/utilities.cpp
+	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/$(TARGET_SERVER) ./src/server.cpp ./src/sipm.cpp ./src/utilities.cpp
 
 simspad: ./src/main.cpp ./src/sipm.cpp ./src/utilities.cpp
-	g++ --std=c++17 -O3 -ffast-math -funsafe-math-optimizations -msse4.2 -pthread -L./lib  -o simspad ./src/main.cpp ./src/sipm.cpp ./src/utilities.cpp
+	$(CXX) $(CXXFLAGS) -o $(TARGET) ./src/main.cpp ./src/sipm.cpp ./src/utilities.cpp

@@ -23,7 +23,6 @@
 #include <string>
 #include <cmath>
 #include <random>
-//#include "utilities.hpp"
 
 // Progress bar defines
 #define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
@@ -87,9 +86,6 @@ private:
 
     void test_rand_funcs();
 
-    // vector<double> SiPM::get_gaussian();
-
-    // static const size_t LUTSize;
     int LUTSize;
     double *tVecLUT;
     double *pdeVecLUT;
