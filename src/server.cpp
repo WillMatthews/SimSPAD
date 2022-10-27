@@ -63,8 +63,8 @@ int main(void)
   srv.new_task_queue = []
   { return new ThreadPool(4); };
 
-  // max payload size is 512 MB
-  srv.set_payload_max_length(1024 * 1024 * 512);
+  // max payload size is 128 MB
+  srv.set_payload_max_length(1024 * 1024 * 128);
 
   srv.Get("/", [](const Request &, Response &res)
           { res.set_content(welcome(), "text/plain"); });
