@@ -20,74 +20,67 @@ int main(void)
   std::cout << "Server Running" << std::endl;
 
   using namespace httplib;
-  // HTTP
-  Server svr;
 
-  // HTTPS
-  // SSLServer svr;
+  Server srv; // HTTP
+  // SSLServer srv; // HTTPS
 
   // Limit Number of active threads - default 12
-  svr.new_task_queue = []
+  srv.new_task_queue = []
   { return new ThreadPool(4); };
 
-  svr.set_payload_max_length(1024 * 1024 * 512);
+  // max payload size is 512 MB
+  srv.set_payload_max_length(1024 * 1024 * 512);
 
-  svr.Get("/", [](const Request &, Response &res)
+  srv.Get("/", [](const Request &, Response &res)
           { res.set_content(welcome(), "text/plain"); });
 
-  svr.Get("/stop", [&](const Request &req, Response &res)
+  srv.Get("/stop", [&](const Request &req, Response &res)
           {
             (void) req;
             (void) res;
-            svr.stop(); });
+            srv.stop(); });
 
-  svr.Post("/simspad", [](const Request &req, Response &res)
+  srv.Post("/simspad", [](const Request &req, Response &res)
            {
              using namespace std;
-             cout << "=====================================" << endl;
-
-             // cout << req.body << endl;
+             cout << "==================== GOT POST ====================" << endl;
              auto data = req.body;
 
-             size_t data_length = data.length();
-             size_t numbits = data_length;
-
-             unsigned char *bytes;
-             double recv;
-             char buf[8];
+             size_t numbits = data.length();
+             std::cout << "Decoding " << numbits << " bytes..." << endl;
 
              vector<double> optical_input = {};
              vector<double> sipmvars = {};
-
-             std::cout << "Decoding " << numbits << " bytes..." << endl;
+             unsigned char *bytes;
+             double recv;
+             char buf[8];
+             // decode 8 chars to a double precision float
              for (size_t i = 0; i < numbits / 8; i++)
              {
                for (int j = 0; j < 8; j++)
                {
-                 buf[j] = data[8 * i + j];
+                 buf[j] = data[8 * i + j]; // create buffer of char*
                }
-               bytes = reinterpret_cast<unsigned char *>(&buf);
-               recv = *reinterpret_cast<double *>(bytes);
+               bytes = reinterpret_cast<unsigned char *>(&buf); // cast char* buffer to bytes
+               recv = *reinterpret_cast<double *>(bytes); // cast bytes to double
 
-               if (i < 10)
+               if (i < 10) // first ten doubles are SiPM simulator parameters
                {
                  sipmvars.push_back(recv);
                }
-               else
+               else // remainder are expected number of photons per dt striking array
                {
                  optical_input.push_back(recv);
                }
-               // std::cout << recv << std::endl;
              }
 
-             vector<double> response = {};
-             bool silence = true;
+             // create SiPM
              SiPM sipm(sipmvars);
 
+             // cout parameters so I can tell when someone does something stupid which breaks the server
              auto start = chrono::system_clock::now();
              time_t start_time = chrono::system_clock::to_time_t(start);
              cout << "Started computation at " << ctime(&start_time) << endl;
-             // cout output so I can tell when someone does something stupid which breaks the server
              cout << "dt " << (sipm.dt) << endl;
              cout << "nuc " << ((double)sipm.numMicrocell) << endl;
              cout << "vb " << (sipm.vBias) << endl;
@@ -99,13 +92,17 @@ int main(void)
              cout << "tau " << (sipm.tauFwhm) << endl;
              cout << "digithresh " << (sipm.digitalThreshhold) << endl;
 
-             //simulate
+             // simulate
+             vector<double> response = {};
+             bool silence = true;
              response = sipm.simulate(optical_input, silence);
 
+             // Print Elapsed Time (allow debugging)
              auto end = chrono::system_clock::now();
              chrono::duration<double> elapsed_seconds = end-start;
              cout << "elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
+             // create output vector
              vector<double> sipm_output = {};
              sipm_output.push_back(sipm.dt);
              sipm_output.push_back((double)sipm.numMicrocell);
@@ -118,27 +115,24 @@ int main(void)
              sipm_output.push_back(sipm.tauFwhm);
              sipm_output.push_back(sipm.digitalThreshhold);
 
+             // concat SiPM simulation output on end of input parameters
              sipm_output.insert(sipm_output.end(), response.begin(), response.end());
 
+             // create output string. char* (in blocks of 8 for each double) are appended
+             // for the output via the web response
              string outputstring = "";
 
-             char c[8];
+             //recycle buffer char buf[8] from earlier
              for (int i = 0; i < (int)sipm_output.size(); i++)
              {
-
-               memcpy(&c, &sipm_output[i], sizeof(c));
-
-               outputstring.push_back(c[0]);
-               outputstring.push_back(c[1]);
-               outputstring.push_back(c[2]);
-               outputstring.push_back(c[3]);
-               outputstring.push_back(c[4]);
-               outputstring.push_back(c[5]);
-               outputstring.push_back(c[6]);
-               outputstring.push_back(c[7]);
+               memcpy(&buf, &sipm_output[i], sizeof(buf));
+               for (int j = 0; j < 8; j++){
+                outputstring.push_back(buf[j]);
+               }
              }
+             cout << "==================== GOODBYE  ====================" << endl;
 
              res.set_content(outputstring, "text/plain"); });
 
-  svr.listen("localhost", 33232);
+  srv.listen("localhost", 33232);
 }
