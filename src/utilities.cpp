@@ -85,8 +85,7 @@ void writeBinary(string filename, SiPM sipm, vector<double> response)
     sipm_params.push_back(sipm.pdeMax);
     sipm_params.push_back(sipm.vChr);
     sipm_params.push_back(sipm.cCell);
-    sipm_params.push_back(0);
-    // pulse_fwhm = svars[8];
+    sipm_params.push_back(sipm.tauFwhm);
     sipm_params.push_back(sipm.digitalThreshhold);
 
     sipm_params.insert(sipm_params.end(), response.begin(), response.end());

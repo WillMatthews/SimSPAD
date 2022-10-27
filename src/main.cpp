@@ -28,7 +28,7 @@
 
 using namespace std;
 
-// create lambda expression for a simulation run (input csv -> output csv).
+// create lambda expression for a simulation run (binary in -> binary out).
 // might be helpful if multithreading in the future
 void simulate(string fname_in, string fname_out, bool silence)
 {
@@ -53,7 +53,7 @@ void simulate(string fname_in, string fname_out, bool silence)
     // sipm.test_rand_funcs();
     auto end = chrono::steady_clock::now();
 
-    vector<double> out2 = sipm.shape_output(out);
+    // vector<double> out2 = sipm.shape_output(out);
 
     chrono::duration<double> elapsed = end - start;
 
@@ -126,7 +126,6 @@ int main(int argc, char *argv[])
 
     if (!silence)
     {
-
         cout << "   _____ _          _____ ____  ___    ____ " << endl;
         cout << "  / ___/(_)___ ___ / ___// __ \\/   |  / __ \\" << endl;
         cout << "  \\__ \\/ / __ `__  \\__ \\/ /_/ / /| | / / / /" << endl;
