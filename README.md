@@ -1,6 +1,6 @@
 # SimSPAD
 
-![logo](https://github.com/WillMatthews/SimSPAD/blob/documentation/doc/img/simspad_logo.svg)
+![logo](https://github.com/WillMatthews/SimSPAD/blob/master/doc/img/simspad_logo.svg)
 
 A high performance avalanche multiplication based optical receiver simulator.
 Version 0.1
@@ -53,7 +53,7 @@ William Matthews (2022) SimSPAD (Version 0.1) [Source Code]. https://github.com/
 
 ### Standalone
 
-![logo](https://github.com/WillMatthews/SimSPAD/blob/documentation/doc/img/example.gif)
+![logo](https://github.com/WillMatthews/SimSPAD/blob/master/doc/img/example.gif)
 
 SimSPAD can be run as a standalone program from the command line, taking an input binary file, and producing an output binary file.
 This binary file is currently produced by MATLAB, but Python and C++ generators will be created soon.
