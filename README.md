@@ -30,7 +30,7 @@ Simulation also allows for more complicated experiments to be performed in a con
 The simulation was originally written in MATLAB to interface with existing bit error rate detection code, but has since been migrated to c++ to enable the simulator to work (much, oh so much) faster.
 
 
-## Publications involving this simulation
+## Publications involving this simulation:
 
 This is an **experimental work in progress**, and more documentation will follow. This work has been/will be published in:
 
@@ -58,7 +58,11 @@ William Matthews (2022) SimSPAD (Version 0.1) [Source Code]. https://github.com/
 SimSPAD can be run as a standalone program from the command line, taking an input binary file, and producing an output binary file.
 This binary file is currently produced by MATLAB, but Python and C++ generators will be created soon.
 
+### Web Application
 
+Once SimSPAD server is running, send a POST request to `http://localhost/simspad`.
+The reply from the server will be the result from the simulation.
+The data to and from the server is packaged as characters - see below in the Binary Format section for more details.
 
 ## Install
 
