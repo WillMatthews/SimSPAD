@@ -1,4 +1,8 @@
 # SimSPAD
+
+[!logo](https://raw.githubusercontent.com/WillMatthews/SimSPAD/documentation/doc/img/simspad_logo.svg)
+
+
 A high performance avalanche multiplication based optical receiver simulator.
 Version 0.1
 
