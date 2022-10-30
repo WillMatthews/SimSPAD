@@ -63,7 +63,7 @@ void simulate(string fname_in, string fname_out, bool silence)
     {
         print_info(elapsed, sipm.dt, out, sipm.numMicrocell);
     }
-};
+}
 
 static void show_usage(string name)
 {
