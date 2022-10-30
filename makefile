@@ -4,6 +4,7 @@ LDFLAGS	 := -L/usr/lib -lstdc++ -lm
 BUILD	 := ./build
 OBJ_DIR	 := $(BUILD)/objects
 APP_DIR	 := $(BUILD)/apps
+LIB_DIR	 := ./lib
 TARGET	 := simspad
 TARGET_SERVER	 := server
 INCLUDE	 := -Ilib/
@@ -31,6 +32,10 @@ $(APP_DIR)/$(TARGET): $(OBJECTS)
 build:
 	@mkdir -p $(APP_DIR)
 	@mkdir -p $(OBJ_DIR)
+
+configure:
+	@mkdir -p $(LIB_DIR)
+	git clone https://github.com/yhirose/cpp-httplib ./lib/cpp-httplib
 
 debug: CXXFLAGS += -DDEBUG -g
 debug: all

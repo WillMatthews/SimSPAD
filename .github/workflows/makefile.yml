@@ -23,7 +23,10 @@ jobs:
       
     - name: Make SimSPAD
       run: make
-     
+    
+    - name: Configure
+      run: make configure
+
     - name: Make Server
       run: make server
      
