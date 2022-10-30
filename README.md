@@ -5,6 +5,8 @@
 A high performance avalanche multiplication based optical receiver simulator.
 Version 0.1
 
+[![Makefile CI](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml)
+
 ## About
 
 **SimSPAD** is an input output converter which takes an input of simulation parameters and an arbitrary length vector of expected number of photons striking the detector array per time step.
