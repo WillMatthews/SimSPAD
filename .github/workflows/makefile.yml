@@ -1,4 +1,4 @@
-name: Makefile CI
+name: Build
 
 on:
   push:
@@ -17,6 +17,9 @@ jobs:
     
     #- name: configure
     #  run: ./configure
+    
+    - name: Make Build
+      run: make build
       
     - name: Make SimSPAD
       run: make
