@@ -5,7 +5,7 @@
 A high performance avalanche multiplication based optical receiver simulator.
 Version 0.1
 
-[![Makefile CI](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml)
+[![Build](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml)
 
 ## About
 
