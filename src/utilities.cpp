@@ -38,21 +38,21 @@ FILE FORMAT:
     double pde_Vchr = x(6);
     double ccell = x(7);
     double pulse_fwhm = x(8);
-    double digital_threshholds = x(9);
+    double digital_thresholds = x(9);
 
     vector<double> optical_input = x(10:end);
 */
-tuple<vector<double>, SiPM> loadBinary(string filename)
+tuple<vector<double>, SiPM> load_binary(string filename)
 {
     vector<double> optical_input = {};
     ifstream fin(filename, ios::binary);
-    vector<double> sipmvars = {};
+    vector<double> sipmParametersVector = {};
     int i = 0;
     for (double read; fin.read(reinterpret_cast<char *>(&read), sizeof(read));)
     {
         if (i < 10)
         {
-            sipmvars.push_back(read);
+            sipmParametersVector.push_back(read);
         }
         else
         {
@@ -61,11 +61,11 @@ tuple<vector<double>, SiPM> loadBinary(string filename)
         ++i;
     }
 
-    return make_tuple(optical_input, SiPM(sipmvars));
+    return make_tuple(optical_input, SiPM(sipmParametersVector));
 }
 
 // write binary file from simulation settings and output
-void writeBinary(string filename, SiPM sipm, vector<double> response)
+void write_binary(string filename, SiPM sipm, vector<double> response)
 {
     ofstream fout(filename, ios::out | ios::binary);
 
@@ -76,21 +76,21 @@ void writeBinary(string filename, SiPM sipm, vector<double> response)
     string timeStr = ctime(tt);
     */
 
-    vector<double> sipm_params = {};
-    sipm_params.push_back(sipm.dt);
-    sipm_params.push_back((double)sipm.numMicrocell);
-    sipm_params.push_back(sipm.vBias);
-    sipm_params.push_back(sipm.vBr);
-    sipm_params.push_back(sipm.tauRecovery);
-    sipm_params.push_back(sipm.pdeMax);
-    sipm_params.push_back(sipm.vChr);
-    sipm_params.push_back(sipm.cCell);
-    sipm_params.push_back(sipm.tauFwhm);
-    sipm_params.push_back(sipm.digitalThreshold);
+    vector<double> sipmParametersVector = {};
+    sipmParametersVector.push_back(sipm.dt);
+    sipmParametersVector.push_back((double)sipm.numMicrocell);
+    sipmParametersVector.push_back(sipm.vBias);
+    sipmParametersVector.push_back(sipm.vBr);
+    sipmParametersVector.push_back(sipm.tauRecovery);
+    sipmParametersVector.push_back(sipm.pdeMax);
+    sipmParametersVector.push_back(sipm.vChr);
+    sipmParametersVector.push_back(sipm.cCell);
+    sipmParametersVector.push_back(sipm.tauFwhm);
+    sipmParametersVector.push_back(sipm.digitalThreshold);
 
-    sipm_params.insert(sipm_params.end(), response.begin(), response.end());
+    sipmParametersVector.insert(sipmParametersVector.end(), response.begin(), response.end());
 
-    fout.write((char *)(&sipm_params[0]), sizeof(sipm_params) * sipm_params.size());
+    fout.write((char *)(&sipmParametersVector[0]), sizeof(sipmParametersVector) * sipmParametersVector.size());
     fout.close();
 }
 

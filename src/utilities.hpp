@@ -27,9 +27,9 @@
 #include <tuple>
 #include "sipm.hpp"
 
-std::tuple<std::vector<double>, SiPM> loadBinary(std::string filename);
+std::tuple<std::vector<double>, SiPM> load_binary(std::string filename);
 
-void writeBinary(std::string filename, SiPM sipm, std::vector<double> response);
+void write_binary(std::string filename, SiPM sipm, std::vector<double> response);
 
 std::vector<double> conv1d(std::vector<double> inputVec, std::vector<double> kernel);
 

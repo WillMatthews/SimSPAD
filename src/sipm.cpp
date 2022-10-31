@@ -302,8 +302,8 @@ void SiPM::test_rand_funcs()
     }
 
     double lambda = 3.5;
-    const int poissNumIntervals = 20;
-    int p2[poissNumIntervals] = {};
+    const int poissonNumIntervals = 20;
+    int p2[poissonNumIntervals] = {};
     int s2;
     for (int i = 0; i < iters; i++)
     {
@@ -314,7 +314,7 @@ void SiPM::test_rand_funcs()
 
     cout << "\n\n***** POISSON *****\n"
          << endl;
-    for (int i = 0; i < poissNumIntervals; i++)
+    for (int i = 0; i < poissonNumIntervals; i++)
     {
         cout << i << "\t: ";
         cout << string(p2[i] * numStars / iters, '*') << endl;

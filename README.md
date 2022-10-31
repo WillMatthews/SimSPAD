@@ -11,9 +11,15 @@ Version 0.1
 ## About
 
 **SimSPAD** is an input output converter which takes an input of simulation parameters and an arbitrary length vector of expected number of photons striking the detector array per time step.
-From here, the output of a silicon photomultiplier is simulated.
+From here, the output of a silicon photomultiplier is simulated, and packaged into a binary file.
 Currently the software returns the total charge emitted per time step, which can then be pulse-shaped with a convolution further down the line.
 Pulse-shaping is being integrated into the software so in the future this step may be omitted.
+
+### SimSPAD does not:
+- Do fancy random walks to determine if microcells will fire when an electron-hole pair is generated - this is far too slow and can be encapsulated into the PDE approximation.
+- Calculate electrical fields present in the device.
+- Have an afterpulsing probability method (although this is easy to implement - I don't have enough time and will welcome pull requests).
+- Assume digital driving circuitry (although I will accept pull requests which add this functionality).
 
 ## Background on SiPMs, and why simulation is necessary
 
@@ -150,3 +156,12 @@ The output file is identical, with the simulation parameters taking the first te
 This is *identical* to the input for the web application, except that the input and output are character encoded.
 A char is a 1 byte input, and eight bytes are needed for each double.
 This is packaged and unpackaged at either end of the process to reproduce the simulation inputs and outputs.
+
+## Contributing:
+Pull requests are extremely welcome, as long as you obey the give key points in the design philosophy:
+
+- Keep SimSPAD fast.
+- Keep SimSPAD simple, and all in C++.
+- Ensure the output compares well to experimental data.
+- Do not use magic numbers - ground everything in device parameters and physical constants.
+- Keep SimSPAD fast (again).
