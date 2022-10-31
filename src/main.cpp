@@ -44,7 +44,7 @@ void simulate(string fname_in, string fname_out, bool silence)
     vector<double> in = {};
     SiPM sipm;
 
-    tie(in, sipm) = loadBinary(fname_in);
+    tie(in, sipm) = load_binary(fname_in);
     auto start = chrono::steady_clock::now();
 
     out = sipm.simulate(in, silence);
@@ -57,7 +57,7 @@ void simulate(string fname_in, string fname_out, bool silence)
 
     chrono::duration<double> elapsed = end - start;
 
-    writeBinary(fname_out, sipm, out);
+    write_binary(fname_out, sipm, out);
 
     if (!silence)
     {
