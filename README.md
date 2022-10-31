@@ -6,7 +6,7 @@ A high performance avalanche multiplication based optical receiver simulator.
 Version 0.1
 
 [![Build](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml)
-[![Spellcheck](https://github.com/WillMatthews/SimSPAD/actions/workflows/spelling.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/spelling.yml)
+[![Spell Check](https://github.com/WillMatthews/SimSPAD/actions/workflows/spelling.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/spelling.yml)
 
 ## About
 
@@ -18,7 +18,7 @@ Pulse-shaping is being integrated into the software so in the future this step m
 ### SimSPAD does not:
 - Do fancy random walks to determine if microcells will fire when an electron-hole pair is generated - this is far too slow and can be encapsulated into the PDE approximation.
 - Calculate electrical fields present in the device.
-- Have an afterpulsing probability method (although this is easy to implement - I don't have enough time and will welcome pull requests).
+- Have an after-pulsing probability method (although this is easy to implement - I don't have enough time and will welcome pull requests).
 - Assume digital driving circuitry (although I will accept pull requests which add this functionality).
 
 ## Background on SiPMs, and why simulation is necessary
