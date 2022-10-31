@@ -66,7 +66,7 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vBr_in, double tauRecove
     vChr = vChr_in;                         // characteristic voltage for PDE-vOver curve
     pdeMax = pdeMax_in;                     // pdeMax characteristic for PDE-vOver curve
 
-    microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live tiem since last detection vector
+    microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live time since last detection vector
 
     LUTSize = 20;
     tVecLUT = new double[LUTSize];
@@ -302,8 +302,8 @@ void SiPM::test_rand_funcs()
     }
 
     double lambda = 3.5;
-    const int poiss_nintervals = 20;
-    int p2[poiss_nintervals] = {};
+    const int poissNumIntervals = 20;
+    int p2[poissNumIntervals] = {};
     int s2;
     for (int i = 0; i < iters; i++)
     {
@@ -314,7 +314,7 @@ void SiPM::test_rand_funcs()
 
     cout << "\n\n***** POISSON *****\n"
          << endl;
-    for (int i = 0; i < poiss_nintervals; i++)
+    for (int i = 0; i < poissNumIntervals; i++)
     {
         cout << i << "\t: ";
         cout << string(p2[i] * numStars / iters, '*') << endl;

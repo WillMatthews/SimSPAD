@@ -35,7 +35,7 @@ FILE FORMAT:
     double vbr = x(3);
     double recovery = x(4);
     double pde_Max = x(5);
-    double pde_vchr = x(6);
+    double pde_Vchr = x(6);
     double ccell = x(7);
     double pulse_fwhm = x(8);
     double digital_threshholds = x(9);
@@ -137,10 +137,10 @@ vector<double> get_gaussian(double dt, double tauFwhm)
     const double sigma = (tauFwhm / dt) / fwhmConversionConst;
     const double numSigma = 4.0;
 
-    int gau_numpoint = (int)ceil(numSigma * sigma);
+    int gaussianNumberOfPoints = (int)ceil(numSigma * sigma);
 
     vector<double> kernel = {};
-    if (gau_numpoint == 1)
+    if (gaussianNumberOfPoints == 1)
     {
         kernel.push_back(1);
         return kernel;
@@ -148,7 +148,7 @@ vector<double> get_gaussian(double dt, double tauFwhm)
 
     double gaussianPower;
 
-    for (int i = -(gau_numpoint - 1); i < (gau_numpoint - 1); i++)
+    for (int i = -(gaussianNumberOfPoints - 1); i < (gaussianNumberOfPoints - 1); i++)
     {
         gaussianPower = -pow((double)i / sigma, 2) / 2;
         kernel.push_back(gaussianConstant * exp(gaussianPower));
@@ -186,7 +186,7 @@ void print_info(chrono::duration<double> elapsed, double dt, vector<double> outp
     auto tt = chrono::system_clock::to_time_t(sysclock);
     string timeStr = ctime(&tt);
 
-    int inputsize = outputVec.size();
+    int inputSize = outputVec.size();
 
     locale::global(locale("en_US.utf8"));
     wcout.imbue(locale());
@@ -197,22 +197,22 @@ void print_info(chrono::duration<double> elapsed, double dt, vector<double> outp
     double val;
     tie(prefix, val) = exponent_val(elapsed.count());
     wcout << "Elapsed Time:\t\t" << val << prefix << "s" << endl;
-    tie(prefix, val) = exponent_val(dt * inputsize);
+    tie(prefix, val) = exponent_val(dt * inputSize);
     wcout << "Simulated Time:\t\t" << val << prefix << "s" << endl;
     tie(prefix, val) = exponent_val(dt);
     wcout << "Simulation dt:\t\t" << val << prefix << "s" << endl;
-    cout << "Time Steps:\t\t" << inputsize << "Sa" << endl;
-    double time_per_iter = ((double)elapsed.count()) / ((double)inputsize);
+    cout << "Time Steps:\t\t" << inputSize << "Sa" << endl;
+    double time_per_iter = ((double)elapsed.count()) / ((double)inputSize);
     tie(prefix, val) = exponent_val(time_per_iter);
     wcout << "Compute Per Step:\t" << val << prefix << "s" << endl;
     tie(prefix, val) = exponent_val(time_per_iter / numMicrocell);
     wcout << "Compute Per uCell Step: " << val << prefix << "s" << endl;
 
     double sumOut = 0;
-    for (int i = 0; i < inputsize; i++)
+    for (int i = 0; i < inputSize; i++)
     {
         sumOut += outputVec[i];
     }
-    double Ibias = sumOut / (inputsize * dt);
+    double Ibias = sumOut / (inputSize * dt);
     cout << "Simulated Ibias:\t" << Ibias * 1E3 << "mA" << endl;
 }

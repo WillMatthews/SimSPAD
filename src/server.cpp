@@ -117,7 +117,7 @@ int main(void)
              time_t start_time = chrono::system_clock::to_time_t(start);
              cout << "Started computation at " << ctime(&start_time) << endl;
              cout << "dt " << (sipm.dt) << endl;
-             cout << "NMicrocells " << ((double)sipm.numMicrocell) << endl;
+             cout << "NumMicrocells " << ((double)sipm.numMicrocell) << endl;
              cout << "vBias " << (sipm.vBias) << endl;
              cout << "vBreakdown " << (sipm.vBr) << endl;
              cout << "TauRecovery " << (sipm.tauRecovery) << endl;
@@ -125,7 +125,7 @@ int main(void)
              cout << "vChrPDE " << (sipm.vChr) << endl;
              cout << "CCell " << (sipm.cCell) << endl;
              cout << "TauPulseFWHM " << (sipm.tauFwhm) << endl;
-             cout << "DigtalThreshold " << (sipm.digitalThreshold) << endl;
+             cout << "DigitalThreshold " << (sipm.digitalThreshold) << endl;
 
              // simulate
              vector<double> response = {};
