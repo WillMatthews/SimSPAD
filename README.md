@@ -6,7 +6,7 @@ A high performance avalanche multiplication based optical receiver simulator.
 Version 0.1
 
 [![Build](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml)
-[![Check Spelling](https://github.com/WillMatthews/SimSPAD/actions/workflows/spelling.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/spelling.yml)
+[![Spellcheck](https://github.com/WillMatthews/SimSPAD/actions/workflows/spelling.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/spelling.yml)
 
 ## About
 
@@ -21,12 +21,12 @@ Silicon Photomultipliers (SiPMs) are solid-state single-photon-sensitive optical
 SiPMs use a vast array of single photon avalanche diodes (SPADs) to enable single photon detection at an exceptionally high count rate.
 
 For the purposes of my DPhil, I investigated using SiPMs with application of high-performance receivers for optical wireless communications.
-SiPMs consequently have turned out to be extremely good detectors as they have a high bandwidth, high gain, and large area when contrasted with other silicon based photodetectors.
+SiPMs consequently have turned out to be extremely good detectors as they have a high bandwidth, high gain, and large area when contrasted with other silicon based photo-detectors.
 
 SiPMs unfortunately experience recovery-time based nonlinearity, which is due to the recharge period each microcell undergoes after detection oh a photon.
 Interestingly, there are unobservable parameters inside the device as a result which dictate the shape of the output.
 These unobservable parameters include both the array average photon detection efficiency, and the mean fired charge per microcell.
-This simulation allows both simulation of SiPMs for arbitary optical input, and observation of those unobservable parameters.
+This simulation allows both simulation of SiPMs for arbitrary optical input, and observation of those unobservable parameters.
 
 Simulation also allows for more complicated experiments to be performed in a contained environment where transmitter effects, thermal noise and more can be eliminated.
 
@@ -63,7 +63,9 @@ This binary file is currently produced by MATLAB, but Python and C++ generators 
 
 ### Web Application
 
-Once SimSPAD server is running, send a POST request to `http://localhost/simspad`.
+Once SimSPAD server is running, you are able to send a POST request to `http://localhost:33232/simspad`.
+To stop the server, access http://localhost:33232/stop.
+To see if the server is running, access http://localhost:33232/ where you should see a greeting message in plain text.
 The reply from the server will be the result from the simulation.
 The data to and from the server is packaged as characters - see below in the Binary Format section for more details.
 
@@ -81,7 +83,7 @@ Create a new user `useradd simspad`
 
 ```
 [Unit]
-Description=SimSPAD Avalanche Photodetector Simulator
+Description=SimSPAD Avalanche Photo-detector Simulator
 Requires=network-online.target
 Wants=network-online.target
 After=network.target syslog.target network-online.target
@@ -137,11 +139,11 @@ The binary files used by SimSPAD are vectors of double precision floating point 
         vChr              - Characteristic Voltage for PDE-Vover equation
         cCell             - Capacitance per detector
         tauFwhm           - Output pulse full width half max time
-        digitalThreshhold - Detection Threshhold (as a fraction of overvoltage from bias)
+        digitalThreshold - Detection Threshold (as a fraction of overvoltage from bias)
 
 </details>
 
-And the remainder of doubles in the file are the optical input in expected number of photons per time step dt striking the photodetector.
+And the remainder of doubles in the file are the optical input in expected number of photons per time step dt striking the photo-detector.
 
 The output file is identical, with the simulation parameters taking the first ten positions of the binary file, and the remainder of binary file are the detector's response (in terms of electrical charge output) for each time step.
 

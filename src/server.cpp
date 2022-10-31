@@ -41,13 +41,13 @@
 
 std::string welcome()
 {
-  std::string welcomestring = "";
-  welcomestring += "Welcome to SimSPAD";
-  welcomestring += "\n";
-  welcomestring += "Access the GitHub Repository for more information:\n";
-  welcomestring += "https://github.com/WillMatthews/SimSPAD\n";
+  std::string welcomeString = "";
+  welcomeString += "Welcome to SimSPAD";
+  welcomeString += "\n";
+  welcomeString += "Access the GitHub Repository for more information:\n";
+  welcomeString += "https://github.com/WillMatthews/SimSPAD\n";
 
-  return welcomestring;
+  return welcomeString;
 }
 
 int main(void)
@@ -81,16 +81,16 @@ int main(void)
              cout << "==================== GOT POST ====================" << endl;
              auto data = req.body;
 
-             size_t numbits = data.length();
-             std::cout << "Decoding " << numbits << " bytes..." << endl;
+             size_t numBits = data.length();
+             std::cout << "Decoding " << numBits << " bytes..." << endl;
 
              vector<double> optical_input = {};
-             vector<double> sipmvars = {};
+             vector<double> sipmSettingsVector = {};
              unsigned char *bytes; // uchar* buffer for intermediate step converting char* to double
              double recv; // received double
              char buf[8]; // char buffer (incoming chars to be converted to floats)
              // decode 8 chars to a double precision float
-             for (size_t i = 0; i < numbits / 8; i++)
+             for (size_t i = 0; i < numBits / 8; i++)
              {
                for (int j = 0; j < 8; j++)
                {
@@ -101,7 +101,7 @@ int main(void)
 
                if (i < 10) // first ten doubles are SiPM simulator parameters
                {
-                 sipmvars.push_back(recv);
+                 sipmSettingsVector.push_back(recv);
                }
                else // remainder of values are expected number of photons per dt striking array
                {
@@ -110,22 +110,22 @@ int main(void)
              }
 
              // create SiPM
-             SiPM sipm(sipmvars);
+             SiPM sipm(sipmSettingsVector);
 
              // cout parameters so I can tell when someone does something stupid which breaks the server
              auto start = chrono::system_clock::now();
              time_t start_time = chrono::system_clock::to_time_t(start);
              cout << "Started computation at " << ctime(&start_time) << endl;
              cout << "dt " << (sipm.dt) << endl;
-             cout << "nuc " << ((double)sipm.numMicrocell) << endl;
-             cout << "vb " << (sipm.vBias) << endl;
-             cout << "vbr " << (sipm.vBr) << endl;
-             cout << "tau " << (sipm.tauRecovery) << endl;
-             cout << "mpde " << (sipm.pdeMax) << endl;
-             cout << "vchr " << (sipm.vChr) << endl;
-             cout << "ccell " << (sipm.cCell) << endl;
-             cout << "tau " << (sipm.tauFwhm) << endl;
-             cout << "digithresh " << (sipm.digitalThreshhold) << endl;
+             cout << "NMicrocells " << ((double)sipm.numMicrocell) << endl;
+             cout << "vBias " << (sipm.vBias) << endl;
+             cout << "vBreakdown " << (sipm.vBr) << endl;
+             cout << "TauRecovery " << (sipm.tauRecovery) << endl;
+             cout << "PDEMax " << (sipm.pdeMax) << endl;
+             cout << "vChrPDE " << (sipm.vChr) << endl;
+             cout << "CCell " << (sipm.cCell) << endl;
+             cout << "TauPulseFWHM " << (sipm.tauFwhm) << endl;
+             cout << "DigtalThreshold " << (sipm.digitalThreshold) << endl;
 
              // simulate
              vector<double> response = {};
@@ -148,26 +148,26 @@ int main(void)
              sipm_output.push_back(sipm.vChr);
              sipm_output.push_back(sipm.cCell);
              sipm_output.push_back(sipm.tauFwhm);
-             sipm_output.push_back(sipm.digitalThreshhold);
+             sipm_output.push_back(sipm.digitalThreshold);
 
              // concat SiPM simulation output on end of input parameters
              sipm_output.insert(sipm_output.end(), response.begin(), response.end());
 
              // create output string. char* (in blocks of 8 for each double) are appended
              // for the output via the web response
-             string outputstring = "";
+             string outputString = "";
 
              //recycle buffer char buf[8] from earlier
              for (int i = 0; i < (int)sipm_output.size(); i++)
              {
                memcpy(&buf, &sipm_output[i], sizeof(buf));
                for (int j = 0; j < 8; j++){
-                outputstring.push_back(buf[j]);
+                outputString.push_back(buf[j]);
                }
              }
              cout << "==================== GOODBYE  ====================" << endl;
 
-             res.set_content(outputstring, "text/plain"); });
+             res.set_content(outputString, "text/plain"); });
 
   srv.listen("127.0.0.1", 33232);
 }

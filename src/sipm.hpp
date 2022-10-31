@@ -36,16 +36,16 @@ public:
     double vBr;
     double vOver;
     double tauRecovery;
-    double digitalThreshhold;
+    double digitalThreshold;
     double cCell;
     double dt;
     double vChr;
     double pdeMax;
     double tauFwhm;
 
-    SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in, double tauFwhm_in, double digitalThreshhold_in, double ccell_in, double Vchr_in, double PDE_max_in);
+    SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in, double tauFwhm_in, double digitalThreshold_in, double ccell_in, double Vchr_in, double PDE_max_in);
 
-    SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in, double digitalThreshhold_in, double ccell_in, double Vchr_in, double PDE_max_in);
+    SiPM(int numMicrocell_in, double vbias_in, double vbr_in, double tauRecovery_in, double digitalThreshold_in, double ccell_in, double Vchr_in, double PDE_max_in);
 
     SiPM(std::vector<double> svars);
 
@@ -78,7 +78,7 @@ private:
 
     void init_spads(void);
 
-    double selective_recharge_illuminate_LUT(double photonsPerSecond);
+    double selective_recharge_illuminate_LUT(double photonsPerDt);
 
     double recharge_illuminate(double photonsPerSecond);
 

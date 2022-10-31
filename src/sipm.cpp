@@ -29,20 +29,20 @@
 using namespace std;
 
 SiPM::SiPM(int numMicrocell_in, double vbias_in, double vBr_in, double tauRecovery_in,
-           double tFwhm_in, double digitalThreshhold_in, double cCell_in, double vChr_in, double pdeMax_in)
+           double tFwhm_in, double digitalThreshold_in, double cCell_in, double vChr_in, double pdeMax_in)
 {
-    numMicrocell = numMicrocell_in;           // number of microcells in SiPM
-    vBias = vbias_in;                         // supplied SiPM bias voltage
-    vBr = vBr_in;                             // SiPM breakdown voltage
-    tauRecovery = tauRecovery_in;             // recharge recovery time tau RC
-    tauFwhm = tFwhm_in;                       // full width half max output pulse time
-    digitalThreshhold = digitalThreshhold_in; // readout threshhold (typically 0 for analog)
-    cCell = cCell_in;                         // microcell capacitance
-    vOver = vbias_in - vBr_in;                // overvoltage
-    vChr = vChr_in;                           // characteristic voltage for PDE-vOver curve
-    pdeMax = pdeMax_in;                       // pdeMax characteristic for PDE-vOver curve
+    numMicrocell = numMicrocell_in;         // number of microcells in SiPM
+    vBias = vbias_in;                       // supplied SiPM bias voltage
+    vBr = vBr_in;                           // SiPM breakdown voltage
+    tauRecovery = tauRecovery_in;           // recharge recovery time tau RC
+    tauFwhm = tFwhm_in;                     // full width half max output pulse time
+    digitalThreshold = digitalThreshold_in; // readout threshold (typically 0 for analog)
+    cCell = cCell_in;                       // microcell capacitance
+    vOver = vbias_in - vBr_in;              // overvoltage
+    vChr = vChr_in;                         // characteristic voltage for PDE-vOver curve
+    pdeMax = pdeMax_in;                     // pdeMax characteristic for PDE-vOver curve
 
-    microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live tiem since last detection vector
+    microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live time since last detection vector
 
     LUTSize = 20;
     tVecLUT = new double[LUTSize];
@@ -53,18 +53,18 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vBr_in, double tauRecove
 }
 
 SiPM::SiPM(int numMicrocell_in, double vbias_in, double vBr_in, double tauRecovery_in,
-           double digitalThreshhold_in, double cCell_in, double vChr_in, double pdeMax_in)
+           double digitalThreshold_in, double cCell_in, double vChr_in, double pdeMax_in)
 {
-    numMicrocell = numMicrocell_in;           // number of microcells in SiPM
-    vBias = vbias_in;                         // supplied SiPM bias voltage
-    vBr = vBr_in;                             // SiPM breakdown voltage
-    tauRecovery = tauRecovery_in;             // recharge recovery time tau RC
-    tauFwhm = 0;                              // full width half max output pulse time
-    digitalThreshhold = digitalThreshhold_in; // readout threshhold (typically 0 for analog)
-    cCell = cCell_in;                         // microcell capacitance
-    vOver = vbias_in - vBr_in;                // overvoltage
-    vChr = vChr_in;                           // characteristic voltage for PDE-vOver curve
-    pdeMax = pdeMax_in;                       // pdeMax characteristic for PDE-vOver curve
+    numMicrocell = numMicrocell_in;         // number of microcells in SiPM
+    vBias = vbias_in;                       // supplied SiPM bias voltage
+    vBr = vBr_in;                           // SiPM breakdown voltage
+    tauRecovery = tauRecovery_in;           // recharge recovery time tau RC
+    tauFwhm = 0;                            // full width half max output pulse time
+    digitalThreshold = digitalThreshold_in; // readout threshold (typically 0 for analog)
+    cCell = cCell_in;                       // microcell capacitance
+    vOver = vbias_in - vBr_in;              // overvoltage
+    vChr = vChr_in;                         // characteristic voltage for PDE-vOver curve
+    pdeMax = pdeMax_in;                     // pdeMax characteristic for PDE-vOver curve
 
     microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live tiem since last detection vector
 
@@ -87,10 +87,10 @@ SiPM::SiPM(vector<double> svars)
     vChr = svars[6];              // characteristic voltage for PDE-vOver curve
     cCell = svars[7];             // microcell capacitance
     tauFwhm = svars[8];           // full width half max output pulse time
-    digitalThreshhold = svars[9]; // readout threshhold (typically 0 for analog)
+    digitalThreshold = svars[9];  // readout threshold (typically 0 for analog)
     vOver = vBias - vBr;          // overvoltage
 
-    microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live tiem since last detection vector
+    microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live time since last detection vector
 
     LUTSize = 20;
     tVecLUT = new double[LUTSize];
@@ -100,9 +100,9 @@ SiPM::SiPM(vector<double> svars)
     precalculate_LUT();
 }
 
-SiPM::SiPM(){}
+SiPM::SiPM() {}
 
-SiPM::~SiPM(){}
+SiPM::~SiPM() {}
 
 // convert overvoltage to PDE
 inline double SiPM::pde_from_volt(double overvoltage)
@@ -124,11 +124,11 @@ inline double SiPM::volt_from_time(double time)
 }
 
 // Simulation function - takes as an argument a 'light' vector
-// light vector is the expected number of photons to strike the SiPM in simulation timestep dt.
+// light vector is the expected number of photons to strike the SiPM in simulation time step dt.
 vector<double> SiPM::simulate(vector<double> light, bool silent)
 {
     vector<double> qFired = {};
-    double pctdone;
+    double percentDone;
     double l;
     init_spads();
     // O(light.size()* numMicrocell)
@@ -136,8 +136,8 @@ vector<double> SiPM::simulate(vector<double> light, bool silent)
     {
         if ((!silent) & (i % 10000 == 0 || i == (int)(light.size() - 1)))
         {
-            pctdone = (double)i / (double)(light.size() - 1);
-            print_progress(pctdone);
+            percentDone = (double)i / (double)(light.size() - 1);
+            print_progress(percentDone);
         }
         l = light[i];
         if (l < 0)
@@ -151,21 +151,21 @@ vector<double> SiPM::simulate(vector<double> light, bool silent)
 
 // "Full" simulation function - takes as an argument a 'light' vector
 // "Full" simulation simulates every single microcell rather than using
-// a Poisson PDE to randomly distribute photons. Slow and obselete.
-// light vector is the expected number of photons to strike the SiPM in simulation timestep dt.
+// a Poisson PDE to randomly distribute photons. Slow and obsolete.
+// light vector is the expected number of photons to strike the SiPM in simulation time step dt.
 vector<double> SiPM::simulate_full(vector<double> light)
 {
     vector<double> qFired = {};
     double l;
-    double pctdone;
+    double percentDone;
     init_spads();
     // O(light.size()* numMicrocell)
     for (int i = 0; i < (int)light.size(); i++)
     {
         if (i % 100 == 0 || i == ((int)light.size() - 1))
         {
-            pctdone = (double)i / (double)(light.size() - 1);
-            print_progress(pctdone);
+            percentDone = (double)i / (double)(light.size() - 1);
+            print_progress(percentDone);
         }
         l = light[i];
         if (l < 0)
@@ -199,18 +199,18 @@ void SiPM::init_spads(void)
     }
 }
 
-double SiPM::selective_recharge_illuminate_LUT(double photonsPerSecond)
+double SiPM::selective_recharge_illuminate_LUT(double photonsPerDt)
 {
     double output = 0;
     double volt = 0;
 
     // randomly sample poisson parameter lambda input to generate number of incoming photons
-    poisson_distribution<int> distribution(photonsPerSecond);
-    int poissPhotons = distribution(poissonEngine);
+    poisson_distribution<int> distribution(photonsPerDt);
+    int poissonPhotons = distribution(poissonEngine);
 
     // generate n random microcells to strike - n random microcells
     vector<int> struckMicrocells = {};
-    for (int i = 0; (int)i < poissPhotons; i++)
+    for (int i = 0; (int)i < poissonPhotons; i++)
     {
         struckMicrocells.push_back(unif_rand_int(0, numMicrocell));
     }
@@ -227,7 +227,7 @@ double SiPM::selective_recharge_illuminate_LUT(double photonsPerSecond)
         {
             volt = volt_LUT(microcellTimes[i]);
             microcellTimes[i] = 0;
-            if (volt > digitalThreshhold * vOver)
+            if (volt > digitalThreshold * vOver)
             {
                 output += volt * cCell;
             }
@@ -238,7 +238,7 @@ double SiPM::selective_recharge_illuminate_LUT(double photonsPerSecond)
 
 // "full simulation" - does not use Poisson Stats, approximates with a uniform distribution
 // no lookup table
-double SiPM::recharge_illuminate(double photonsPerSecond)
+double SiPM::recharge_illuminate(double photonsPerDt)
 {
     double output = 0;
     double volt = 0;
@@ -246,10 +246,10 @@ double SiPM::recharge_illuminate(double photonsPerSecond)
     {
         microcellTimes[i] += dt;
         volt = volt_from_time(microcellTimes[i]);
-        if (unif_rand_double(0, 1) < (pde_from_volt(volt) * (photonsPerSecond / numMicrocell)))
+        if (unif_rand_double(0, 1) < (pde_from_volt(volt) * (photonsPerDt / numMicrocell)))
         {
             microcellTimes[i] = 0;
-            if (volt > digitalThreshhold * vOver)
+            if (volt > digitalThreshold * vOver)
             {
                 output += volt * cCell;
             }
@@ -278,27 +278,27 @@ void SiPM::print_progress(double percentage) const
 // Sanity check random number generation as used in the program
 void SiPM::test_rand_funcs()
 {
-    const int nstars = 100;    // maximum number of stars to distribute
-    const int nintervals = 10; // number of intervals
+    const int numStars = 100;    // maximum number of stars to distribute
+    const int numIntervals = 10; // number of intervals
     int iters = 10000;
 
     cout << "\n\n***** UNIFORM *****\n"
          << endl;
     double s1;
     double test1 = 0;
-    int p1[nintervals] = {};
+    int p1[numIntervals] = {};
     for (int i = 0; i < iters; i++)
     {
         s1 = unif_rand_double(0, 1);
         test1 += s1;
-        ++p1[int(nintervals * s1)];
+        ++p1[int(numIntervals * s1)];
     }
     cout << "mean dist 1: " << test1 / iters << endl;
 
-    for (int i = 0; i < nintervals; i++)
+    for (int i = 0; i < numIntervals; i++)
     {
-        cout << float(i) / nintervals << "-" << float(i + 1) / nintervals << "\t: ";
-        cout << string(p1[i] * nstars / iters, '*') << endl;
+        cout << float(i) / numIntervals << "-" << float(i + 1) / numIntervals << "\t: ";
+        cout << string(p1[i] * numStars / iters, '*') << endl;
     }
 
     double lambda = 3.5;
@@ -317,7 +317,7 @@ void SiPM::test_rand_funcs()
     for (int i = 0; i < poiss_nintervals; i++)
     {
         cout << i << "\t: ";
-        cout << string(p2[i] * nstars / iters, '*') << endl;
+        cout << string(p2[i] * numStars / iters, '*') << endl;
     }
 }
 
@@ -332,10 +332,10 @@ vector<double> SiPM::shape_output(vector<double> inputVec)
 
 void SiPM::precalculate_LUT(void)
 {
-    const int numpoint = (int)LUTSize;
-    const double maxt = 5.3 * tauRecovery;
-    const double ddt = (double)maxt / numpoint;
-    for (int i = 0; i < numpoint; i++)
+    const int numPoints = (int)LUTSize;
+    const double maxTime = 5.3 * tauRecovery;
+    const double ddt = (double)maxTime / numPoints;
+    for (int i = 0; i < numPoints; i++)
     {
         tVecLUT[i] = i * ddt;
         vVecLUT[i] = vOver * (1 - exp(-tVecLUT[i] / tauRecovery));

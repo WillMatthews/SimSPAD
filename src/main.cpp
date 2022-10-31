@@ -29,7 +29,7 @@
 using namespace std;
 
 // create lambda expression for a simulation run (binary in -> binary out).
-// might be helpful if multithreading in the future
+// might be helpful if multi-threading in the future
 void simulate(string fname_in, string fname_out, bool silence)
 {
     /*

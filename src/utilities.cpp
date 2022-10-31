@@ -86,7 +86,7 @@ void writeBinary(string filename, SiPM sipm, vector<double> response)
     sipm_params.push_back(sipm.vChr);
     sipm_params.push_back(sipm.cCell);
     sipm_params.push_back(sipm.tauFwhm);
-    sipm_params.push_back(sipm.digitalThreshhold);
+    sipm_params.push_back(sipm.digitalThreshold);
 
     sipm_params.insert(sipm_params.end(), response.begin(), response.end());
 
@@ -103,25 +103,25 @@ vector<double> conv1d(vector<double> inputVec, vector<double> kernel)
         return inputVec;
     }
 
-    int kernelsize = (int)kernel.size();
+    int kernelSize = (int)kernel.size();
 
-    if (kernelsize == 1)
+    if (kernelSize == 1)
     {
         return inputVec;
     }
 
     vector<double> outputVec = {};
-    int inpoint;
+    int innerPosition;
 
     for (int i = 0; i < (int)inputVec.size(); i++)
     {
         outputVec.push_back(0.0);
-        for (int j = 0; j < kernelsize; j++)
+        for (int j = 0; j < kernelSize; j++)
         {
-            inpoint = i + j - kernelsize / 2;
-            if (!(inpoint < 0 || (inpoint > (long)inputVec.size())))
+            innerPosition = i + j - kernelSize / 2;
+            if (!(innerPosition < 0 || (innerPosition > (long)inputVec.size())))
             {
-                outputVec[i] += kernel[j] * inputVec[inpoint];
+                outputVec[i] += kernel[j] * inputVec[innerPosition];
             }
         }
     }
@@ -132,7 +132,7 @@ vector<double> conv1d(vector<double> inputVec, vector<double> kernel)
 // TODO check if the pulse width is correct!
 vector<double> get_gaussian(double dt, double tauFwhm)
 {
-    const double gauconst = (double)(1 / sqrt(2 * M_PI));
+    const double gaussianConstant = (double)(1 / sqrt(2 * M_PI));
     const double fwhmConversionConst = sqrt(2 * log(2)) / 2;
     const double sigma = (tauFwhm / dt) / fwhmConversionConst;
     const double numSigma = 4.0;
@@ -146,12 +146,12 @@ vector<double> get_gaussian(double dt, double tauFwhm)
         return kernel;
     }
 
-    double gaupower;
+    double gaussianPower;
 
     for (int i = -(gau_numpoint - 1); i < (gau_numpoint - 1); i++)
     {
-        gaupower = -pow((double)i / sigma, 2) / 2;
-        kernel.push_back(gauconst * exp(gaupower));
+        gaussianPower = -pow((double)i / sigma, 2) / 2;
+        kernel.push_back(gaussianConstant * exp(gaussianPower));
     }
     return kernel;
 }
@@ -180,13 +180,13 @@ tuple<wstring, double> exponent_val(double num)
     return make_tuple(prefixes[k], num * pow(10, -(k * 3 - 15)));
 }
 
-void print_info(chrono::duration<double> elapsed, double dt, vector<double> outvec, int numMicrocell)
+void print_info(chrono::duration<double> elapsed, double dt, vector<double> outputVec, int numMicrocell)
 {
     auto sysclock = chrono::system_clock::now();
     auto tt = chrono::system_clock::to_time_t(sysclock);
     string timeStr = ctime(&tt);
 
-    int inputsize = outvec.size();
+    int inputsize = outputVec.size();
 
     locale::global(locale("en_US.utf8"));
     wcout.imbue(locale());
@@ -211,7 +211,7 @@ void print_info(chrono::duration<double> elapsed, double dt, vector<double> outv
     double sumOut = 0;
     for (int i = 0; i < inputsize; i++)
     {
-        sumOut += outvec[i];
+        sumOut += outputVec[i];
     }
     double Ibias = sumOut / (inputsize * dt);
     cout << "Simulated Ibias:\t" << Ibias * 1E3 << "mA" << endl;

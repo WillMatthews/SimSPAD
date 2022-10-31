@@ -37,6 +37,6 @@ std::vector<double> get_gaussian(double dt, double tauFwhm);
 
 std::tuple<std::wstring, double> exponent_val(double num);
 
-void print_info(std::chrono::duration<double> elapsed, double dt, std::vector<double> outvec, int numMicrocell);
+void print_info(std::chrono::duration<double> elapsed, double dt, std::vector<double> outputVec, int numMicrocell);
 
 #endif // UTILITIES_H
