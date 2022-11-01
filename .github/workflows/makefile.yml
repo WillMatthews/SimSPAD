@@ -2,36 +2,39 @@ name: Build
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["**"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["**"]
   schedule:
-  - cron: "0 */2 * * *"
+    - cron: "0 12 * * *"
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
 
     steps:
-    - uses: actions/checkout@v3
-    
-    #- name: configure
-    #  run: ./configure
-    
-    - name: Make Build
-      run: make build
-      
-    - name: Make SimSPAD
-      run: make
-    
-    - name: Configure
-      run: make configure
+      - uses: actions/checkout@v3
 
-    - name: Make Server
-      run: make server
-     
+      #- name: configure
+      #  run: ./configure
+
+      - name: Make Build
+        run: make build
+
+      - name: Make SimSPAD
+        run: make
+
+      - name: Configure
+        run: make configure
+
+      - name: Make Server
+        run: make server
+
     #- name: Run check
     #  run: make check
-      
+
     #- name: Run distcheck
     #  run: make distcheck
