@@ -19,7 +19,7 @@ x(6) = config.pde_Max;
 x(7) = config.pde_vchr;
 x(8) = config.ccell;
 x(9) = config.pulse_fwhm;
-x(10) = config.digital_threshholds;
+x(10) = config.digital_thresholds;
 
 fname = strcat("./binary/", filename, ".bin");
 

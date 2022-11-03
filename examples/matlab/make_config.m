@@ -16,8 +16,8 @@ config.sa_per_bit = 21;
 config.dt = (1/samplerate)/config.sa_per_bit; 
 % Number of Microcells to store the overvoltage for each time step
 config.num_microcells_to_store = 10;
-% Detection threshholds. Keep at zero for analogue SiPM
-config.digital_threshholds = [0];
+% Detection thresholds. Keep at zero for analogue SiPM
+config.digital_thresholds = [0];
 % photon energy (currently set at 405nm)
 config.photonE = 4.90E-19; % 405nm light energy per photon in Joules
 

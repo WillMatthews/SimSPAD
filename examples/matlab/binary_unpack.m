@@ -23,7 +23,7 @@ config.pde_Max = x(6);
 config.pde_vchr = x(7);
 config.ccell = x(8);
 config.pulse_fwhm = x(9);
-config.digital_threshholds = x(10);
+config.digital_thresholds = x(10);
 
 opticalOutput = x(11:end);
 
