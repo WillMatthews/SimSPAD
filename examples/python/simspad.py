@@ -27,6 +27,8 @@ class SiPM:
             self.digitalThreshold = args[9]
 
     def write_binary(self, filename, optical_input):
+        """simspad.SiPM.write_binary(filename, inputVector) creates a binary output file with the given file name,
+        which packages the given input vector and SiPM parameters"""
         with open(filename, 'wb') as f:
             sipm_settings = [self.dt, self.numMicrocell, self.vBias, self.vBr,
                              self.tauRecovery, self.pdeMax, self.vChr, self.cCell, self.tauFwhm, self.digitalThreshold]
@@ -34,6 +36,8 @@ class SiPM:
             double_array.tofile(f)
 
     def simulate_web(self, url, optical_input):
+        """simspad.SiPM.simulate_web(url, optical_input) sends a POST request to the SimSPAD Server application
+        The SiPM's response is returned as a list"""
         import requests
         sipm_settings = [self.dt, self.numMicrocell, self.vBias, self.vBr,
                          self.tauRecovery, self.pdeMax, self.vChr, self.cCell, self.tauFwhm, self.digitalThreshold]
@@ -49,6 +53,9 @@ class SiPM:
 
 
 def read_binary(filename):
+    """simspad.read_binary(filename) reads a binary file with a given file name,
+    and returns a tuple (vector, SiPM) whose first element is the associated vector,
+    and the second element is the associated SiPM with parameters pre-configured"""
     with open(filename, 'rb') as f:
         numchar = len(f.read())
         numdouble = numchar//8
