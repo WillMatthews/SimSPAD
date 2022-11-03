@@ -5,3 +5,4 @@ callgrind.*
 simspad
 *.bin
 *.vscode
+__pycache__
