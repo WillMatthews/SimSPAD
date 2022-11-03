@@ -1,4 +1,6 @@
 function [opticalOutput, config] = simspad_server(filename)
+%SIMSPAD_SERVER performs the post request to retrieve data
+%from the SimSPAD web server
 
 %% Web Settings
 httpUrl  = 'http://localhost:33232/simspad';

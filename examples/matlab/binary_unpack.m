@@ -1,6 +1,6 @@
 function [config, opticalOutput] = binary_unpack(filename)
-%PACKAGE_TO_BINARY Summary of this function goes here
-%   Detailed explanation goes here
+%PACKAGE_TO_BINARY retrieves a SiPM configuration and vector from a binary file
+% takes as arguments a filename as a string
 
 fname = strcat("./binary/", filename, ".bin");
 fileID = fopen(fname,'r');

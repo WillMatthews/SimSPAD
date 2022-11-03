@@ -1,5 +1,6 @@
 function [config] = make_config(irrad_tx, irrad_dc, samplerate)
-%MAKE_CONFIG Summary of this function goes here
+%MAKE_CONFIG creates a configuration structure for the SiPM given
+%transmit irradiance, dc irradiance, and a sample rate
 
 config.irrad_tx = irrad_tx;
 config.irrad_dc = irrad_dc;

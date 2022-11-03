@@ -1,6 +1,6 @@
 function [light] = make_calibrated_input(optical_input, config)
-%MAKE_OPTICAL_INPUT Summary of this function goes here
-%   Detailed explanation goes here
+%MAKE_OPTICAL_INPUT calibrates the optical input given the configuration
+%of the SiPM to create a vector with the expected number of photons per time step
 
 
 

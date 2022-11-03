@@ -1,6 +1,6 @@
 function [] = binary_pack(filename, config, opticalInput)
-%PACKAGE_TO_BINARY Summary of this function goes here
-%   Detailed explanation goes here
+%PACKAGE_TO_BINARY packages a SiPM configuration and input vector into a binary file
+% takes as arguments a filename as a string, a configuration structure, and an input vector
 
 
 %% Settings for Simulation
