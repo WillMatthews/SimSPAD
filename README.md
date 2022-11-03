@@ -65,13 +65,13 @@ William Matthews (2022) SimSPAD (Version 0.1) [Source Code]. https://github.com/
 ![logo](https://github.com/WillMatthews/SimSPAD/blob/master/doc/img/example.gif)
 
 SimSPAD can be run as a standalone program from the command line, taking an input binary file, and producing an output binary file.
-This binary file is currently produced by MATLAB, but Python and C++ generators will be created soon.
+This binary file can be created using examples in the examples directory. Currently MATLAB and Python methods exist, and a C++ method will be added in the future.
 
 ### Web Application
 
 Once SimSPAD server is running, you are able to send a POST request to `http://localhost:33232/simspad`.
-To stop the server, access http://localhost:33232/stop.
-To see if the server is running, access http://localhost:33232/ where you should see a greeting message in plain text.
+To stop the server, access `http://localhost:33232/stop`.
+To see if the server is running, access `http://localhost:33232/` where you should see a greeting message in plain text.
 The reply from the server will be the result from the simulation.
 The data to and from the server is packaged as characters - see below in the Binary Format section for more details.
 

@@ -57,6 +57,7 @@ jobs:
           experimental_apply_changes_via_bot: 1
           extra_dictionaries: cspell:filetypes/filetypes.txt
             cspell:cpp/cpp.txt
+            cspell:python/python.txt
 
   comment:
     name: Report
