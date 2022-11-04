@@ -68,15 +68,18 @@ public:
 private:
     std::vector<double> microcellTimes;
 
-    std::default_random_engine poissonEngine;
+    std::mt19937_64 poissonEngine;
     std::mt19937_64 unifRandomEngine;
+    std::mt19937_64 exponentialEngine;
     std::uniform_real_distribution<double> unif;
+
+    void seed_engines(void);
 
     double unif_rand_double(double a, double b);
 
     int unif_rand_int(int a, int b);
 
-    void init_spads(void);
+    void init_spads(std::vector<double> light);
 
     double selective_recharge_illuminate_LUT(double photonsPerDt);
 

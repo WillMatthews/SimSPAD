@@ -32,14 +32,6 @@ using namespace std;
 // might be helpful if multi-threading in the future
 void simulate(string fname_in, string fname_out, bool silence)
 {
-    /*
-    // Generate Dummy Input for Testing
-    int ber_run_samples = 844759;
-    vector<double> in2(ber_run_samples, 10); // DC light source
-    dt = 1E-10;
-    SiPM sipm(14410, 27.5, 24.5, 2.2 * 14E-9, 0.0, 4.6e-14, 2.04, 0.46);
-    */
-
     vector<double> out = {};
     vector<double> in = {};
     SiPM sipm;

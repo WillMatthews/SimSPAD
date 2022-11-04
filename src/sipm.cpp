@@ -49,6 +49,7 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vBr_in, double tauRecove
     pdeVecLUT = new double[LUTSize];
     vVecLUT = new double[LUTSize];
 
+    seed_engines();
     precalculate_LUT();
 }
 
@@ -73,6 +74,7 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vBr_in, double tauRecove
     pdeVecLUT = new double[LUTSize];
     vVecLUT = new double[LUTSize];
 
+    seed_engines();
     precalculate_LUT();
 }
 
@@ -97,6 +99,7 @@ SiPM::SiPM(vector<double> svars)
     pdeVecLUT = new double[LUTSize];
     vVecLUT = new double[LUTSize];
 
+    seed_engines();
     precalculate_LUT();
 }
 
@@ -130,7 +133,7 @@ vector<double> SiPM::simulate(vector<double> light, bool silent)
     vector<double> qFired = {};
     double percentDone;
     double l;
-    init_spads();
+    init_spads(light);
     // O(light.size()* numMicrocell)
     for (int i = 0; i < (int)light.size(); i++)
     {
@@ -158,7 +161,7 @@ vector<double> SiPM::simulate_full(vector<double> light)
     vector<double> qFired = {};
     double l;
     double percentDone;
-    init_spads();
+    init_spads(light);
     // O(light.size()* numMicrocell)
     for (int i = 0; i < (int)light.size(); i++)
     {
@@ -177,6 +180,14 @@ vector<double> SiPM::simulate_full(vector<double> light)
     return qFired;
 }
 
+// randomly seed engines
+void SiPM::seed_engines()
+{
+    poissonEngine.seed(random_device{}());
+    unifRandomEngine.seed(random_device{}());
+    exponentialEngine.seed(random_device{}());
+}
+
 // random double between range a and b
 double SiPM::unif_rand_double(double a, double b)
 {
@@ -191,11 +202,28 @@ int SiPM::unif_rand_int(int a, int b)
 
 //// SIMULATION METHODS
 
-void SiPM::init_spads(void)
+// Initialises SiPMs based on an exponential distribution.
+// This is definitely wrong - The distribution is more complicated, but this is better than uniform.
+void SiPM::init_spads(vector<double> light)
 {
+    double meanInPhotonsDt = 0;
+    for (auto &a : light)
+    {
+        meanInPhotonsDt += a;
+    }
+    meanInPhotonsDt = meanInPhotonsDt / light.size();
+
+    // predict PDE - assume each microcell recovers to Vbias
+    double estPde = pdeMax * (1 - exp(-(vBias - vBr) / vChr));
+
+    // Generate Distribution and rate parameter
+    double lambda = estPde * meanInPhotonsDt / (dt * numMicrocell);
+    exponential_distribution<double> expDistribution(lambda);
+
+    // randomly sample
     for (int i = 0; (int)i < numMicrocell; i++)
     {
-        microcellTimes[i] = tauRecovery * unif_rand_double(0, 10);
+        microcellTimes[i] = expDistribution(exponentialEngine);
     }
 }
 
@@ -209,7 +237,7 @@ double SiPM::selective_recharge_illuminate_LUT(double photonsPerDt)
     int poissonPhotons = distribution(poissonEngine);
 
     // generate n random microcells to strike - n random microcells
-    vector<int> struckMicrocells = {};
+    vector<int> struckMicrocells = {}; // DO NOT REPLACE WITH SET! set is too slow.
     for (int i = 0; (int)i < poissonPhotons; i++)
     {
         struckMicrocells.push_back(unif_rand_int(0, numMicrocell));
