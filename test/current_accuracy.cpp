@@ -16,68 +16,65 @@ double ibias_check(SiPM sipm, double photonsPerDt)
     vector<double> in(testSamples, photonsPerDt); // DC light source
 
     vector<double> out = {};
-    SiPM sipm;
 
     auto start = chrono::steady_clock::now();
     bool silence = true;
     out = sipm.simulate(in, silence);
 
     double sumOut = 0;
-    for (auto &a : outputVec){sumOut += a;}
+    for (auto &a : out){sumOut += a;}
 
-    double Ibias = sumOut / (inputSize * dt);
-    cout << "Simulated Ibias:\t" << Ibias * 1E3 << "mA" << endl;
+    double Ibias = sumOut / (out.size() * sipm.dt);
+    cout << "Simulated Ibias:\t" << Ibias * 1E3 << "mA";
     
     return Ibias;
 }
 
-template <class arrayType>
-int arraySize(arrayType a)
-{
-    return sizeof(a) / sizeof(decltype(a[0]));
-}
-
-int TEST_currents()
+bool TEST_currents()
 {
     vector<double> irradiances = {1e-4, 1e-3, 2e-3, 5e-3, 1e-2, 1e-1, 1e0};
     vector<vector<double>> expected_currents = {};
     vector<SiPM> DUTs = {};
+    vector<string> sipm_names = {};
 
+    double photonsPerDt;
     double current;
-    double* bounds = {0.9, 1.1};
+    double bounds[2] = {0.9, 1.1};
+    SiPM sipm;
 
-    DUTs[0] = SiPM(14410, 27.5, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46);   // J30020
-    expected_currnets[0] = {};
-    DUTs[1] = SiPM(14410, 27.5, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46);   // J60035
-    expected_currnets[1] = {};
+    sipm_names.push_back("J30020");
+    DUTs.push_back(SiPM(14410, 27.5, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46));   // J30020
+    expected_currents.push_back({1.0,1.0,1.0,1.0,1.0,1.0,1.0});
+
+    sipm_names.push_back("J60035");
+    DUTs.push_back(SiPM(14410, 27.5, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46));   // J60035
+    expected_currents.push_back({1.0,1.0,1.0,1.0,1.0,1.0,1.0});
 
     bool passed = true;
+    double testCurrent;
     for (int j=0; j < (int)DUTs.size(); j++)
     {
         sipm = DUTs[j]; 
         sipm.dt = 1E-10;
+        cout << "====== " <<  sipm_names[j] <<  " ======"<< endl;
         for (int i = 0; i < (int)irradiances.size(); i++)
         {
-            cout << "====== " <<  sipm_names[j] <<  " ======"<< endl;
             cout << "405nm Irradiance: " << irradiances[i] << "W/m2\tExpected Ibias: " << expected_currents[j][i] << "A\t";
             photonsPerDt = 0; // TODO photon energy and area... convert irrad to photons per dt.
-            current  = ibias_check(sipm, photonsPerDt)
+            current  = ibias_check(sipm, photonsPerDt);
+            testCurrent = expected_currents[j][i];
 
-            if (runtime < expected_runtimes[i])
+            if ( (current > testCurrent * bounds[0] ) & (current < testCurrent * bounds[1]) )
             {
-                cout << "\t\tOK" << endl;
+                cout << "\tOK" << endl;
             }
             else
             {
-                cout << "\t\tFAIL" << endl;
+                cout << "\tFAIL" << endl;
                 passed = false;
             }
         }
     }
-    if (passed)
-    {
-        return EXIT_SUCCESS;
-    }
-    return EXIT_FAILURE;
+    return passed;
 }
 
