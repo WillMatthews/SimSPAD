@@ -10,7 +10,7 @@
 
 using namespace std;
 
-double ibias_test(SiPM sipm, double photonsPerDt)
+double ibias_check(SiPM sipm, double photonsPerDt)
 {
     int testSamples = 10000;
     vector<double> in(testSamples, photonsPerDt); // DC light source
@@ -37,7 +37,7 @@ int arraySize(arrayType a)
     return sizeof(a) / sizeof(decltype(a[0]));
 }
 
-int main()
+int TEST_currents()
 {
     vector<double> irradiances = {1e-4, 1e-3, 2e-3, 5e-3, 1e-2, 1e-1, 1e0};
     vector<vector<double>> expected_currents = {};
@@ -61,7 +61,7 @@ int main()
             cout << "====== " <<  sipm_names[j] <<  " ======"<< endl;
             cout << "405nm Irradiance: " << irradiances[i] << "W/m2\tExpected Ibias: " << expected_currents[j][i] << "A\t";
             photonsPerDt = 0; // TODO photon energy and area... convert irrad to photons per dt.
-            current  = ibias_test(sipm, photonsPerDt)
+            current  = ibias_check(sipm, photonsPerDt)
 
             if (runtime < expected_runtimes[i])
             {
@@ -80,3 +80,4 @@ int main()
     }
     return EXIT_FAILURE;
 }
+

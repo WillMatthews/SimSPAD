@@ -10,11 +10,11 @@
 
 using namespace std;
 
-double speed_test(double photonsPerDt)
+double speed_measure(double photonsPerDt)
 {
     int speedTestSamples = 10000;
     vector<double> in(speedTestSamples, photonsPerDt); // DC light source
-    SiPM sipm(14410, 27.5, 24.5, 2.2 * 14E-9, 0.0, 4.6e-14, 2.04, 0.46);
+    SiPM sipm(14410, 27.5, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46);
     sipm.dt = 1E-10;
 
     vector<double> out = {};
@@ -45,16 +45,16 @@ int arraySize(arrayType a)
     return sizeof(a) / sizeof(decltype(a[0]));
 }
 
-int main()
+int TEST_performance()
 {
     double photonsPerDt[] = {0, 1, 10, 100, 1000};
-    double expected_runtimes[] = {250E-12, 250E-12, 250E-12, 325E-12, 400E-12};
+    double expected_runtimes[] = {250e-12, 250e-12, 250e-12, 325e-12, 400e-12};
     double runtime;
     bool passed = true;
 
     for (int i = 0; i < (int)arraySize(photonsPerDt); i++)
     {
-        runtime = speed_test(photonsPerDt[i]);
+        runtime = speed_measure(photonsPerDt[i]);
         cout << photonsPerDt << "\t" << runtime << "\t";
         if (runtime < expected_runtimes[i])
         {
@@ -72,3 +72,4 @@ int main()
     }
     return EXIT_FAILURE;
 }
+
