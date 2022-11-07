@@ -21,9 +21,9 @@
 
 using namespace std;
 
-int main(){
+int main()
+{
     cout << TEST_currents() << endl;
     cout << TEST_performance() << endl;
     return EXIT_SUCCESS;
 }
-

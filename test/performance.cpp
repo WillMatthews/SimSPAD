@@ -24,7 +24,7 @@ double speed_measure(double photonsPerDt)
     out = sipm.simulate(in, silence);
     auto end = chrono::steady_clock::now();
 
-    (void) out; 
+    (void)out;
     chrono::duration<double> elapsed = end - start;
 
     double time_per_iter = ((double)elapsed.count()) / ((double)speedTestSamples);
@@ -56,4 +56,3 @@ bool TEST_performance()
     }
     return passed;
 }
-
