@@ -15,14 +15,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define BARS 88
+
 #include <iostream>
-#include "performance.cpp"
-#include "current_accuracy.cpp"
+#include <string>
+#include "performance.hpp"
+#include "current_accuracy.hpp"
 
 using namespace std;
 
 int main()
 {
+    unsigned int time_ui = static_cast<unsigned int>(time(NULL));
+    srand(time_ui);
+
+    ios::sync_with_stdio(0);
+    cin.tie(0);
+
     cout << TEST_currents() << endl;
     cout << TEST_performance() << endl;
     return EXIT_SUCCESS;

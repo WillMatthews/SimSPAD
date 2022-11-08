@@ -6,3 +6,4 @@ simspad
 *.bin
 *.vscode
 __pycache__
+test/test
