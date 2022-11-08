@@ -21,11 +21,11 @@ jobs:
       #- name: configure
       #  run: ./configure
 
+      - name: Make Build Dir
+        run: make build
+
       - name: Make Test
         run: make test
 
-      - name: List Files
-        run: ls -al
-
       - name: Run Accuracy and Performance Tests
-        run: ./build/apps/test
+        run: ./test
