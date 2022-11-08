@@ -37,7 +37,7 @@ double ibias_check(SiPM sipm, double photonsPerDt)
     vector<double> out = {};
 
     bool silence = true;
-    out = sipm.simulate(in, silence);
+    out = sipm.simulate(in, in, silence);
 
     // throw out first 10 RC times as statistics have not stabilised
     int discard = (int)10 * (sipm.tauRecovery / sipm.dt);
@@ -77,17 +77,17 @@ bool TEST_currents()
     // Test Cases for SiPM Bias Current
 
     sipm_names.push_back("J30020 2V Over");
-    DUTs.push_back(SiPM(14410, 24.5 + 2, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46)); // J30020
+    DUTs.push_back(SiPM(14410, 24.5 + 2, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46, 0)); // J30020
     expected_currents.push_back({0, 4.5235e-5, 4.2184e-4, 8.2776e-4, 1.960e-3, 3.6916e-3, 18.0968e-3, 34.0636e-3});
     areas.push_back(pow((3.07E-3), 2));
 
     sipm_names.push_back("J30020 3V Over");
-    DUTs.push_back(SiPM(14410, 24.5 + 3, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46)); // J30020
+    DUTs.push_back(SiPM(14410, 24.5 + 3, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46, 0)); // J30020
     expected_currents.push_back({0, 8.4519e-5, 8.0958e-4, 1.5820e-3, 3.7762e-3, 6.9938e-3, 31.4950e-3, 55.0066e-3});
     areas.push_back(pow((3.07E-3), 2));
 
     sipm_names.push_back("J30020 4V Over");
-    DUTs.push_back(SiPM(14410, 24.5 + 4, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46)); // J30020
+    DUTs.push_back(SiPM(14410, 24.5 + 4, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46, 0)); // J30020
     expected_currents.push_back({0, 1.3120e-4, 1.2665e-3, 2.4768e-3, 5.8981e-3, 10.7652e-3, 45.7787e-3, 76.3823e-3});
     areas.push_back(pow((3.07E-3), 2));
 

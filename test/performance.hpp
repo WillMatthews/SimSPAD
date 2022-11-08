@@ -24,14 +24,14 @@
 #include "../src/utilities.hpp"
 
 #define BARS 108
-#define MACHINE_SPEED_RATIO 2
+#define MACHINE_SPEED_RATIO 4
 
 using namespace std;
 
 double speed_measure(double photonsPerDt)
 {
     // create a J30020 SiPM
-    SiPM sipm(14410, 27.5, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46);
+    SiPM sipm(14410, 27.5, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46, 0);
     sipm.dt = 2.0e-10;
 
     int speedTestSamples = 10000;
@@ -39,7 +39,7 @@ double speed_measure(double photonsPerDt)
     vector<double> out = {};
 
     auto start = chrono::steady_clock::now();
-    out = sipm.simulate(in, true);
+    out = sipm.simulate(in, in, true);
     auto end = chrono::steady_clock::now();
     chrono::duration<double> elapsed = end - start;
 
