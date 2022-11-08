@@ -28,4 +28,4 @@ jobs:
         run: make test
 
       - name: Run Accuracy and Performance Tests
-        run: ./test
+        run: ./build/apps/test
