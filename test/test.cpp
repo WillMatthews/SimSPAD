@@ -15,8 +15,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define BARS 88
-
 #include <iostream>
 #include <string>
 #include "performance.hpp"
@@ -29,10 +27,18 @@ int main()
     unsigned int time_ui = static_cast<unsigned int>(time(NULL));
     srand(time_ui);
 
-    ios::sync_with_stdio(0);
-    cin.tie(0);
+    // ios::sync_with_stdio(0);
+    // cin.tie(0);
+    // wcin.tie(0);
 
-    cout << TEST_currents() << endl;
-    cout << TEST_performance() << endl;
-    return EXIT_SUCCESS;
+    bool passed = true;
+
+    passed = passed && TEST_currents();
+    passed = passed && TEST_performance();
+
+    if (passed)
+    {
+        return EXIT_SUCCESS;
+    }
+    return EXIT_FAILURE;
 }
