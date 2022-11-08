@@ -7,6 +7,7 @@ APP_DIR	 := $(BUILD)/apps
 LIB_DIR	 := ./lib
 TARGET	 := simspad
 TARGET_SERVER	 := server
+TARGET_TEST	:= test
 INCLUDE	 := -Ilib/
 SRC_ALL	 := $(wildcard src/*.cpp)
 SRC		 := $(filter-out src/server.cpp, $(SRC_ALL))
@@ -27,7 +28,7 @@ $(APP_DIR)/$(TARGET): $(OBJECTS)
 
 -include $(DEPENDENCIES)
 
-.PHONY: all build clean debug release info
+.PHONY: all test build clean debug release info
 
 build:
 	@mkdir -p $(APP_DIR)
@@ -54,7 +55,10 @@ info:
 	@echo "[*] Objects:			${OBJECTS}	   "
 	@echo "[*] Dependencies:	${DEPENDENCIES}"
 
-server: ./src/server.cpp #./src/sipm.cpp ./src/utilities.cpp
+test: ./test/test.cpp ./test/performance.hpp ./test/current_accuracy.hpp ./src/sipm.cpp ./src/utilities.cpp
+	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/$(TARGET_TEST) ./test/test.cpp ./src/sipm.cpp ./src/utilities.cpp
+
+server: ./src/server.cpp ./src/sipm.cpp ./src/utilities.cpp
 	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/$(TARGET_SERVER) ./src/server.cpp ./src/sipm.cpp ./src/utilities.cpp
 
 simspad: ./src/main.cpp ./src/sipm.cpp ./src/utilities.cpp

@@ -209,10 +209,7 @@ void print_info(chrono::duration<double> elapsed, double dt, vector<double> outp
     wcout << "Compute Per uCell Step: " << val << prefix << "s" << endl;
 
     double sumOut = 0;
-    for (int i = 0; i < inputSize; i++)
-    {
-        sumOut += outputVec[i];
-    }
+    for (auto &a : outputVec){sumOut += a;}
     double Ibias = sumOut / (inputSize * dt);
     cout << "Simulated Ibias:\t" << Ibias * 1E3 << "mA" << endl;
 }

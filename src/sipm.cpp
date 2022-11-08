@@ -212,6 +212,10 @@ void SiPM::init_spads(vector<double> light)
         meanInPhotonsDt += a;
     }
     meanInPhotonsDt = meanInPhotonsDt / light.size();
+    if (meanInPhotonsDt == 0)
+    {
+        meanInPhotonsDt = 1E-10; // prevent errors with the exponential distribution generation
+    }
 
     // predict PDE - assume each microcell recovers to Vbias
     double estPde = pdeMax * (1 - exp(-(vBias - vBr) / vChr));

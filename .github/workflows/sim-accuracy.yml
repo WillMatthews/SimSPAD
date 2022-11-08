@@ -1,0 +1,34 @@
+name: Simulator Tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  schedule:
+    - cron: "0 12 * * *"
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    continue-on-error: false
+
+    steps:
+      - uses: actions/checkout@v3
+
+      #- name: configure
+      #  run: ./configure
+
+      - name: Make Build Dir
+        run: make build
+
+      - name: Make Test
+        run: make test
+
+      - name: ls directory
+        run: ls -al ./build/apps
+
+      - name: Run Accuracy and Performance Tests
+        run: ./build/apps/test
