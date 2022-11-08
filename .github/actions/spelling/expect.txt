@@ -8,6 +8,7 @@ CPPHTTPLIB
 cwe
 DDEBUG
 distcheck
+DUTs
 Equaliser
 fout
 funsafe
@@ -16,13 +17,12 @@ gaussian
 gca
 Gsps
 HTT
-httplib
 huntr
-Ibias
+ibias
 Ilib
 img
 irrad
-kwargs
+irradiances
 lpad
 lstdc
 mailto
