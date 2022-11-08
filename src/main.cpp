@@ -39,7 +39,7 @@ void simulate(string fname_in, string fname_out, bool silence)
     tie(in, sipm) = load_binary(fname_in);
     auto start = chrono::steady_clock::now();
 
-    out = sipm.simulate(in, silence);
+    out = sipm.simulate(in,in, silence);
 
     // out = sipm.simulate_full(in);
     // sipm.test_rand_funcs();

@@ -84,7 +84,9 @@ int main(void)
              size_t numBits = data.length();
              std::cout << "Decoding " << numBits << " bytes..." << endl;
 
-             vector<double> optical_input = {};
+            bool tickTock = true;
+             vector<double> optical_input1 = {};
+             vector<double> optical_input2 = {};
              vector<double> sipmSettingsVector = {};
              unsigned char *bytes; // uchar* buffer for intermediate step converting char* to double
              double recv; // received double
@@ -99,13 +101,19 @@ int main(void)
                bytes = reinterpret_cast<unsigned char *>(&buf); // cast char* buffer to bytes
                recv = *reinterpret_cast<double *>(bytes); // cast bytes to double
 
-               if (i < 10) // first ten doubles are SiPM simulator parameters
+               if (i < 11) // first ELEVEN doubles are SiPM simulator parameters
                {
                  sipmSettingsVector.push_back(recv);
                }
                else // remainder of values are expected number of photons per dt striking array
                {
-                 optical_input.push_back(recv);
+                if (tickTock){
+                 optical_input1.push_back(recv);
+                 tickTock = not tickTock;
+                } else {
+                 optical_input2.push_back(recv);
+                 tickTock = not tickTock;
+                }
                }
              }
 
@@ -121,7 +129,8 @@ int main(void)
              cout << "vBias " << (sipm.vBias) << endl;
              cout << "vBreakdown " << (sipm.vBr) << endl;
              cout << "TauRecovery " << (sipm.tauRecovery) << endl;
-             cout << "PDEMax " << (sipm.pdeMax) << endl;
+             cout << "PDEMax1 " << (sipm.pdeMax1) << endl;
+             cout << "PDEMax2 " << (sipm.pdeMax2) << endl;
              cout << "vChrPDE " << (sipm.vChr) << endl;
              cout << "CCell " << (sipm.cCell) << endl;
              cout << "TauPulseFWHM " << (sipm.tauFwhm) << endl;
@@ -130,7 +139,7 @@ int main(void)
              // simulate
              vector<double> response = {};
              bool silence = true;
-             response = sipm.simulate(optical_input, silence);
+             response = sipm.simulate(optical_input1, optical_input2, silence);
 
              // Print Elapsed Time (allow debugging)
              auto end = chrono::system_clock::now();
@@ -144,7 +153,8 @@ int main(void)
              sipm_output.push_back(sipm.vBias);
              sipm_output.push_back(sipm.vBr);
              sipm_output.push_back(sipm.tauRecovery);
-             sipm_output.push_back(sipm.pdeMax);
+             sipm_output.push_back(sipm.pdeMax1);
+             sipm_output.push_back(sipm.pdeMax2);
              sipm_output.push_back(sipm.vChr);
              sipm_output.push_back(sipm.cCell);
              sipm_output.push_back(sipm.tauFwhm);

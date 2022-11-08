@@ -82,7 +82,8 @@ void write_binary(string filename, SiPM sipm, vector<double> response)
     sipmParametersVector.push_back(sipm.vBias);
     sipmParametersVector.push_back(sipm.vBr);
     sipmParametersVector.push_back(sipm.tauRecovery);
-    sipmParametersVector.push_back(sipm.pdeMax);
+    sipmParametersVector.push_back(sipm.pdeMax1);
+    sipmParametersVector.push_back(sipm.pdeMax2);
     sipmParametersVector.push_back(sipm.vChr);
     sipmParametersVector.push_back(sipm.cCell);
     sipmParametersVector.push_back(sipm.tauFwhm);

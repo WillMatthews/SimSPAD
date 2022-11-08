@@ -40,12 +40,13 @@ public:
     double cCell;
     double dt;
     double vChr;
-    double pdeMax;
+    double pdeMax1;
+    double pdeMax2;
     double tauFwhm;
 
-    SiPM(int numMicrocell_in, double vBias_in, double vBr_in, double tauRecovery_in, double tauFwhm_in, double digitalThreshold_in, double ccell_in, double Vchr_in, double PDE_max_in);
+    SiPM(int numMicrocell_in, double vBias_in, double vBr_in, double tauRecovery_in, double tauFwhm_in, double digitalThreshold_in, double ccell_in, double Vchr_in, double PDE_max1_in, double PDE_max2_in);
 
-    SiPM(int numMicrocell_in, double vBias_in, double vBr_in, double tauRecovery_in, double digitalThreshold_in, double ccell_in, double Vchr_in, double PDE_max_in);
+    SiPM(int numMicrocell_in, double vBias_in, double vBr_in, double tauRecovery_in, double digitalThreshold_in, double ccell_in, double Vchr_in, double PDE_max1_in, double PDE_max2_in);
 
     SiPM(std::vector<double> svars);
 
@@ -53,15 +54,15 @@ public:
 
     ~SiPM();
 
-    inline double pde_from_volt(double overvoltage);
+    inline double pde1_from_volt(double overvoltage);
+    inline double pde2_from_volt(double overvoltage);
 
-    inline double pde_from_time(double time);
+    inline double pde1_from_time(double time);
+    inline double pde2_from_time(double time);
 
     inline double volt_from_time(double time);
 
-    std::vector<double> simulate(std::vector<double> light, bool silent);
-
-    std::vector<double> simulate_full(std::vector<double> light);
+    std::vector<double> simulate(std::vector<double> light, std::vector<double> light2, bool silent);
 
     std::vector<double> shape_output(std::vector<double> inputVec);
 
@@ -79,11 +80,9 @@ private:
 
     int unif_rand_int(int a, int b);
 
-    void init_spads(std::vector<double> light);
+    void init_spads(std::vector<double> light1, std::vector<double> light2);
 
-    double selective_recharge_illuminate_LUT(double photonsPerDt);
-
-    double recharge_illuminate(double photonsPerSecond);
+    double selective_recharge_illuminate_LUT(double photonsPerDt1, double photonsPerDt2);
 
     void print_progress(double percentage) const;
 
@@ -91,12 +90,14 @@ private:
 
     int LUTSize;
     double *tVecLUT;
-    double *pdeVecLUT;
+    double *pde1VecLUT;
+    double *pde2VecLUT;
     double *vVecLUT;
 
     void precalculate_LUT(void);
 
-    double pde_LUT(double x) const;
+    double pde1_LUT(double x) const;
+    double pde2_LUT(double x) const;
 
     double volt_LUT(double x) const;
 
