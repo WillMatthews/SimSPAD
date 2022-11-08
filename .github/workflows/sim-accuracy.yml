@@ -30,17 +30,11 @@ jobs:
       - name: ls directory
         run: ls -al
 
-      - name: cd build
-        run: cd build
+      - name: ls directory
+        run: ls -al ./build/
 
       - name: ls directory
-        run: ls -al
-
-      - name: cd apps
-        run: cd apps
-
-      - name: ls directory
-        run: ls -al
+        run: ls -al ./build/apps
 
       - name: Run Accuracy and Performance Tests
         run: ./build/apps/test
