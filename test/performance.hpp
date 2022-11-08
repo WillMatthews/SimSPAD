@@ -24,7 +24,7 @@
 #include "../src/utilities.hpp"
 
 #define BARS 108
-#define MACHINE_SPEED_RATIO 1.5
+#define MACHINE_SPEED_RATIO 2
 
 using namespace std;
 
