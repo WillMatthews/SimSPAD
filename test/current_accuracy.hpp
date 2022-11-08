@@ -36,7 +36,6 @@ double ibias_check(SiPM sipm, double photonsPerDt)
 
     vector<double> out = {};
 
-    auto start = chrono::steady_clock::now();
     bool silence = true;
     out = sipm.simulate(in, silence);
 
@@ -44,7 +43,7 @@ double ibias_check(SiPM sipm, double photonsPerDt)
     int discard = (int)10 * (sipm.tauRecovery / sipm.dt);
 
     double sumOut = 0;
-    for (int i = discard; i < out.size(); i++)
+    for (int i = discard; i < (int)out.size(); i++)
     {
         sumOut += out[i];
     }

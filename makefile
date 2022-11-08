@@ -54,7 +54,10 @@ info:
 	@echo "[*] Objects:			${OBJECTS}	   "
 	@echo "[*] Dependencies:	${DEPENDENCIES}"
 
-server: ./src/server.cpp #./src/sipm.cpp ./src/utilities.cpp
+test: ./test/test.cpp ./test/performance.hpp ./test/current_accuracy.hpp ./src/sipm.cpp ./src/utilities.cpp
+	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/test ./test/test.cpp ./src/sipm.cpp ./src/utilities.cpp
+
+server: ./src/server.cpp ./src/sipm.cpp ./src/utilities.cpp
 	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/$(TARGET_SERVER) ./src/server.cpp ./src/sipm.cpp ./src/utilities.cpp
 
 simspad: ./src/main.cpp ./src/sipm.cpp ./src/utilities.cpp
