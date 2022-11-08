@@ -51,7 +51,7 @@ double ibias_check(SiPM sipm, double photonsPerDt)
     double current_val;
     wstring current_prefix;
     tie(current_prefix, current_val) = exponent_val(Ibias);
-    wcout << "Simulated Ibias:\t" << current_val << current_prefix << "A";
+    wcout << L"Simulated Ibias:\t" << current_val << current_prefix << L"A";
 
     return Ibias;
 }
@@ -117,19 +117,19 @@ bool TEST_currents()
             tie(irrad_prefix, irrad_val) = exponent_val(irradiances[i]);
             tie(expected_current_prefix, expected_current_val) = exponent_val(expected_currents[j][i]);
 
-            wcout << "405nm Irradiance: " << irrad_val << irrad_prefix << "W/m2   \tExpected Ibias: "
-                  << expected_current_val << expected_current_prefix << "A      \t";
+            wcout << L"405nm Irradiance: " << irrad_val << irrad_prefix << L"W/m2   \tExpected Ibias: "
+                  << expected_current_val << expected_current_prefix << L"A      \t";
 
             current = ibias_check(sipm, photonsPerDt);
             testCurrent = expected_currents[j][i];
 
             if ((current >= testCurrent * bounds[0]) & (current <= testCurrent * bounds[1]))
             {
-                wcout << "      \tPASS" << endl;
+                wcout << L"      \tPASS" << endl;
             }
             else
             {
-                wcout << "      \tFAIL" << endl;
+                wcout << L"      \tFAIL" << endl;
                 passed = false;
             }
         }

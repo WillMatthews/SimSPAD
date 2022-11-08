@@ -69,15 +69,15 @@ bool TEST_performance()
     {
         runtime = speed_measure(photonsPerDt[i]);
         tie(runtime_prefix, runtime_val) = exponent_val(runtime);
-        wcout << "Photons per dt: " << photonsPerDt[i] << "\t" << runtime_val << runtime_prefix << "s/(μcell dt)"
-              << "\t";
+        wcout << L"Photons per dt: " << photonsPerDt[i] << L"\t" << runtime_val << runtime_prefix << L"s/(μcell dt)"
+              << L"\t";
         if (runtime < expected_runtimes[i] * MACHINE_SPEED_RATIO)
         {
-            cout << "PASS" << endl;
+            wcout << "PASS" << endl;
         }
         else
         {
-            cout << "FAIL" << endl;
+            wcout << "FAIL" << endl;
             passed = false;
         }
     }

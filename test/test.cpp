@@ -27,9 +27,13 @@ int main()
     unsigned int time_ui = static_cast<unsigned int>(time(NULL));
     srand(time_ui);
 
-    // ios::sync_with_stdio(0);
-    // cin.tie(0);
-    // wcin.tie(0);
+    ios::sync_with_stdio(false);
+    cin.tie(NULL);
+    wcin.tie(NULL);
+
+    locale::global(locale("en_US.utf8"));
+    cout.imbue(locale());
+    wcout.imbue(locale());
 
     bool passed = true;
 
