@@ -6,33 +6,61 @@ import numpy as np
 
 # Simulate a SiPM
 dt = 1E-11
-numMicrocell = 14410
-vBias = 27.5
-vBr = 24.5
-tauRecovery = 2.2*14E-9
-pdeMax1 = 0.46
-pdeMax2 = 0.05
-vChr = 2.04
-cCell = 4.6E-14
-tauFwhm = 1.5E-9
-digitalThreshold = 0
 
-j30020 = simspad.SiPM(dt, numMicrocell, vBias, vBr, tauRecovery,
-                      pdeMax1, pdeMax2, vChr, cCell, tauFwhm, digitalThreshold)
 
-samples = 100
-optical_input1 = [10 * (abs(x-samples/2)/samples/2) for x in range(samples)]
-optical_input2 = [90 * (abs(x-samples/2)/samples/2) for x in range(samples)]
+# https://www.onsemi.com/pdf/datasheet/microj-series-d.pdf
+JnumMicrocell = 14410
+JvBias = 27.5
+JvBr = 24.5
+JtauRecovery = 2.2*14E-9
+JpdeMax1 = 0.46/0.37 * 0.37 # 405nm
+JpdeMax2 = 0.46/0.37 * 0.1 # 650nm
+JvChr = 2.04
+JcCell = 4.6E-14
+JtauFwhm = 1.5E-9
+JdigitalThreshold = 0
+
+J30020 = simspad.SiPM(dt, JnumMicrocell, JvBias, JvBr, JtauRecovery,
+                      JpdeMax1, JpdeMax2, JvChr, JcCell, JtauFwhm, JdigitalThreshold)
+
+
+# https://www.onsemi.com/pdf/datasheet/microrb-series-d.pdf
+RBnumMicrocell = 1590
+RBvBias = 27.5
+RBvBr = 24.5
+RBtauRecovery = 2.2*21E-9
+RBpdeMax1 = 0.46/0.37 * 0.1  # 405nm, approximate
+RBpdeMax2 = 0.46/0.37 * 0.27 # 650nm
+RBvChr = 2.04
+RBcCell = 4.6E-14 # unknown
+RBtauFwhm = 2.0E-9
+RBdigitalThreshold = 0
+
+RB10020 = simspad.SiPM(dt, RBnumMicrocell, RBvBias, RBvBr, RBtauRecovery,
+                      RBpdeMax1, RBpdeMax2, RBvChr, RBcCell, RBtauFwhm, RBdigitalThreshold)
+
+
+samples = 10000
+
+optical_input1 = [4 * (abs(x-samples/2)/(samples/2)) for x in range(samples)]
+optical_input2 = [10 * (1-abs(x-samples/2)/(samples/2)) for x in range(samples)]
+
 simulator_url = "http://localhost:33232/simspad"
 
-response = j30020.simulate_web(simulator_url, optical_input1, optical_input2)
+responseJ  =  J30020.simulate_web(simulator_url, optical_input1, optical_input2)
+
+area_ratio = 9
+optical_input1 = [o/area_ratio for o in optical_input1]
+optical_input2 = [o/area_ratio for o in optical_input2]
+
+responseRB = RB10020.simulate_web(simulator_url, optical_input1, optical_input2)
 N = 200
 
-#response = np.convolve(response, np.ones(N)/N, mode='valid')
-print(response)
-print(sum(response))
+responseJ = np.convolve(responseJ, np.ones(N)/N, mode='valid')
+responseRB = np.convolve(responseRB, np.ones(N)/N, mode='valid')
 
-time = np.arange(0, (len(response)) * j30020.dt, j30020.dt)
+time = np.arange(0, (len(responseJ)) * J30020.dt, J30020.dt)
 
-#plt.plot(time, response)
-#plt.show()
+plt.plot(time, responseJ)
+plt.plot(time, responseRB)
+plt.show()
