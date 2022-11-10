@@ -259,6 +259,10 @@ double SiPM::selective_recharge_illuminate_LUT(double T, double photonsPerDt)
 
     for (auto &i : struckMicrocells)
     {
+        if (T == microcellTimes[i])
+        {
+            continue;
+        }
         if (unif_rand_double(0, 1) < (pde_LUT(T - microcellTimes[i])))
         {
             volt = volt_LUT(T - microcellTimes[i]);
