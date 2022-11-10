@@ -123,22 +123,17 @@ bool TEST_currents()
             current = ibias_check(sipm, photonsPerDt);
             testCurrent = expected_currents[j][i];
 
-            if ((current >= testCurrent * bounds[0]) & (current <= testCurrent * bounds[1]))
-            {
-                wcout << L"      \tPASS" << endl;
-            }
-            else
-            {
-                wcout << L"      \tFAIL" << endl;
-                passed = false;
-            }
+            passed = ((current >= testCurrent * bounds[0]) & (current <= testCurrent * bounds[1]));
+            wstring outstring = passed ? L"      \t\033[32;49;1mPASS\033[0m" : L"      \t\033[31;49;1mFAIL\033[0m";
+            wcout << outstring << endl;
         }
     }
 
-    string outStatus = passed ? "PASS\n" : "FAIL\n";
-    cout << BAR_STRING << endl;
+    string prefix = passed ? "\033[32;49;1m" : "\033[31;49;1m";
+    string outStatus = passed ? "PASS\n" : "FAIL\a\n";
+    cout << prefix << BAR_STRING << endl;
     cout << "TEST " << outStatus;
     cout << "END TEST: SiPM Nonlinearity and Bias Current Accuracy" << endl;
-    cout << BAR_STRING << endl;
+    cout << BAR_STRING << "\033[0m" << endl;
     return passed;
 }

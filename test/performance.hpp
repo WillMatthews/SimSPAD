@@ -71,22 +71,17 @@ bool TEST_performance()
         tie(runtime_prefix, runtime_val) = exponent_val(runtime);
         wcout << L"Photons per dt: " << photonsPerDt[i] << L"\t" << runtime_val << runtime_prefix << L"s/(μcell dt)"
               << L"\t";
-        if (runtime < expected_runtimes[i] * MACHINE_SPEED_RATIO)
-        {
-            wcout << "PASS" << endl;
-        }
-        else
-        {
-            wcout << "FAIL" << endl;
-            passed = false;
-        }
+        passed = (runtime < expected_runtimes[i] * MACHINE_SPEED_RATIO);
+        wstring outstring = passed ? L"\033[32;49;1mPASS\033[0m" : L"\033[31;49;1mFAIL\033[0m";
+        wcout << outstring << endl;
     }
 
-    string outStatus = passed ? "PASS\n" : "FAIL\n";
-    cout << BAR_STRING << endl;
+    string prefix = passed ? "\033[32;49;1m" : "\033[31;49;1m";
+    string outStatus = passed ? "PASS\n" : "FAIL\a\n";
+    cout << prefix << BAR_STRING << endl;
     cout << "TEST " << outStatus;
     cout << "END TEST: SiPM Nonlinearity and Bias Current Accuracy" << endl;
-    cout << BAR_STRING << endl;
+    cout << BAR_STRING << "\033[0m" << endl;
 
     return passed;
 }
