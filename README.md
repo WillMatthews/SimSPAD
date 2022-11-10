@@ -3,7 +3,7 @@
 ![logo](https://github.com/WillMatthews/SimSPAD/blob/master/doc/img/simspad_logo.svg)
 
 A high performance avalanche multiplication based optical receiver simulator.
-Version 0.1
+Version 0.2.0
 
 [![Build](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml)
 [![Simulator Tests](https://github.com/WillMatthews/SimSPAD/actions/workflows/sim-accuracy.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/sim-accuracy.yml)
