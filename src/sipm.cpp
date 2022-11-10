@@ -133,6 +133,7 @@ vector<double> SiPM::simulate(vector<double> light, bool silent)
     vector<double> qFired = {};
     double percentDone;
     double l;
+    double T = 0;
     init_spads(light);
     // O(light.size()* numMicrocell)
     for (int i = 0; i < (int)light.size(); i++)
@@ -147,7 +148,8 @@ vector<double> SiPM::simulate(vector<double> light, bool silent)
         {
             l = 0;
         }
-        qFired.push_back(selective_recharge_illuminate_LUT(l));
+        qFired.push_back(selective_recharge_illuminate_LUT(T, l));
+        T += dt;
     }
     return qFired;
 }
@@ -227,11 +229,11 @@ void SiPM::init_spads(vector<double> light)
     // randomly sample
     for (int i = 0; (int)i < numMicrocell; i++)
     {
-        microcellTimes[i] = expDistribution(exponentialEngine);
+        microcellTimes[i] = -expDistribution(exponentialEngine);
     }
 }
 
-double SiPM::selective_recharge_illuminate_LUT(double photonsPerDt)
+double SiPM::selective_recharge_illuminate_LUT(double T, double photonsPerDt)
 {
     double output = 0;
     double volt = 0;
@@ -248,17 +250,23 @@ double SiPM::selective_recharge_illuminate_LUT(double photonsPerDt)
     }
 
     // recharge all microcells
+    /*
     for (int i = 0; i < numMicrocell; i++)
     {
         microcellTimes[i] += dt;
     }
+    */
 
     for (auto &i : struckMicrocells)
     {
-        if (unif_rand_double(0, 1) < (pde_LUT(microcellTimes[i])))
+        if (T == microcellTimes[i])
         {
-            volt = volt_LUT(microcellTimes[i]);
-            microcellTimes[i] = 0;
+            continue;
+        }
+        if (unif_rand_double(0, 1) < (pde_LUT(T - microcellTimes[i])))
+        {
+            volt = volt_LUT(T - microcellTimes[i]);
+            microcellTimes[i] = T;
             if (volt > digitalThreshold * vOver)
             {
                 output += volt * cCell;

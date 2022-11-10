@@ -37,8 +37,8 @@ int main()
 
     bool passed = true;
 
-    passed = passed && TEST_currents();
     passed = passed && TEST_performance();
+    passed = passed && TEST_currents();
 
     if (passed)
     {

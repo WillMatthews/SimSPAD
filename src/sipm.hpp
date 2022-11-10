@@ -81,7 +81,7 @@ private:
 
     void init_spads(std::vector<double> light);
 
-    double selective_recharge_illuminate_LUT(double photonsPerDt);
+    double selective_recharge_illuminate_LUT(double T, double photonsPerDt);
 
     double recharge_illuminate(double photonsPerSecond);
 
