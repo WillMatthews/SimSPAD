@@ -124,8 +124,8 @@ bool TEST_currents()
             testCurrent = expected_currents[j][i];
 
             passed = ((current >= testCurrent * bounds[0]) & (current <= testCurrent * bounds[1]));
-            wstring outstring = passed ? L"      \t\033[32;49;1mPASS\033[0m" : L"      \t\033[31;49;1mFAIL\033[0m";
-            wcout << outstring << endl;
+            wstring outString = passed ? L"      \t\033[32;49;1mPASS\033[0m" : L"      \t\033[31;49;1mFAIL\033[0m";
+            wcout << outString << endl;
         }
     }
 
