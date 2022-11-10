@@ -26,9 +26,3 @@ jobs:
 
       - name: Make Test
         run: make test
-
-      - name: ls directory
-        run: ls -al ./build/apps
-
-      - name: Run Accuracy and Performance Tests
-        run: ./build/apps/test
