@@ -44,8 +44,8 @@ The simulation was originally written in MATLAB to interface with existing bit e
 
 This is an **experimental work in progress**, and more documentation will follow. This work has been/will be published in:
 
-1. PRIME 2022 (Using Original MATLAB Simulation)
-2. Photonics (Submitted, pending...) (Using Original MATLAB Simulation)
+1. [PRIME 2022: The negative impact of anode resistance on SiPMs as VLC receivers](https://doi.org/10.1109/PRIME55000.2022.9816749)
+2. [MDPI Photonics: An experimental and numerical study of the impact of ambient light of SiPMs in VLC receivers](https://doi.org/10.3390/photonics9120888)
 3. Upcoming Paper (Pending... Equaliser based)
 5. Upcoming Paper (Pending... OFDM based)
 4. My Thesis (Pending...)
