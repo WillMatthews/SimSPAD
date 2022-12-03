@@ -82,7 +82,7 @@ bool TEST_performance()
     string outStatus = passed_all ? "PASS\n" : "FAIL\a\n";
     cout << prefix << BAR_STRING << endl;
     cout << prefix << "TEST " << outStatus;
-    cout << prefix << "END TEST: SiPM Nonlinearity and Bias Current Accuracy" << endl;
+    cout << prefix << "END TEST: SimSPAD Performance" << endl;
     cout << prefix << BAR_STRING << "\033[0m" << endl;
 
     return passed_all;
