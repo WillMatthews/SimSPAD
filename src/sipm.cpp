@@ -110,51 +110,6 @@ SiPM::SiPM() {}
 
 SiPM::~SiPM() {}
 
-void SiPM::input_sanitation()
-{
-    if (dt <= 0)
-    {
-        invalid_argument("dt cannot be less than or equal to zero");
-    }
-    if (numMicrocell <= 0)
-    {
-        invalid_argument("numMicrocell cannot be less than or equal to zero");
-    }
-    if (vOver <= 0)
-    {
-        invalid_argument("Overvoltage cannot be less than or equal to zero");
-    }
-    if (tauRecovery < 0)
-    {
-        invalid_argument("Recovery time constant cannot be less than zero");
-    }
-    if (pdeMax <= 0)
-    {
-        invalid_argument("PDEmax constant cannot be less than or equal to zero");
-    }
-    if (pdeMax > 1)
-    {
-        pdeMax = 1;
-        invalid_argument("PDEmax constant cannot be greater than one");
-    }
-    if (vChr <= 0)
-    {
-        invalid_argument("PDE characteristic voltage cannot be less than or equal to zero");
-    }
-    if (cCell <= 0)
-    {
-        invalid_argument("Microcell capacitance cannot be less than or equal to zero");
-    }
-    /* if (tauFwhm <= 0)
-    {
-        invalid_argument("Output pulse width cannot be less than or equal to zero");
-    }*/
-    if (digitalThreshold <= 0)
-    {
-        invalid_argument("Digital Threshold cannot be less than or equal to zero");
-    }
-}
-
 // convert overvoltage to PDE
 inline double SiPM::pde_from_volt(double overvoltage)
 {
@@ -228,6 +183,13 @@ vector<double> SiPM::simulate_full(vector<double> light)
         qFired.push_back(recharge_illuminate(l));
     }
     return qFired;
+}
+
+vector<double> SiPM::shape_output(vector<double> inputVec)
+{
+    vector<double> kernel = get_gaussian(dt, tauFwhm);
+
+    return conv1d(inputVec, kernel);
 }
 
 // randomly seed engines
@@ -409,11 +371,50 @@ void SiPM::test_rand_funcs()
     }
 }
 
-vector<double> SiPM::shape_output(vector<double> inputVec)
+// Input Sanitation Checks - currently just throws exceptions!
+void SiPM::input_sanitation()
 {
-    vector<double> kernel = get_gaussian(dt, tauFwhm);
-
-    return conv1d(inputVec, kernel);
+    if (dt <= 0)
+    {
+        invalid_argument("dt cannot be less than or equal to zero");
+    }
+    if (numMicrocell <= 0)
+    {
+        invalid_argument("numMicrocell cannot be less than or equal to zero");
+    }
+    if (vOver <= 0)
+    {
+        invalid_argument("Overvoltage cannot be less than or equal to zero");
+    }
+    if (tauRecovery < 0)
+    {
+        invalid_argument("Recovery time constant cannot be less than zero");
+    }
+    if (pdeMax <= 0)
+    {
+        invalid_argument("PDEmax constant cannot be less than or equal to zero");
+    }
+    if (pdeMax > 1)
+    {
+        pdeMax = 1;
+        invalid_argument("PDEmax constant cannot be greater than one");
+    }
+    if (vChr <= 0)
+    {
+        invalid_argument("PDE characteristic voltage cannot be less than or equal to zero");
+    }
+    if (cCell <= 0)
+    {
+        invalid_argument("Microcell capacitance cannot be less than or equal to zero");
+    }
+    /* if (tauFwhm <= 0)
+    {
+        invalid_argument("Output pulse width cannot be less than or equal to zero");
+    }*/
+    if (digitalThreshold <= 0)
+    {
+        invalid_argument("Digital Threshold cannot be less than or equal to zero");
+    }
 }
 
 //// LOOKUP TABLE PARAMS AND FUNCTIONS
@@ -453,16 +454,21 @@ double SiPM::LUT(double x, double *workingVector) const
     int i;
     double dx, dy;
 
+    // this check first - Microcell more likely to be recharged under low arrival rate scenarios
     if (x > xs[count - 1])
     {
         return ys[count - 1]; // return maximum
     }
+    /*
+    // Impossible to enter this region of LUT - time vector starts at zero
+    // no negative time in simulation!
     if (x < xs[0])
     {
         // x is less than the minimum element
         //  handle error here if you want
         return ys[0]; // return minimum element
     }
+    */
     // find i, such that xs[i] <= x < xs[i+1]
     for (i = 0; i < count - 1; i++)
     {
@@ -471,7 +477,7 @@ double SiPM::LUT(double x, double *workingVector) const
             break;
         }
     }
-    // o.t.w. interpolate
+    // interpolate in the region of the LUT where xs[i] <= x < xs[i+1]
     dx = xs[i + 1] - xs[i];
     dy = ys[i + 1] - ys[i];
     return ys[i] + (x - xs[i]) * dy / dx;

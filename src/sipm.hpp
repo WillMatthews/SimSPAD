@@ -89,12 +89,12 @@ private:
 
     void test_rand_funcs();
 
+    void input_sanitation(void);
+
     int LUTSize;
     double *tVecLUT;
     double *pdeVecLUT;
     double *vVecLUT;
-
-    void input_sanitation(void);
 
     void precalculate_LUT(void);
 
