@@ -453,15 +453,15 @@ double SiPM::LUT(double x, double *workingVector) const
     int i;
     double dx, dy;
 
+    if (x > xs[count - 1])
+    {
+        return ys[count - 1]; // return maximum
+    }
     if (x < xs[0])
     {
         // x is less than the minimum element
         //  handle error here if you want
         return ys[0]; // return minimum element
-    }
-    if (x > xs[count - 1])
-    {
-        return ys[count - 1]; // return maximum
     }
     // find i, such that xs[i] <= x < xs[i+1]
     for (i = 0; i < count - 1; i++)
