@@ -71,7 +71,7 @@ private:
 
     std::mt19937_64 poissonEngine;
     std::mt19937_64 unifRandomEngine;
-    std::mt19937_64 exponentialEngine;
+    std::mt19937_64 renewalEngine;
     std::uniform_real_distribution<double> unif;
 
     void seed_engines(void);

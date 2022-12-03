@@ -198,7 +198,7 @@ void SiPM::seed_engines()
 {
     poissonEngine.seed(random_device{}());
     unifRandomEngine.seed(random_device{}());
-    exponentialEngine.seed(random_device{}());
+    renewalEngine.seed(random_device{}());
 }
 
 // random double between range a and b
@@ -265,7 +265,7 @@ void SiPM::init_spads(vector<double> light) // inclusion adds ~ 35ps/ucell dt in
     // randomly sample this distribution
     for (int i = 0; (int)i < numMicrocell; i++)
     {
-        microcellTimes[i] = -d(exponentialEngine); // negative as in the past - before simulation has begun
+        microcellTimes[i] = -d(renewalEngine); // negative as in the past - before simulation has begun
     }
 }
 
