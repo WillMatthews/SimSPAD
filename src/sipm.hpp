@@ -22,6 +22,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <algorithm>
 #include <random>
 
 // Progress bar defines
@@ -103,6 +104,8 @@ private:
     double volt_LUT(double x) const;
 
     double LUT(double x, double *workingVector) const;
+
+    double trapezoidal(double (SiPM::*f)(double), double lower, double upper, int n);
 };
 
 #endif // SIPM_H

@@ -44,8 +44,12 @@ std::vector<double> linspace(T start_in, T end_in, int num_in);
 
 void print_vector(std::vector<double> vec);
 
-double trapezoidal(int (*f)(double), double lower, double upper, int n);
+// double trapezoidal(double (*f)(double), double lower, double upper, int n);
 
-double trapezoidal(vector<double> f, double t);
+double trapezoidal(std::vector<double> f, double t);
+
+std::vector<double> cum_trapezoidal(double (*f)(double), double lower, double upper, int n);
+
+std::vector<double> cum_trapezoidal(std::vector<double> f, double dx);
 
 #endif // UTILITIES_H

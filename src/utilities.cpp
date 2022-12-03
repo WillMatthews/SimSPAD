@@ -262,10 +262,10 @@ void print_vector(vector<double> vec)
 
 // trapezoidally integrate function f which takes a single double type argument
 // between lower and upper with n points
-double trapezoidal(int (*f)(double), double lower, double upper, int n)
+/* double trapezoidal(double (*f)(double), double lower, double upper, int n)
 {
-    double s = f(lower) + f(upper); // beginning and end add to formula
     double dx = (upper - lower) / n;
+    double s = f(lower) + f(upper); // beginning and end add to formula
 
     for (int i = 1; i < (n - 1); i++)
     {
@@ -273,14 +273,50 @@ double trapezoidal(int (*f)(double), double lower, double upper, int n)
     }
     return dx * s / 2;
 }
+*/
 
 // trapezoidally integrate vector f with spacing dx
 double trapezoidal(vector<double> f, double dx)
 {
     double s = f[0] + f[f.size() - 1]; // beginning and end add to formula
-    for (int i = 1; i < (f.size() - 1); i++)
+    for (int i = 1; i < (int)(f.size() - 1); i++)
     {
         s += 2 * f[i];
     }
     return dx * s / 2;
+}
+
+// cumunulatively trapezoidally integrate function f which takes a single double type argument
+// between lower and upper with n points
+vector<double> cum_trapezoidal(double (*f)(double), double lower, double upper, int n)
+{
+    double dx = (upper - lower) / n;
+    double s = f(lower) * dx / 2; // beginning and end add to formula
+    vector<double> result;
+    result.push_back(s);
+
+    for (int i = 1; i < (n - 1); i++)
+    {
+        s += 2 * f(lower + i * dx) * dx / 2;
+        result.push_back(s);
+    }
+    s += f(upper) * dx / 2;
+    result.push_back(s);
+    return result;
+}
+
+// trapezoidally integrate vector f with spacing dx
+vector<double> cum_trapezoidal(vector<double> f, double dx)
+{
+    double s = f[0] * dx / 2; // beginning and end add to formula
+    vector<double> result;
+    result.push_back(s);
+    for (int i = 1; i < (int)(f.size() - 1); i++)
+    {
+        s += 2 * f[i] * dx / 2;
+        result.push_back(s);
+    }
+    s += f[f.size() - 1] * dx / 2;
+    result.push_back(s);
+    return result;
 }

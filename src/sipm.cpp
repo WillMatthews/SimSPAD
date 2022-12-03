@@ -19,6 +19,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <algorithm>
 #include <random>
 #include "utilities.hpp"
 
@@ -230,32 +231,36 @@ void SiPM::init_spads(vector<double> light)
         meanInPhotonsDt = 1 / (double)light.size();
     }
 
-    // Define and generate distribution (use piecewise linear as an approximation)
-
-    // p_t(t) provides the approximation of \frac{1}{t} \int_0^t pde(t) dt
-    auto p_t = [this](double t)
-    {
-        vector<double> T = linspace<double>(0, t, 1000); // how many elements are needed?
-        double dx = T[1] - T[0];
-        double p_x = 0;
-
-        p_x += pde_from_time(0) + pde_from_time(T[T.size() - 1]); // maybe change to LUT?
-        p_x *= (1 / t);                                           // distribution
-        return p_x;
-    };
+    // Define and generate Inter-Detection distribution
 
     // Generate rate parameter for arriving photons
     double lambda = meanInPhotonsDt / (dt * numMicrocell);
-    double tmax = 100E-9; // how to I estimate a good tmax?
+    double tmax = tauRecovery * 20; // how to I estimate a good tmax?
+    int nIntegralPDE = 200;         // how many elements are needed? TODO remove this magic number
+    int nPDF = 1500;                // how many elements are needed? TODO remove this magic number
 
-    vector<double> T = linspace<double>(0, tmax, 10000);
-    vector<double> weights;
-    for (auto &t : T)
+    vector<double> f_t;
+    vector<double> T;
+    for (int i = 0; i < nPDF; i++)
     {
-        weights.push_back(pde_from_time(t) * lambda * exp(-lambda * t * p_t(t)));
+        double t = i * tmax / (double)nPDF;
+        // p_t(t) provides the approximation of \frac{1}{t} \int_0^t pde(t) dt
+        double p_t = t > 0 ? trapezoidal(&SiPM::pde_from_time, 0.0, t, nIntegralPDE) / t : 0;
+
+        f_t.push_back(pde_from_time(t) * lambda * exp(-lambda * t * p_t));
+        T.push_back(t);
     }
 
-    std::piecewise_constant_distribution<> d(T.begin(), T.end(), weights.begin());
+    // do integration: \int_t^{\infty} f_t(t) dt
+    // As weights are produced for the distribution - we do not need to normalise
+    reverse(f_t.begin(), f_t.end());
+    vector<double> weights = cum_trapezoidal(f_t, T[1] - T[0]);
+    reverse(weights.begin(), weights.end());
+
+    // Generate time since last detection distribution f_x = \frac {\int_t^{\infty} f_t(t) dt} {\int_0^{\infty} \int_t^{\infty} f_t(t) dt dt}
+    // use piecewise linear as an approximation
+    std::piecewise_constant_distribution<>
+        d(T.begin(), T.end(), weights.begin());
 
     // randomly sample this distribution
     for (int i = 0; (int)i < numMicrocell; i++)
@@ -502,4 +507,16 @@ double SiPM::LUT(double x, double *workingVector) const
     dx = xs[i + 1] - xs[i];
     dy = ys[i + 1] - ys[i];
     return ys[i] + (x - xs[i]) * dy / dx;
+}
+
+double SiPM::trapezoidal(double (SiPM::*f)(double), double lower, double upper, int n)
+{
+    double dx = (upper - lower) / n;
+    double s = (this->*f)(lower) + (this->*f)(upper); // beginning and end add to formula
+
+    for (int i = 1; i < (n - 1); i++)
+    {
+        s += 2 * (this->*f)(lower + i * dx);
+    }
+    return dx * s / 2;
 }
