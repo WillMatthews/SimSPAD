@@ -59,9 +59,10 @@ bool TEST_performance()
     cout << BAR_STRING << endl;
 
     vector<double> photonsPerDt = {0, 1, 10, 100, 1000, 10000};
-    vector<double> expected_runtimes = {10e-12, 12e-12, 60e-12, 500e-12, 4e-9, 30e-9};
+    vector<double> expected_runtimes = {50e-12, 50e-12, 80e-12, 500e-12, 4e-9, 30e-9};
     double runtime;
     bool passed = true;
+    bool passed_all = true;
     wstring runtime_prefix;
     double runtime_val;
 
@@ -74,14 +75,15 @@ bool TEST_performance()
         passed = (runtime < expected_runtimes[i] * MACHINE_SPEED_RATIO);
         wstring outString = passed ? L"\033[32;49;1mPASS\033[0m" : L"\033[31;49;1mFAIL\033[0m";
         wcout << outString << endl;
+        passed_all = passed_all & passed;
     }
 
-    string prefix = passed ? "\033[32;49;1m" : "\033[31;49;1m";
-    string outStatus = passed ? "PASS\n" : "FAIL\a\n";
+    string prefix = passed_all ? "\033[32;49;1m" : "\033[31;49;1m";
+    string outStatus = passed_all ? "PASS\n" : "FAIL\a\n";
     cout << prefix << BAR_STRING << endl;
-    cout << "TEST " << outStatus;
-    cout << "END TEST: SiPM Nonlinearity and Bias Current Accuracy" << endl;
-    cout << BAR_STRING << "\033[0m" << endl;
+    cout << prefix << "TEST " << outStatus;
+    cout << prefix << "END TEST: SiPM Nonlinearity and Bias Current Accuracy" << endl;
+    cout << prefix << BAR_STRING << "\033[0m" << endl;
 
-    return passed;
+    return passed_all;
 }

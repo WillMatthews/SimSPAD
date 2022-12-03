@@ -402,23 +402,28 @@ void SiPM::input_sanitation()
 {
     if (dt <= 0)
     {
+        dt = 1E-100;
         invalid_argument("dt cannot be less than or equal to zero");
     }
     if (numMicrocell <= 0)
     {
+        numMicrocell = 1;
         invalid_argument("numMicrocell cannot be less than or equal to zero");
     }
-    if (vOver <= 0)
+    if (vOver < 0)
     {
-        invalid_argument("Overvoltage cannot be less than or equal to zero");
+        vOver = 0;
+        invalid_argument("Overvoltage cannot be less than zero");
     }
     if (tauRecovery < 0)
     {
+        tauRecovery = 0;
         invalid_argument("Recovery time constant cannot be less than zero");
     }
-    if (pdeMax <= 0)
+    if (pdeMax < 0)
     {
-        invalid_argument("PDEmax constant cannot be less than or equal to zero");
+        pdeMax = 0;
+        invalid_argument("PDEmax constant cannot be less than zero");
     }
     if (pdeMax > 1)
     {
@@ -427,19 +432,22 @@ void SiPM::input_sanitation()
     }
     if (vChr <= 0)
     {
+        vChr = 1;
         invalid_argument("PDE characteristic voltage cannot be less than or equal to zero");
     }
-    if (cCell <= 0)
+    /* if (cCell < 0) // this is fine  - just inverts output
     {
-        invalid_argument("Microcell capacitance cannot be less than or equal to zero");
+        invalid_argument("Microcell capacitance cannot be less than zero");
     }
-    /* if (tauFwhm <= 0)
+    */
+    /* if (tauFwhm <= 0) // not yet implemented
     {
         invalid_argument("Output pulse width cannot be less than or equal to zero");
     }*/
-    if (digitalThreshold <= 0)
+    if (digitalThreshold < 0)
     {
-        invalid_argument("Digital Threshold cannot be less than or equal to zero");
+        digitalThreshold = 0;
+        invalid_argument("Digital Threshold cannot be less than zero");
     }
 }
 
