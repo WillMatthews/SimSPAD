@@ -51,6 +51,7 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vBr_in, double tauRecove
 
     seed_engines();
     precalculate_LUT();
+    input_sanitation();
 }
 
 SiPM::SiPM(int numMicrocell_in, double vbias_in, double vBr_in, double tauRecovery_in,
@@ -76,6 +77,7 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vBr_in, double tauRecove
 
     seed_engines();
     precalculate_LUT();
+    input_sanitation();
 }
 
 SiPM::SiPM(vector<double> svars)
@@ -101,11 +103,57 @@ SiPM::SiPM(vector<double> svars)
 
     seed_engines();
     precalculate_LUT();
+    input_sanitation();
 }
 
 SiPM::SiPM() {}
 
 SiPM::~SiPM() {}
+
+void SiPM::input_sanitation()
+{
+    if (dt <= 0)
+    {
+        invalid_argument("dt cannot be less than or equal to zero");
+    }
+    if (numMicrocell <= 0)
+    {
+        invalid_argument("numMicrocell cannot be less than or equal to zero");
+    }
+    if (vOver <= 0)
+    {
+        invalid_argument("Overvoltage cannot be less than or equal to zero");
+    }
+    if (tauRecovery < 0)
+    {
+        invalid_argument("Recovery time constant cannot be less than zero");
+    }
+    if (pdeMax <= 0)
+    {
+        invalid_argument("PDEmax constant cannot be less than or equal to zero");
+    }
+    if (pdeMax > 1)
+    {
+        pdeMax = 1;
+        invalid_argument("PDEmax constant cannot be greater than one");
+    }
+    if (vChr <= 0)
+    {
+        invalid_argument("PDE characteristic voltage cannot be less than or equal to zero");
+    }
+    if (cCell <= 0)
+    {
+        invalid_argument("Microcell capacitance cannot be less than or equal to zero");
+    }
+    /* if (tauFwhm <= 0)
+    {
+        invalid_argument("Output pulse width cannot be less than or equal to zero");
+    }*/
+    if (digitalThreshold <= 0)
+    {
+        invalid_argument("Digital Threshold cannot be less than or equal to zero");
+    }
+}
 
 // convert overvoltage to PDE
 inline double SiPM::pde_from_volt(double overvoltage)
@@ -373,7 +421,7 @@ vector<double> SiPM::shape_output(vector<double> inputVec)
 void SiPM::precalculate_LUT(void)
 {
     const int numPoints = (int)LUTSize;
-    const double maxTime = 5.3 * tauRecovery;
+    const double maxTime = tauRecovery > 0 ? 5.3 * tauRecovery : 1E-9;
     const double ddt = (double)maxTime / numPoints;
     for (int i = 0; i < numPoints; i++)
     {

@@ -94,6 +94,8 @@ private:
     double *pdeVecLUT;
     double *vVecLUT;
 
+    void input_sanitation(void);
+
     void precalculate_LUT(void);
 
     double pde_LUT(double x) const;
