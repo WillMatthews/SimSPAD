@@ -217,7 +217,7 @@ int SiPM::unif_rand_int(int a, int b)
 
 // Initialises SiPMs based on an exponential distribution.
 // This is definitely wrong - The distribution is more complicated, but this is better than uniform.
-void SiPM::init_spads(vector<double> light)
+void SiPM::init_spads(vector<double> light) // inclusion adds ~ 35ps/ucell dt in SIM
 {
     double meanInPhotonsDt = 0;
     for (auto &a : light)
@@ -398,7 +398,7 @@ void SiPM::test_rand_funcs()
 }
 
 // Input Sanitation Checks - currently just throws exceptions!
-void SiPM::input_sanitation()
+void SiPM::input_sanitation() // inclusion adds ~ 10ps/ucell dt in SIM
 {
     if (dt <= 0)
     {

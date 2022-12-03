@@ -59,7 +59,7 @@ bool TEST_performance()
     cout << BAR_STRING << endl;
 
     vector<double> photonsPerDt = {0, 1, 10, 100, 1000, 10000};
-    vector<double> expected_runtimes = {50e-12, 50e-12, 80e-12, 500e-12, 4e-9, 30e-9};
+    vector<double> expected_runtimes = {10e-12, 12e-12, 60e-12, 500e-12, 4e-9, 30e-9};
     double runtime;
     bool passed = true;
     bool passed_all = true;
