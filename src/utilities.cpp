@@ -88,6 +88,7 @@ void write_binary(string filename, SiPM sipm, vector<double> response)
     sipmParametersVector.push_back(sipm.tauFwhm);
     sipmParametersVector.push_back(sipm.digitalThreshold);
 
+    // concatenate response on the end of SiPM parameters vector
     sipmParametersVector.insert(sipmParametersVector.end(), response.begin(), response.end());
 
     fout.write((char *)(&sipmParametersVector[0]), sizeof(sipmParametersVector) * sipmParametersVector.size());
@@ -209,7 +210,77 @@ void print_info(chrono::duration<double> elapsed, double dt, vector<double> outp
     wcout << "Compute Per uCell Step: " << val << prefix << "s" << endl;
 
     double sumOut = 0;
-    for (auto &a : outputVec){sumOut += a;}
+    for (auto &a : outputVec)
+    {
+        sumOut += a;
+    }
     double Ibias = sumOut / (inputSize * dt);
     cout << "Simulated Ibias:\t" << Ibias * 1E3 << "mA" << endl;
+}
+
+// Linearly space num_in points between values start_in and end_in
+// template removed as I am stupid and keep getting undefined reference errors.
+// template <typename T>
+// vector<double> linspace(T start_in, T end_in, int num_in)
+vector<double> linspace(double start_in, double end_in, int num_in)
+{
+
+    vector<double> linspaced;
+
+    double start = static_cast<double>(start_in);
+    double end = static_cast<double>(end_in);
+    double num = static_cast<double>(num_in);
+
+    if (num == 0)
+    {
+        return linspaced;
+    }
+    if (num == 1)
+    {
+        linspaced.push_back(start);
+        return linspaced;
+    }
+
+    double delta = (end - start) / (num - 1);
+
+    for (int i = 0; i < num - 1; ++i)
+    {
+        linspaced.push_back(start + delta * i);
+    }
+    linspaced.push_back(end); // I want to ensure that start and end
+                              // are exactly the same as the input
+    return linspaced;
+}
+
+void print_vector(vector<double> vec)
+{
+    cout << "size: " << vec.size() << endl;
+    for (double d : vec)
+        cout << d << " ";
+    cout << endl;
+}
+
+// trapezoidally integrate function f which takes a single double type argument
+// between lower and upper with n points
+double trapezoidal(int (*f)(double), double lower, double upper, int n)
+{
+    double s = f(lower) + f(upper); // beginning and end add to formula
+    double dx = (upper - lower) / n;
+
+    for (int i = 1; i < (n - 1); i++)
+    {
+        s += 2 * f(lower + i * dx);
+    }
+    return dx * s / 2;
+}
+
+// trapezoidally integrate vector f with spacing dx
+double trapezoidal(vector<double> f, double dx)
+{
+    double s = f[0] + f[f.size() - 1]; // beginning and end add to formula
+    for (int i = 1; i < (f.size() - 1); i++)
+    {
+        s += 2 * f[i];
+    }
+    return dx * s / 2;
 }

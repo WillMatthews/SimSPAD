@@ -226,20 +226,41 @@ void SiPM::init_spads(vector<double> light)
     meanInPhotonsDt = meanInPhotonsDt / light.size();
     if (meanInPhotonsDt == 0)
     {
-        meanInPhotonsDt = 1E-10; // prevent errors with the exponential distribution generation
+        // prevent errors with distribution generation - assume one photon arriving?
+        meanInPhotonsDt = 1 / (double)light.size();
     }
 
-    // predict PDE - assume each microcell recovers to Vbias
-    double estPde = pdeMax * (1 - exp(-(vBias - vBr) / vChr));
+    // Define and generate distribution (use piecewise linear as an approximation)
 
-    // Generate Distribution and rate parameter
-    double lambda = estPde * meanInPhotonsDt / (dt * numMicrocell);
-    exponential_distribution<double> expDistribution(lambda);
+    // p_t(t) provides the approximation of \frac{1}{t} \int_0^t pde(t) dt
+    auto p_t = [this](double t)
+    {
+        vector<double> T = linspace<double>(0, t, 1000); // how many elements are needed?
+        double dx = T[1] - T[0];
+        double p_x = 0;
 
-    // randomly sample
+        p_x += pde_from_time(0) + pde_from_time(T[T.size() - 1]); // maybe change to LUT?
+        p_x *= (1 / t);                                           // distribution
+        return p_x;
+    };
+
+    // Generate rate parameter for arriving photons
+    double lambda = meanInPhotonsDt / (dt * numMicrocell);
+    double tmax = 100E-9; // how to I estimate a good tmax?
+
+    vector<double> T = linspace<double>(0, tmax, 10000);
+    vector<double> weights;
+    for (auto &t : T)
+    {
+        weights.push_back(pde_from_time(t) * lambda * exp(-lambda * t * p_t(t)));
+    }
+
+    std::piecewise_constant_distribution<> d(T.begin(), T.end(), weights.begin());
+
+    // randomly sample this distribution
     for (int i = 0; (int)i < numMicrocell; i++)
     {
-        microcellTimes[i] = -expDistribution(exponentialEngine);
+        microcellTimes[i] = -d(exponentialEngine); // negative as in the past - before simulation has begun
     }
 }
 
