@@ -211,16 +211,19 @@ void SiPM::init_spads(vector<double> light) // inclusion adds ~ 35ps/ucell dt in
     int nIntegralPDE = 200;         // how many elements are needed? TODO remove this magic number
     int nPDF = 1500;                // how many elements are needed? TODO remove this magic number
 
-    vector<double> f_t;
-    vector<double> T;
-    for (int i = 0; i < nPDF; i++)
-    {
-        double t = i * tmax / (double)nPDF;
-        // p_t(t) provides the approximation of \frac{1}{t} \int_0^t pde(t) dt
-        double p_t = t > 0 ? trapezoidal(&SiPM::pde_from_time, 0.0, t, nIntegralPDE) / t : 0;
+    vector<double> f_t = vector<double>(nPDF, 0.0);
+    vector<double> T = vector<double>(nPDF, 0.0);
+    double t;
+    double p_t;
 
-        f_t.push_back(pde_from_time(t) * lambda * exp(-lambda * t * p_t));
-        T.push_back(t);
+    for (int i = 0; i < nPDF; i++) // this block slows me down
+    {
+        t = i * tmax / (double)nPDF;
+        // p_t(t) provides the approximation of \frac{1}{t} \int_0^t pde(t) dt
+        p_t = t > 0.0 ? trapezoidal(&SiPM::pde_from_time, 0.0, t, nIntegralPDE) / t : 0.0;
+
+        f_t[i] = pde_from_time(t) * lambda * exp(-lambda * t * p_t); // lut replace?
+        T[i] = t;
     }
 
     // do integration: \int_t^{\infty} f_t(t) dt
@@ -293,6 +296,7 @@ void SiPM::print_progress(double percentage) const
     }
 }
 
+/*
 // Sanity check random number generation as used in the program
 void SiPM::test_rand_funcs()
 {
@@ -338,6 +342,7 @@ void SiPM::test_rand_funcs()
         cout << string(p2[i] * numStars / iters, '*') << endl;
     }
 }
+*/
 
 // Input Sanitation Checks - currently just throws exceptions!
 void SiPM::input_sanitation() // inclusion adds ~ 10ps/ucell dt in SIM

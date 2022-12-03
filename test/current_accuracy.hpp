@@ -51,7 +51,7 @@ double ibias_check(SiPM sipm, double photonsPerDt)
     double current_val;
     wstring current_prefix;
     tie(current_prefix, current_val) = exponent_val(Ibias);
-    wcout << L"Simulated Ibias:\t" << current_val << current_prefix << L"A";
+    wcout << L"Simulated Ibias: " << current_val << current_prefix << L"A";
 
     return Ibias;
 }

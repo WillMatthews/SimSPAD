@@ -24,6 +24,7 @@ optical_input = [10 * (abs(x-samples/2)/samples/2) for x in range(samples)]
 simulator_url = "http://localhost:33232/simspad"
 
 for i in range(10):
+    optical_input = [1000 for x in range(samples)]
     response = j30020.simulate_web(simulator_url, optical_input)
     N = 200
 

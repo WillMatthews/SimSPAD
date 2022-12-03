@@ -84,7 +84,7 @@ private:
 
     void print_progress(double percentage) const;
 
-    void test_rand_funcs();
+    // void test_rand_funcs();
 
     void input_sanitation(void);
 
