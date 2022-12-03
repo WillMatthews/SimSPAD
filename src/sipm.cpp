@@ -152,36 +152,8 @@ vector<double> SiPM::simulate(vector<double> light, bool silent)
         {
             l = 0;
         }
-        qFired.push_back(selective_recharge_illuminate_LUT(T, l));
+        qFired.push_back(simulate_microcells(T, l));
         T += dt;
-    }
-    return qFired;
-}
-
-// "Full" simulation function - takes as an argument a 'light' vector
-// "Full" simulation simulates every single microcell rather than using
-// a Poisson PDE to randomly distribute photons. Slow and obsolete.
-// light vector is the expected number of photons to strike the SiPM in simulation time step dt.
-vector<double> SiPM::simulate_full(vector<double> light)
-{
-    vector<double> qFired = {};
-    double l;
-    double percentDone;
-    init_spads(light);
-    // O(light.size()* numMicrocell)
-    for (int i = 0; i < (int)light.size(); i++)
-    {
-        if (i % 100 == 0 || i == ((int)light.size() - 1))
-        {
-            percentDone = (double)i / (double)(light.size() - 1);
-            print_progress(percentDone);
-        }
-        l = light[i];
-        if (l < 0)
-        {
-            l = 0;
-        }
-        qFired.push_back(recharge_illuminate(l));
     }
     return qFired;
 }
@@ -269,7 +241,7 @@ void SiPM::init_spads(vector<double> light) // inclusion adds ~ 35ps/ucell dt in
     }
 }
 
-double SiPM::selective_recharge_illuminate_LUT(double T, double photonsPerDt)
+double SiPM::simulate_microcells(double T, double photonsPerDt)
 {
     double output = 0;
     double volt = 0;
@@ -285,49 +257,19 @@ double SiPM::selective_recharge_illuminate_LUT(double T, double photonsPerDt)
         struckMicrocells.push_back(unif_rand_int(0, numMicrocell));
     }
 
-    // recharge all microcells
-    /*
-    for (int i = 0; i < numMicrocell; i++)
-    {
-        microcellTimes[i] += dt;
-    }
-    */
-
     for (auto &i : struckMicrocells)
     {
-        if (T == microcellTimes[i])
+        if (T == microcellTimes[i]) // if ucell has already been struck, skip it
         {
             continue;
         }
-        if (unif_rand_double(0, 1) < (pde_LUT(T - microcellTimes[i])))
+        if (unif_rand_double(0, 1) < (pde_LUT(T - microcellTimes[i]))) // PDE detection test
         {
-            volt = volt_LUT(T - microcellTimes[i]);
-            microcellTimes[i] = T;
+            volt = volt_LUT(T - microcellTimes[i]); // calculate ucell voltage
+            microcellTimes[i] = T;                  // set detection time
             if (volt > digitalThreshold * vOver)
             {
-                output += volt * cCell;
-            }
-        }
-    }
-    return output;
-}
-
-// "full simulation" - does not use Poisson Stats, approximates with a uniform distribution
-// no lookup table
-double SiPM::recharge_illuminate(double photonsPerDt)
-{
-    double output = 0;
-    double volt = 0;
-    for (int i = 0; i < numMicrocell; i++)
-    {
-        microcellTimes[i] += dt;
-        volt = volt_from_time(microcellTimes[i]);
-        if (unif_rand_double(0, 1) < (pde_from_volt(volt) * (photonsPerDt / numMicrocell)))
-        {
-            microcellTimes[i] = 0;
-            if (volt > digitalThreshold * vOver)
-            {
-                output += volt * cCell;
+                output += volt * cCell; // add to output
             }
         }
     }

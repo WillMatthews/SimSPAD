@@ -62,8 +62,6 @@ public:
 
     std::vector<double> simulate(std::vector<double> light, bool silent);
 
-    std::vector<double> simulate_full(std::vector<double> light);
-
     std::vector<double> shape_output(std::vector<double> inputVec);
 
 private:
@@ -82,9 +80,7 @@ private:
 
     void init_spads(std::vector<double> light);
 
-    double selective_recharge_illuminate_LUT(double T, double photonsPerDt);
-
-    double recharge_illuminate(double photonsPerSecond);
+    double simulate_microcells(double T, double photonsPerDt);
 
     void print_progress(double percentage) const;
 
