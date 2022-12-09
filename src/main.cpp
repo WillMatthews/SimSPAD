@@ -28,8 +28,8 @@
 
 using namespace std;
 
-// create lambda expression for a simulation run (binary in -> binary out).
-// might be helpful if multi-threading in the future
+// Create lambda expression for a simulation run (binary in -> binary out).
+// Might be helpful if multi-threading in the future
 void simulate(string fname_in, string fname_out, bool silence)
 {
     vector<double> out = {};
@@ -41,8 +41,6 @@ void simulate(string fname_in, string fname_out, bool silence)
 
     out = sipm.simulate(in, silence);
 
-    // out = sipm.simulate_full(in);
-    // sipm.test_rand_funcs();
     auto end = chrono::steady_clock::now();
 
     // vector<double> out2 = sipm.shape_output(out);
