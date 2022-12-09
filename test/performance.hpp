@@ -16,6 +16,7 @@
  */
 
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 #include <chrono>
@@ -68,12 +69,15 @@ bool TEST_performance()
     wstring runtime_prefix;
     double runtime_val;
 
+    wcout << fixed;
+    wcout << setprecision(0);
+
     for (int i = 0; i < (int)photonsPerDt.size(); i++)
     {
         runtime = speed_measure(photonsPerDt[i]);
         tie(runtime_prefix, runtime_val) = exponent_val(runtime);
         wcout << L"Photons per dt: " << photonsPerDt[i] << L"\t" << runtime_val << runtime_prefix << L"s/(μcell dt)"
-              << L"\t";
+              << L"  \t";
         passed = (runtime < expected_runtimes[i] * MACHINE_SPEED_RATIO);
         wstring outString = passed ? L"\033[32;49;1mPASS\033[0m" : L"\033[31;49;1mFAIL\033[0m";
         wcout << outString << endl;
