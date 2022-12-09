@@ -43,12 +43,12 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vBr_in, double tauRecove
     vChr = vChr_in;                         // characteristic voltage for PDE-vOver curve
     pdeMax = pdeMax_in;                     // pdeMax characteristic for PDE-vOver curve
 
-    microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live time since last detection vector
+    microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live time of last detection vector
 
-    LUTSize = 20;
-    tVecLUT = new double[LUTSize];
-    pdeVecLUT = new double[LUTSize];
-    vVecLUT = new double[LUTSize];
+    LUTSize = 20;                    // Look Up Table Size
+    tVecLUT = new double[LUTSize];   // Preallocate LUT Time array
+    pdeVecLUT = new double[LUTSize]; // Preallocate LUT PDE array
+    vVecLUT = new double[LUTSize];   // Preallocate LUT Voltage array
 
     seed_engines();
     precalculate_LUT();
@@ -69,12 +69,12 @@ SiPM::SiPM(int numMicrocell_in, double vbias_in, double vBr_in, double tauRecove
     vChr = vChr_in;                         // characteristic voltage for PDE-vOver curve
     pdeMax = pdeMax_in;                     // pdeMax characteristic for PDE-vOver curve
 
-    microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live time since last detection vector
+    microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live time of last detection vector
 
-    LUTSize = 20;
-    tVecLUT = new double[LUTSize];
-    pdeVecLUT = new double[LUTSize];
-    vVecLUT = new double[LUTSize];
+    LUTSize = 20;                    // Look Up Table Size
+    tVecLUT = new double[LUTSize];   // Preallocate LUT Time array
+    pdeVecLUT = new double[LUTSize]; // Preallocate LUT PDE array
+    vVecLUT = new double[LUTSize];   // Preallocate LUT Voltage array
 
     seed_engines();
     precalculate_LUT();
@@ -95,12 +95,12 @@ SiPM::SiPM(vector<double> svars)
     digitalThreshold = svars[9];  // readout threshold (typically 0 for analog)
     vOver = vBias - vBr;          // overvoltage
 
-    microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live time since last detection vector
+    microcellTimes = vector<double>(numMicrocell, 0.0); // microcell live time of last detection vector
 
-    LUTSize = 20;
-    tVecLUT = new double[LUTSize];
-    pdeVecLUT = new double[LUTSize];
-    vVecLUT = new double[LUTSize];
+    LUTSize = 20;                    // Look Up Table Size
+    tVecLUT = new double[LUTSize];   // Preallocate LUT Time array
+    pdeVecLUT = new double[LUTSize]; // Preallocate LUT PDE array
+    vVecLUT = new double[LUTSize];   // Preallocate LUT Voltage array
 
     seed_engines();
     precalculate_LUT();
@@ -109,22 +109,22 @@ SiPM::SiPM(vector<double> svars)
 
 SiPM::SiPM() {}
 
-SiPM::~SiPM() {}
+SiPM::~SiPM() {} // destructor
 
-// convert overvoltage to PDE
+// Convert overvoltage to PDE
 inline double SiPM::pde_from_volt(double overvoltage)
 {
     return pdeMax * (1 - exp(-(overvoltage / vChr)));
 }
 
-// convert time since last detection to PDE
+// Convert time since last detection to PDE
 inline double SiPM::pde_from_time(double time)
 {
     double v = volt_from_time(time);
     return pde_from_volt(v);
 }
 
-// convert time since last detection to microcell voltage
+// Convert time since last detection to microcell voltage
 inline double SiPM::volt_from_time(double time)
 {
     return vOver * (1 - exp(-time / tauRecovery));
@@ -138,7 +138,10 @@ vector<double> SiPM::simulate(vector<double> light, bool silent)
     double percentDone;
     double l;
     double T = 0;
+
+    // Separate out SiPM initialisation? Being integrated it messes with timing.
     init_spads(light);
+
     // O(light.size()* numMicrocell)
     for (int i = 0; i < (int)light.size(); i++)
     {
@@ -147,25 +150,26 @@ vector<double> SiPM::simulate(vector<double> light, bool silent)
             percentDone = (double)i / (double)(light.size() - 1);
             print_progress(percentDone);
         }
-        l = light[i];
-        if (l < 0)
-        {
-            l = 0;
-        }
+
+        // If expected num of photons per bit is negative, set to zero
+        l = light[i] > 0.0 ? light[i] : 0.0;
+
         qFired.push_back(simulate_microcells(T, l));
         T += dt;
     }
     return qFired;
 }
 
+// Shapes the output of the SiPM with a Gaussian pulse
+// Convolves a Gaussian with the output.
 vector<double> SiPM::shape_output(vector<double> inputVec)
 {
     vector<double> kernel = get_gaussian(dt, tauFwhm);
-
     return conv1d(inputVec, kernel);
 }
 
-// randomly seed engines
+// Seed Random Engines
+// TODO improve this code - appears to give the same result for all runs within the same second
 void SiPM::seed_engines()
 {
     poissonEngine.seed(random_device{}());
@@ -173,7 +177,7 @@ void SiPM::seed_engines()
     renewalEngine.seed(random_device{}());
 }
 
-// random double between range a and b
+// Random double between range a and b.
 double SiPM::unif_rand_double(double a, double b)
 {
     return unif(unifRandomEngine) * (b - a) + a;
@@ -188,15 +192,16 @@ int SiPM::unif_rand_int(int a, int b)
 //// SIMULATION METHODS
 
 // Initialises SiPMs based on an exponential distribution.
-// This is definitely wrong - The distribution is more complicated, but this is better than uniform.
+// This is correct for constant photon arrival rates.
+// The true distribution for general input is more complicated and needs investigation.
+// This is run at simulation time.
 void SiPM::init_spads(vector<double> light) // inclusion adds ~ 35ps/ucell dt in SIM
 {
-    double meanInPhotonsDt = 0;
-    for (auto &a : light)
+    double meanInPhotonsDt = 0; // mean number of photons per time step
+    if (!light.empty())
     {
-        meanInPhotonsDt += a;
+        meanInPhotonsDt = reduce(light.begin(), light.end()) / (double)light.size();
     }
-    meanInPhotonsDt = meanInPhotonsDt / light.size();
     if (meanInPhotonsDt == 0)
     {
         // prevent errors with distribution generation - assume one photon arriving?
@@ -204,38 +209,41 @@ void SiPM::init_spads(vector<double> light) // inclusion adds ~ 35ps/ucell dt in
     }
 
     // Define and generate Inter-Detection distribution
-
     // Generate rate parameter for arriving photons
     double lambda = meanInPhotonsDt / (dt * numMicrocell);
     double tmax = tauRecovery * 20; // how to I estimate a good tmax?
     int nIntegralPDE = 200;         // how many elements are needed? TODO remove this magic number
     int nPDF = 1500;                // how many elements are needed? TODO remove this magic number
+    double t;                       // Time
+    double p_t;                     // p_t is the integral of the PDE from 0 to t divided by t
 
+    // Inter detection time PDF
+    // f_t(t) = $pde(t) \lambda exp(-\lambda * t * p_t(t))$
     vector<double> f_t = vector<double>(nPDF, 0.0);
-    vector<double> T = vector<double>(nPDF, 0.0);
-    double t;
-    double p_t;
+    vector<double> T = vector<double>(nPDF, 0.0); // Time vector 1xnPDF
 
     for (int i = 0; i < nPDF; i++) // this block slows me down
     {
         t = i * tmax / (double)nPDF;
-        // p_t(t) provides the approximation of \frac{1}{t} \int_0^t pde(t) dt
+        // p_t(t) provides the approximation of $\frac{1}{t} \int_0^t pde(t) dt$
         p_t = t > 0.0 ? trapezoidal(&SiPM::pde_from_time, 0.0, t, nIntegralPDE) / t : 0.0;
 
-        f_t[i] = pde_from_time(t) * lambda * exp(-lambda * t * p_t); // lut replace?
-        T[i] = t;
+        // calculate the interdetection probability at time t
+        // Do not replace with LUT - solutions appear unstable
+        f_t[i] = pde_from_time(t) * lambda * exp(-lambda * t * p_t);
+        T[i] = t; // populate time vector
     }
 
     // do integration: \int_t^{\infty} f_t(t) dt
     // As weights are produced for the distribution - we do not need to normalise
     reverse(f_t.begin(), f_t.end());
-    vector<double> weights = cum_trapezoidal(f_t, T[1] - T[0]);
+    vector<double> weights = cum_trapezoidal(f_t, T[1] - T[0]); // PDF of time since detection for random stopping time
     reverse(weights.begin(), weights.end());
 
-    // Generate time since last detection distribution f_x = \frac {\int_t^{\infty} f_t(t) dt} {\int_0^{\infty} \int_t^{\infty} f_t(t) dt dt}
+    // Generate time since last detection distribution
+    // $f_x(t) = \frac {\int_t^{\infty} f_t(t) dt} {\int_0^{\infty} \int_t^{\infty} f_t(t) dt dt}$
     // use piecewise linear as an approximation
-    std::piecewise_constant_distribution<>
-        d(T.begin(), T.end(), weights.begin());
+    std::piecewise_constant_distribution<> d(T.begin(), T.end(), weights.begin());
 
     // randomly sample this distribution
     for (int i = 0; (int)i < numMicrocell; i++)
@@ -244,35 +252,37 @@ void SiPM::init_spads(vector<double> light) // inclusion adds ~ 35ps/ucell dt in
     }
 }
 
+// For a single time step, simulate all the microcells in the SiPM detector
+// This function relies on the internal private state microcellTimes, which stores the
+// times when the last detection occured for each microcell.
+// Inputs are the current time T, and the expected number of photons for this time step
+// arriving at the detector
 double SiPM::simulate_microcells(double T, double photonsPerDt)
 {
-    double output = 0;
-    double volt = 0;
+    double output = 0; // output charge for a single time step
+    double volt = 0;   // voltage for microcell
 
     // randomly sample poisson parameter lambda input to generate number of incoming photons
     poisson_distribution<int> distribution(photonsPerDt);
-    int poissonPhotons = distribution(poissonEngine);
+    int poissonPhotons = distribution(poissonEngine); // Number of incident photons
 
-    // generate n random microcells to strike - n random microcells
-    vector<int> struckMicrocells = {}; // DO NOT REPLACE WITH SET! set is too slow.
-    for (int i = 0; (int)i < poissonPhotons; i++)
+    int struck_cell;                         // index of the microcell struck with a photon
+    for (int j = 0; j < poissonPhotons; j++) // for each incident photon...
     {
-        struckMicrocells.push_back(unif_rand_int(0, numMicrocell));
-    }
+        // randomly strike a microcell (obtain the index)
+        struck_cell = unif_rand_int(0, numMicrocell);
 
-    for (auto &i : struckMicrocells)
-    {
-        if (T == microcellTimes[i]) // if ucell has already been struck, skip it
+        if (T == microcellTimes[struck_cell]) // if ucell has already been struck, skip it
         {
             continue;
         }
-        if (unif_rand_double(0, 1) < (pde_LUT(T - microcellTimes[i]))) // PDE detection test
+        if (unif_rand_double(0, 1) < pde_LUT(T - microcellTimes[struck_cell])) // PDE detection test
         {
-            volt = volt_LUT(T - microcellTimes[i]); // calculate ucell voltage
-            microcellTimes[i] = T;                  // set detection time
-            if (volt > digitalThreshold * vOver)
+            volt = volt_LUT(T - microcellTimes[struck_cell]); // calculate ucell voltage
+            microcellTimes[struck_cell] = T;                  // set detection time
+            if (volt > digitalThreshold * vOver)              // digital threshold test
             {
-                output += volt * cCell; // add to output
+                output += volt * cCell; // add fired microcell to output
             }
         }
     }
@@ -400,20 +410,25 @@ void SiPM::input_sanitation() // inclusion adds ~ 10ps/ucell dt in SIM
 
 //// LOOKUP TABLE PARAMS AND FUNCTIONS
 
+// Initialise lookup table for the SiPM being simulated
+// this is run at construction time
 void SiPM::precalculate_LUT(void)
 {
+    // Number of points in lookup table (TODO kill this line?)
     const int numPoints = (int)LUTSize;
+    // Determine the time range of the lookup table
     const double maxTime = tauRecovery > 0 ? 5.3 * tauRecovery : 1E-9;
+    // dt for elements in the lookup table
     const double ddt = (double)maxTime / numPoints;
     for (int i = 0; i < numPoints; i++)
     {
-        tVecLUT[i] = i * ddt;
-        vVecLUT[i] = vOver * (1 - exp(-tVecLUT[i] / tauRecovery));
-        pdeVecLUT[i] = pde_from_volt(vVecLUT[i]);
+        tVecLUT[i] = i * ddt;                                      // Time
+        vVecLUT[i] = vOver * (1 - exp(-tVecLUT[i] / tauRecovery)); // Voltage
+        pdeVecLUT[i] = pde_from_volt(vVecLUT[i]);                  // PDE
     }
 }
 
-// photon detection efficiency as a function of time lookup table
+// Photon detection efficiency as a function of time lookup table
 double SiPM::pde_LUT(double x) const
 {
     return LUT(x, pdeVecLUT);
@@ -425,17 +440,17 @@ double SiPM::volt_LUT(double x) const
     return LUT(x, vVecLUT);
 }
 
-// define a generic lookup table that works on with the time vector
+// Define a generic lookup table that works on with the time vector
 double SiPM::LUT(double x, double *workingVector) const
 {
-    double *xs = tVecLUT;
-    double *ys = workingVector;
-    // number of elements in the array
-    const int count = LUTSize;
-    int i;
-    double dx, dy;
+    double *xs = tVecLUT;       // Precalculated LUT elements
+    double *ys = workingVector; // Precalculated LUT elements
+    const int count = LUTSize;  // Number of elements in the array
+    int i;                      // Index to iterate over
+    double dx, dy;              // Differentials
 
-    // this check first - Microcell more likely to be recharged under low arrival rate scenarios
+    // Check if fully recharge first.
+    // Microcell more likely to be recharged under low arrival rate scenarios
     if (x > xs[count - 1])
     {
         return ys[count - 1]; // return maximum
@@ -450,7 +465,7 @@ double SiPM::LUT(double x, double *workingVector) const
         return ys[0]; // return minimum element
     }
     */
-    // find i, such that xs[i] <= x < xs[i+1]
+    // Find i, such that xs[i] <= x < xs[i+1]
     for (i = 0; i < count - 1; i++)
     {
         if (xs[i + 1] > x)
@@ -464,10 +479,14 @@ double SiPM::LUT(double x, double *workingVector) const
     return ys[i] + (x - xs[i]) * dy / dx;
 }
 
+// Trapezoidal integration of function f between the limits lower and upper, with n points
 double SiPM::trapezoidal(double (SiPM::*f)(double), double lower, double upper, int n)
 {
+    // Step size of integral
     double dx = (upper - lower) / n;
-    double s = (this->*f)(lower) + (this->*f)(upper); // beginning and end add to formula
+
+    // Beginning and end add to formula
+    double s = (this->*f)(lower) + (this->*f)(upper);
 
     for (int i = 1; i < (n - 1); i++)
     {
