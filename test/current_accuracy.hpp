@@ -16,6 +16,7 @@
  */
 
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <string>
 #include <tuple>
@@ -25,7 +26,7 @@
 #include "../src/utilities.hpp"
 #include "../src/constants.hpp"
 
-#define BARS 108
+#define BARS 102
 
 using namespace std;
 
@@ -56,6 +57,9 @@ double ibias_check(SiPM sipm, double photonsPerDt)
     return Ibias;
 }
 
+// Compare experimental results to simulation results for ibias vs irradiance
+// experiments. This test confirms the SiPM has the correct nonlinear response
+// meaning that the simulation is valid
 bool TEST_currents()
 {
     string BAR_STRING(BARS, '=');
@@ -68,13 +72,16 @@ bool TEST_currents()
     vector<string> sipm_names = {};
     vector<double> areas = {};
 
-    double photonsPerDt;
-    double current;
+    double photonsPerDt; // Photons per time step
+    double current;      // SiPM bias current
+    // Tolerance ratios for test Pass
     const double bounds[2] = {0.75, 1.25};
+    // Photon Energy
     const double ePhoton = (speedOfLight * hPlanck) / 405E-9;
     SiPM sipm;
 
     // Test Cases for SiPM Bias Current
+    // Using experimental results to validate the simulator
 
     sipm_names.push_back("J30020 2V Over");
     DUTs.push_back(SiPM(14410, 24.5 + 2, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46)); // J30020
@@ -104,15 +111,16 @@ bool TEST_currents()
 
     wstring irrad_prefix, expected_current_prefix;
     double irrad_val, expected_current_val;
+    wcout << fixed;
+    wcout << setprecision(1);
 
     for (int j = 0; j < (int)DUTs.size(); j++)
     {
         sipm = DUTs[j];
-        sipm.dt = 1E-10;
+        sipm.dt = 1E-10; // Simulation time step
         cout << "********** " << sipm_names[j] << " **********" << endl;
         for (int i = 0; i < (int)irradiances.size(); i++)
         {
-
             photonsPerDt = sipm.dt * irradiances[i] * areas[j] / ePhoton;
 
             tie(irrad_prefix, irrad_val) = exponent_val(irradiances[i]);
@@ -125,9 +133,9 @@ bool TEST_currents()
             testCurrent = expected_currents[j][i];
 
             passed = ((current >= testCurrent * bounds[0]) & (current <= testCurrent * bounds[1]));
-            wstring outString = passed ? L"      \t\033[32;49;1mPASS\033[0m" : L"      \t\033[31;49;1mFAIL\033[0m";
+            wstring outString = passed ? L"    \t\033[32;49;1mPASS\033[0m" : L"      \t\033[31;49;1mFAIL\033[0m";
             wcout << outString << endl;
-            passed_all = passed_all & passed;
+            passed_all = passed_all & passed; // Check if test passed
         }
     }
 

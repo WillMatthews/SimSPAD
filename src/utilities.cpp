@@ -26,7 +26,7 @@
 
 using namespace std;
 
-// load experimental run data from a binary file (packaged from MATLAB)
+// Load experimental run data from a binary file (packaged from MATLAB)
 /*
 FILE FORMAT:
     double dt = x(0);
@@ -64,7 +64,7 @@ tuple<vector<double>, SiPM> load_binary(string filename)
     return make_tuple(optical_input, SiPM(sipmParametersVector));
 }
 
-// write binary file from simulation settings and output
+// Write binary file from simulation settings and output
 void write_binary(string filename, SiPM sipm, vector<double> response)
 {
     ofstream fout(filename, ios::out | ios::binary);
@@ -88,14 +88,14 @@ void write_binary(string filename, SiPM sipm, vector<double> response)
     sipmParametersVector.push_back(sipm.tauFwhm);
     sipmParametersVector.push_back(sipm.digitalThreshold);
 
-    // concatenate response on the end of SiPM parameters vector
+    // Concatenate response on the end of SiPM parameters vector
     sipmParametersVector.insert(sipmParametersVector.end(), response.begin(), response.end());
 
     fout.write((char *)(&sipmParametersVector[0]), sizeof(sipmParametersVector) * sipmParametersVector.size());
     fout.close();
 }
 
-// output convolve to pulse shape using a gaussian approximation
+// Output convolve to pulse shape using a gaussian approximation
 vector<double> conv1d(vector<double> inputVec, vector<double> kernel)
 {
 
@@ -129,7 +129,7 @@ vector<double> conv1d(vector<double> inputVec, vector<double> kernel)
     return outputVec;
 }
 
-// generate gaussian kernel
+// Generate Gaussian kernel
 // TODO check if the pulse width is correct!
 vector<double> get_gaussian(double dt, double tauFwhm)
 {
@@ -181,6 +181,7 @@ tuple<wstring, double> exponent_val(double num)
     return make_tuple(prefixes[k], num * pow(10, -(k * 3 - 15)));
 }
 
+// Print end of simulation run information for user / debug
 void print_info(chrono::duration<double> elapsed, double dt, vector<double> outputVec, int numMicrocell)
 {
     auto sysclock = chrono::system_clock::now();
@@ -209,17 +210,17 @@ void print_info(chrono::duration<double> elapsed, double dt, vector<double> outp
     tie(prefix, val) = exponent_val(time_per_iter / numMicrocell);
     wcout << "Compute Per uCell Step: " << val << prefix << "s" << endl;
 
-    double sumOut = 0;
-    for (auto &a : outputVec)
+    double sumOut = 0; // Sum of all the charge from the SiPM from the experiment
+    if (!outputVec.empty())
     {
-        sumOut += a;
+        sumOut = reduce(outputVec.begin(), outputVec.end()); // Sum all responses
     }
-    double Ibias = sumOut / (inputSize * dt);
+    double Ibias = sumOut / (inputSize * dt); // Calculate the bias current
     cout << "Simulated Ibias:\t" << Ibias * 1E3 << "mA" << endl;
 }
 
 // Linearly space num_in points between values start_in and end_in
-// template removed as I am stupid and keep getting undefined reference errors.
+// Template removed as I am stupid and keep getting undefined reference errors.
 // template <typename T>
 // vector<double> linspace(T start_in, T end_in, int num_in)
 vector<double> linspace(double start_in, double end_in, int num_in)
@@ -252,6 +253,7 @@ vector<double> linspace(double start_in, double end_in, int num_in)
     return linspaced;
 }
 
+// Prints a vector to stdout
 void print_vector(vector<double> vec)
 {
     cout << "size: " << vec.size() << endl;
@@ -260,8 +262,8 @@ void print_vector(vector<double> vec)
     cout << endl;
 }
 
-// trapezoidally integrate function f which takes a single double type argument
-// between lower and upper with n points
+// Trapezoidally integrate function f which takes a single double type argument
+// Between lower and upper with n points
 /* double trapezoidal(double (*f)(double), double lower, double upper, int n)
 {
     double dx = (upper - lower) / n;
@@ -275,40 +277,40 @@ void print_vector(vector<double> vec)
 }
 */
 
-// trapezoidally integrate vector f with spacing dx
+// Trapezoidally integrate vector f with spacing dx
 double trapezoidal(vector<double> f, double dx)
 {
-    double s = f[0] + f[f.size() - 1]; // beginning and end add to formula
+    double s = f[0] + f[f.size() - 1]; // Beginning and end add to formula
     for (int i = 1; i < (int)(f.size() - 1); i++)
     {
-        s += 2 * f[i];
+        s += 2 * f[i]; // Trapezoidal Integration
     }
     return dx * s / 2;
 }
 
-// cumunulatively trapezoidally integrate function f which takes a single double type argument
-// between lower and upper with n points
+// Cumunulatively trapezoidally integrate function f which takes a single double type argument
+// with integration limits lower and upper with n points
 vector<double> cum_trapezoidal(double (*f)(double), double lower, double upper, int n)
 {
     double dx = (upper - lower) / n;
-    double s = f(lower) * dx / 2; // beginning and end add to formula
+    double s = f(lower) * dx / 2; // Beginning add to formula
     vector<double> result;
     result.push_back(s);
 
     for (int i = 1; i < (n - 1); i++)
     {
-        s += 2 * f(lower + i * dx) * dx / 2;
+        s += 2 * f(lower + i * dx) * dx / 2; // Trapezoidal Integration
         result.push_back(s);
     }
-    s += f(upper) * dx / 2;
+    s += f(upper) * dx / 2; // End add to formula
     result.push_back(s);
     return result;
 }
 
-// trapezoidally integrate vector f with spacing dx
+// Cumunulatively trapezoidally integrate vector f with spacing dx
 vector<double> cum_trapezoidal(vector<double> f, double dx)
 {
-    double s = f[0] * dx / 2; // beginning and end add to formula
+    double s = f[0] * dx / 2; // Beginning and end add to formula
     vector<double> result;
     result.push_back(s);
     for (int i = 1; i < (int)(f.size() - 1); i++)
@@ -316,7 +318,7 @@ vector<double> cum_trapezoidal(vector<double> f, double dx)
         s += 2 * f[i] * dx / 2;
         result.push_back(s);
     }
-    s += f[f.size() - 1] * dx / 2;
+    s += f[f.size() - 1] * dx / 2; // End add to formula
     result.push_back(s);
     return result;
 }
