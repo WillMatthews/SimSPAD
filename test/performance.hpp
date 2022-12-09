@@ -16,6 +16,7 @@
  */
 
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 #include <chrono>
@@ -23,14 +24,15 @@
 #include "../src/sipm.hpp"
 #include "../src/utilities.hpp"
 
-#define BARS 108
+#define BARS 102
 #define MACHINE_SPEED_RATIO 2
 
 using namespace std;
 
+// Measure simulation performance
 double speed_measure(double photonsPerDt)
 {
-    // create a J30020 SiPM
+    // Create a J30020 SiPM
     SiPM sipm(14410, 27.5, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46);
     sipm.dt = 2.0e-10;
 
@@ -51,6 +53,7 @@ double speed_measure(double photonsPerDt)
     return time_per_ucell;
 }
 
+// Measure the simulation performance and compare to benchmarks
 bool TEST_performance()
 {
     string BAR_STRING(BARS, '=');
@@ -59,29 +62,34 @@ bool TEST_performance()
     cout << BAR_STRING << endl;
 
     vector<double> photonsPerDt = {0, 1, 10, 100, 1000, 10000};
-    vector<double> expected_runtimes = {10e-12, 12e-12, 60e-12, 500e-12, 4e-9, 30e-9};
+    vector<double> expected_runtimes = {60e-12, 65e-12, 85e-12, 400e-12, 3e-9, 20e-9};
     double runtime;
     bool passed = true;
+    bool passed_all = true;
     wstring runtime_prefix;
     double runtime_val;
+
+    wcout << fixed;
+    wcout << setprecision(0);
 
     for (int i = 0; i < (int)photonsPerDt.size(); i++)
     {
         runtime = speed_measure(photonsPerDt[i]);
         tie(runtime_prefix, runtime_val) = exponent_val(runtime);
         wcout << L"Photons per dt: " << photonsPerDt[i] << L"\t" << runtime_val << runtime_prefix << L"s/(μcell dt)"
-              << L"\t";
+              << L"  \t";
         passed = (runtime < expected_runtimes[i] * MACHINE_SPEED_RATIO);
         wstring outString = passed ? L"\033[32;49;1mPASS\033[0m" : L"\033[31;49;1mFAIL\033[0m";
         wcout << outString << endl;
+        passed_all = passed_all & passed; // Check if test is passed
     }
 
-    string prefix = passed ? "\033[32;49;1m" : "\033[31;49;1m";
-    string outStatus = passed ? "PASS\n" : "FAIL\a\n";
+    string prefix = passed_all ? "\033[32;49;1m" : "\033[31;49;1m";
+    string outStatus = passed_all ? "PASS\n" : "FAIL\a\n";
     cout << prefix << BAR_STRING << endl;
-    cout << "TEST " << outStatus;
-    cout << "END TEST: SiPM Nonlinearity and Bias Current Accuracy" << endl;
-    cout << BAR_STRING << "\033[0m" << endl;
+    cout << prefix << "TEST " << outStatus;
+    cout << prefix << "END TEST: SimSPAD Performance" << endl;
+    cout << prefix << BAR_STRING << "\033[0m" << endl;
 
-    return passed;
+    return passed_all;
 }

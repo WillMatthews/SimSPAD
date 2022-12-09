@@ -3,11 +3,12 @@
 ![logo](https://github.com/WillMatthews/SimSPAD/blob/master/doc/img/simspad_logo.svg)
 
 A high performance avalanche multiplication based optical receiver simulator.
-Version 0.2.0
 
 [![Build](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml)
 [![Simulator Tests](https://github.com/WillMatthews/SimSPAD/actions/workflows/sim-accuracy.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/sim-accuracy.yml)
+[![version](https://img.shields.io/badge/version-0.2.1-success.svg)](https://semver.org)
 [![Spell Check](https://github.com/WillMatthews/SimSPAD/actions/workflows/spelling.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/spelling.yml)
+
 
 ## About
 
@@ -54,10 +55,10 @@ This is an **experimental work in progress**, and more documentation will follow
 ## How to Reference:
 
 If you have used this software for your work, please reference it as follows:
-William Matthews (2022) SimSPAD (Version 0.2.0) [Source Code]. Private Distribution
+William Matthews (2022) SimSPAD (Version 0.2.1) [Source Code]. Private Distribution
 
 Eventually, when this repo is made public, you may cite as:
-William Matthews (2022) SimSPAD (Version 0.2.0) [Source Code]. https://github.com/WillMatthews/SimSPAD
+William Matthews (2022) SimSPAD (Version 0.2.1) [Source Code]. https://github.com/WillMatthews/SimSPAD
 
 
 ## Usage

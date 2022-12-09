@@ -28,8 +28,8 @@
 
 using namespace std;
 
-// create lambda expression for a simulation run (binary in -> binary out).
-// might be helpful if multi-threading in the future
+// Create lambda expression for a simulation run (binary in -> binary out).
+// Might be helpful if multi-threading in the future
 void simulate(string fname_in, string fname_out, bool silence)
 {
     vector<double> out = {};
@@ -41,8 +41,6 @@ void simulate(string fname_in, string fname_out, bool silence)
 
     out = sipm.simulate(in, silence);
 
-    // out = sipm.simulate_full(in);
-    // sipm.test_rand_funcs();
     auto end = chrono::steady_clock::now();
 
     // vector<double> out2 = sipm.shape_output(out);
@@ -57,12 +55,20 @@ void simulate(string fname_in, string fname_out, bool silence)
     }
 }
 
+// Print version number
+static void print_version()
+{
+    cout << "SimSPAD " << __VERSION__ << endl;
+}
+
+// Print help text
 static void show_usage(string name)
 {
     cerr << "Usage: " << name << " <option(s)> INPUT "
          << "Options:\n"
          << "\t-h,--help\t\tShow this help message\n"
          << "\t-s,--silent\t\tSilence output\n"
+         << "\t-v,--version\t\tPrint SimSPAD version number\n"
          // << "\t-c,--csv\t\tOutput in CSV format\n"
          << "\t-o,--output DESTINATION\tSpecify the destination path"
          << endl;
@@ -77,6 +83,18 @@ int main(int argc, char *argv[])
     ios::sync_with_stdio(0);
     cin.tie(0);
 
+    string arg;
+
+    if (argc == 2)
+    {
+        arg = argv[1];
+        if ((arg == "-v") || (arg == "--version"))
+        {
+            print_version();
+            return EXIT_SUCCESS;
+        }
+    }
+
     if (argc < 3)
     {
         show_usage(argv[0]);
@@ -88,15 +106,19 @@ int main(int argc, char *argv[])
     bool silence = false;
     for (int i = 1; i < argc; ++i)
     {
-        string arg = argv[i];
+        arg = argv[i];
         if ((arg == "-h") || (arg == "--help"))
         {
             show_usage(argv[0]);
-            return 0;
+            return EXIT_SUCCESS;
         }
         else if ((arg == "-s") || (arg == "--silent"))
         {
             silence = true;
+        }
+        else if ((arg == "-v") || (arg == "--version"))
+        {
+            print_version();
         }
         else if ((arg == "-o") || (arg == "--output"))
         {
@@ -107,7 +129,7 @@ int main(int argc, char *argv[])
             else
             { // No argument to the destination option.
                 cerr << "--destination option requires one argument." << endl;
-                return 1;
+                return EXIT_FAILURE;
             }
         }
         else

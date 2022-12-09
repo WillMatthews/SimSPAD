@@ -22,6 +22,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <algorithm>
 #include <random>
 
 // Progress bar defines
@@ -61,8 +62,6 @@ public:
 
     std::vector<double> simulate(std::vector<double> light, bool silent);
 
-    std::vector<double> simulate_full(std::vector<double> light);
-
     std::vector<double> shape_output(std::vector<double> inputVec);
 
 private:
@@ -70,7 +69,7 @@ private:
 
     std::mt19937_64 poissonEngine;
     std::mt19937_64 unifRandomEngine;
-    std::mt19937_64 exponentialEngine;
+    std::mt19937_64 renewalEngine;
     std::uniform_real_distribution<double> unif;
 
     void seed_engines(void);
@@ -81,13 +80,13 @@ private:
 
     void init_spads(std::vector<double> light);
 
-    double selective_recharge_illuminate_LUT(double T, double photonsPerDt);
-
-    double recharge_illuminate(double photonsPerSecond);
+    double simulate_microcells(double T, double photonsPerDt);
 
     void print_progress(double percentage) const;
 
-    void test_rand_funcs();
+    // void test_rand_funcs();
+
+    void input_sanitation(void);
 
     int LUTSize;
     double *tVecLUT;
@@ -101,6 +100,8 @@ private:
     double volt_LUT(double x) const;
 
     double LUT(double x, double *workingVector) const;
+
+    double trapezoidal(double (SiPM::*f)(double), double lower, double upper, int n);
 };
 
 #endif // SIPM_H
