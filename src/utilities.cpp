@@ -198,17 +198,18 @@ void print_info(chrono::duration<double> elapsed, double dt, vector<double> outp
     wstring prefix;
     double val;
     tie(prefix, val) = exponent_val(elapsed.count());
-    wcout << "Elapsed Time:\t\t" << val << prefix << "s" << endl;
+    wcout << "Elapsed Time:\t\t" << val << " " << prefix << "s" << endl;
     tie(prefix, val) = exponent_val(dt * inputSize);
-    wcout << "Simulated Time:\t\t" << val << prefix << "s" << endl;
+    wcout << "Simulated Time:\t\t" << val << " " << prefix << "s" << endl;
     tie(prefix, val) = exponent_val(dt);
-    wcout << "Simulation dt:\t\t" << val << prefix << "s" << endl;
-    cout << "Time Steps:\t\t" << inputSize << "Sa" << endl;
+    wcout << "Simulation dt:\t\t" << val << " " << prefix << "s" << endl;
+    cout << "Time Steps:\t\t" << inputSize << " "
+         << "Sa" << endl;
     double time_per_iter = ((double)elapsed.count()) / ((double)inputSize);
     tie(prefix, val) = exponent_val(time_per_iter);
-    wcout << "Compute Per Step:\t" << val << prefix << "s" << endl;
+    wcout << "Compute Per Step:\t" << val << " " << prefix << "s" << endl;
     tie(prefix, val) = exponent_val(time_per_iter / numMicrocell);
-    wcout << "Compute Per uCell Step: " << val << prefix << "s" << endl;
+    wcout << "Compute Per uCell Step: " << val << " " << prefix << "s" << endl;
 
     double sumOut = 0; // Sum of all the charge from the SiPM from the experiment
     if (!outputVec.empty())
@@ -216,7 +217,8 @@ void print_info(chrono::duration<double> elapsed, double dt, vector<double> outp
         sumOut = reduce(outputVec.begin(), outputVec.end()); // Sum all responses
     }
     double Ibias = sumOut / (inputSize * dt); // Calculate the bias current
-    cout << "Simulated Ibias:\t" << Ibias * 1E3 << "mA" << endl;
+    tie(prefix, val) = exponent_val(Ibias);
+    wcout << "Simulated Ibias:\t" << val << " " << prefix << "A" << endl;
 }
 
 // Linearly space num_in points between values start_in and end_in
