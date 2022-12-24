@@ -36,19 +36,11 @@
 //#define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "../lib/cpp-httplib/httplib.h"
 #include "sipm.hpp"
+#include "pages.hpp"
 #include <chrono>
 #include <ctime>
 
-std::string welcome()
-{
-  std::string welcomeString = "";
-  welcomeString += "Welcome to SimSPAD";
-  welcomeString += "\n";
-  welcomeString += "Access the GitHub Repository for more information:\n";
-  welcomeString += "https://github.com/WillMatthews/SimSPAD\n";
 
-  return welcomeString;
-}
 
 int main(void)
 {
@@ -67,7 +59,7 @@ int main(void)
   srv.set_payload_max_length(1024 * 1024 * 128);
 
   srv.Get("/", [](const Request &, Response &res)
-          { res.set_content(welcome(), "text/plain"); });
+          { res.set_content(welcome(), "text/html"); });
 
   srv.Get("/stop", [&](const Request &req, Response &res)
           {
