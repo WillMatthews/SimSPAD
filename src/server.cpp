@@ -40,14 +40,24 @@
 #include <chrono>
 #include <ctime>
 
-#define GREEN "\033[32;1m"
-#define RED "\033[31;1m"
+#define COL_GREEN "\033[32;1m"
+#define COL_RED "\033[31;1m"
 #define COL_RESET "\033[0m"
+
+std::string current_time(void)
+{
+    using namespace std;
+    auto time = chrono::system_clock::now();
+    time_t time_t = chrono::system_clock::to_time_t(time);
+    string timestr = ctime(&time_t);
+    return timestr;
+}
 
 int main(void)
 {
     cli_logo();
-    std::cout << GREEN << "\t   SimSPAD Server Running" << COL_RESET << std::endl;
+    std::cout << COL_GREEN << "\t   SimSPAD Server Running" << COL_RESET << std::endl;
+    std::cout << "Started at time: " << current_time() << std::endl;
 
     using namespace httplib;
 
@@ -66,14 +76,11 @@ int main(void)
 
     srv.Get("/stop", [&](const Request &req, Response &res)
             {
-            using namespace std;
             (void) req;
-            auto halt_time = chrono::system_clock::now();
-            time_t halt_time_t = chrono::system_clock::to_time_t(halt_time);
-            string halttime = ctime(&halt_time_t);
-            cout << RED << "Halted from web interface" << COL_RESET << endl;
-            cout << "At time "<< halttime << endl;
-            res.set_content("Server halted at " + halttime, "text/plain");
+            std::string halttime = current_time();
+            std::cout << COL_RED << "\t   Server halted via http" << COL_RESET << std::endl;
+            std::cout << "Halted at time: " << halttime << std::endl;
+            res.set_content("Server Halted at " + halttime, "text/plain");
             srv.stop(); });
 
     srv.Post("/simspad", [](const Request &req, Response &res)

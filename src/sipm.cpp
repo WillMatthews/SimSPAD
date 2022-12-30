@@ -53,7 +53,8 @@ SiPM::SiPM(unsigned long numMicrocell_in, double vbias_in, double vBr_in, double
     vChr = vChr_in;                         // characteristic voltage for PDE-vOver curve
     pdeMax = pdeMax_in;                     // pdeMax characteristic for PDE-vOver curve
 
-    microcellTimes = vector<double>{}; // microcell live time of last detection vector
+    microcellTimes = vector<double>{};        // microcell live time of last detection vector
+    microcellTimes.reserve(numMicrocell + 8); // Prevent issues with free()
 
     LUTSize = 20;                    // Look Up Table Size
     tVecLUT = new double[LUTSize];   // Preallocate LUT Time array
@@ -79,7 +80,8 @@ SiPM::SiPM(unsigned long numMicrocell_in, double vbias_in, double vBr_in, double
     vChr = vChr_in;                         // characteristic voltage for PDE-vOver curve
     pdeMax = pdeMax_in;                     // pdeMax characteristic for PDE-vOver curve
 
-    microcellTimes = vector<double>{}; // microcell live time of last detection vector
+    microcellTimes = vector<double>{};        // microcell live time of last detection vector
+    microcellTimes.reserve(numMicrocell + 8); // Prevent issues with free()
 
     LUTSize = 20;                    // Look Up Table Size
     tVecLUT = new double[LUTSize];   // Preallocate LUT Time array
@@ -105,7 +107,8 @@ SiPM::SiPM(vector<double> svars)
     digitalThreshold = svars[9];            // readout threshold (typically 0 for analog)
     vOver = vBias - vBr;                    // overvoltage
 
-    microcellTimes = vector<double>{}; // microcell live time of last detection vector
+    microcellTimes = vector<double>{};        // microcell live time of last detection vector
+    microcellTimes.reserve(numMicrocell + 8); // Prevent issues with free()
 
     LUTSize = 20;                    // Look Up Table Size
     tVecLUT = new double[LUTSize];   // Preallocate LUT Time array
