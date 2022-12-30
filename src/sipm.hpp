@@ -30,6 +30,8 @@
 #define PBWIDTH 60
 #define VERSION "0.2.1"
 
+void cli_logo(void);
+
 class SiPM
 {
 public:

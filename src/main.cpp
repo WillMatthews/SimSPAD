@@ -140,12 +140,7 @@ int main(int argc, char *argv[])
 
     if (!silence)
     {
-        cout << "   _____ _          _____ ____  ___    ____ " << endl;
-        cout << "  / ___/(_)___ ___ / ___// __ \\/   |  / __ \\" << endl;
-        cout << "  \\__ \\/ / __ `__  \\__ \\/ /_/ / /| | / / / /" << endl;
-        cout << " ___/ / / / / / / /__/ / ____/ ___ |/ /_/ / " << endl;
-        cout << "/____/_/_/ /_/ /_/____/_/   /_/  |_/_____/  \n"
-             << endl;
+        cli_logo();
     }
 
     simulate(source, destination, silence);

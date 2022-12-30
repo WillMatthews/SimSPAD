@@ -29,6 +29,16 @@
 
 using namespace std;
 
+void cli_logo(void)
+{
+    cout << "   _____ _          _____ ____  ___    ____ " << endl;
+    cout << "  / ___/(_)___ ___ / ___// __ \\/   |  / __ \\" << endl;
+    cout << "  \\__ \\/ / __ `__  \\__ \\/ /_/ / /| | / / / /" << endl;
+    cout << " ___/ / / / / / / /__/ / ____/ ___ |/ /_/ / " << endl;
+    cout << "/____/_/_/ /_/ /_/____/_/   /_/  |_/_____/  \n"
+         << endl;
+}
+
 SiPM::SiPM(unsigned long numMicrocell_in, double vbias_in, double vBr_in, double tauRecovery_in,
            double tFwhm_in, double digitalThreshold_in, double cCell_in, double vChr_in, double pdeMax_in)
 {

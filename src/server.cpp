@@ -40,9 +40,14 @@
 #include <chrono>
 #include <ctime>
 
+#define GREEN "\033[32;1m"
+#define RED "\033[31;1m"
+#define COL_RESET "\033[0m"
+
 int main(void)
 {
-    std::cout << "SimSPAD Server Running" << std::endl;
+    cli_logo();
+    std::cout << GREEN << "\t   SimSPAD Server Running" << COL_RESET << std::endl;
 
     using namespace httplib;
 
@@ -53,7 +58,7 @@ int main(void)
     srv.new_task_queue = []
     { return new ThreadPool(4); };
 
-    // max payload size is 128 MB
+    // Max payload size is 128 MB
     srv.set_payload_max_length(1024 * 1024 * 128);
 
     srv.Get("/", [](const Request &, Response &res)
@@ -61,8 +66,14 @@ int main(void)
 
     srv.Get("/stop", [&](const Request &req, Response &res)
             {
+            using namespace std;
             (void) req;
-            (void) res;
+            auto halt_time = chrono::system_clock::now();
+            time_t halt_time_t = chrono::system_clock::to_time_t(halt_time);
+            string halttime = ctime(&halt_time_t);
+            cout << RED << "Halted from web interface" << COL_RESET << endl;
+            cout << "At time "<< halttime << endl;
+            res.set_content("Server halted at " + halttime, "text/plain");
             srv.stop(); });
 
     srv.Post("/simspad", [](const Request &req, Response &res)
@@ -76,30 +87,30 @@ int main(void)
 
              vector<double> optical_input = {};
              vector<double> sipmSettingsVector = {};
-             unsigned char *bytes; // uchar* buffer for intermediate step converting char* to double
-             double recv; // received double
-             char buf[8]; // char buffer (incoming chars to be converted to floats)
-             // decode 8 chars to a double precision float
+             unsigned char *bytes;  // uchar* buffer for intermediate step converting char* to double
+             double recv;           // Received double
+             char buf[8];           // char buffer (incoming chars to be converted to floats)
+             // Decode 8 chars to a double precision float
              for (size_t i = 0; i < numBits / 8; i++)
              {
                for (int j = 0; j < 8; j++)
                {
-                 buf[j] = data[8 * i + j]; // create buffer of char*
+                 buf[j] = data[8 * i + j]; // Create buffer of char*
                }
                bytes = reinterpret_cast<unsigned char *>(&buf); // cast char* buffer to bytes
                recv = *reinterpret_cast<double *>(bytes);       // cast bytes to double
 
-               if (i < 10) // first ten doubles are SiPM simulator parameters
+               if (i < 10)  // First ten doubles are SiPM simulator parameters
                {
                  sipmSettingsVector.push_back(recv);
                }
-               else // remainder of values are expected number of photons per dt striking array
+               else         // Remainder of values are expected number of photons per dt striking array
                {
                  optical_input.push_back(recv);
                }
              }
 
-             // create SiPM
+             // Create SiPM
              SiPM *sipm = new SiPM(sipmSettingsVector);
 
              // cout parameters so I can tell when someone does something stupid which breaks the server
@@ -117,7 +128,7 @@ int main(void)
              cout << "TauPulseFWHM\t\t" << (sipm->tauFwhm) << " s" << endl;
              cout << "DigitalThreshold\t" << (sipm->digitalThreshold) << endl;
 
-             // simulate
+             // Simulate
              bool silence = true;
              vector<double> response = sipm->simulate(optical_input, silence);
 
