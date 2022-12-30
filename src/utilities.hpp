@@ -37,10 +37,10 @@ std::vector<double> get_gaussian(double dt, double tauFwhm);
 
 std::tuple<std::wstring, double> exponent_val(double num);
 
-void print_info(std::chrono::duration<double> elapsed, double dt, std::vector<double> outputVec, int numMicrocell);
+void print_info(std::chrono::duration<double> elapsed, double dt, std::vector<double> outputVec, unsigned int numMicrocell);
 
 template <typename T>
-std::vector<double> linspace(T start_in, T end_in, int num_in);
+std::vector<double> linspace(T start_in, T end_in, unsigned int num_in);
 
 void print_vector(std::vector<double> vec);
 
@@ -48,7 +48,7 @@ void print_vector(std::vector<double> vec);
 
 double trapezoidal(std::vector<double> f, double t);
 
-std::vector<double> cum_trapezoidal(double (*f)(double), double lower, double upper, int n);
+std::vector<double> cum_trapezoidal(double (*f)(double), double lower, double upper, unsigned int n);
 
 std::vector<double> cum_trapezoidal(std::vector<double> f, double dx);
 

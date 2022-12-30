@@ -58,7 +58,7 @@ void simulate(string fname_in, string fname_out, bool silence)
 // Print version number
 static void print_version()
 {
-    cout << "SimSPAD " << __VERSION__ << endl;
+    cout << "SimSPAD " << VERSION << endl;
 }
 
 // Print help text

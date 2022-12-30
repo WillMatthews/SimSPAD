@@ -33,14 +33,12 @@
  *    run this code. If you proceed, you acknowledge you understand the risks involved.
  */
 
-//#define CPPHTTPLIB_OPENSSL_SUPPORT
+// #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "../lib/cpp-httplib/httplib.h"
 #include "sipm.hpp"
 #include "pages.hpp"
 #include <chrono>
 #include <ctime>
-
-
 
 int main(void)
 {
@@ -89,7 +87,7 @@ int main(void)
                  buf[j] = data[8 * i + j]; // create buffer of char*
                }
                bytes = reinterpret_cast<unsigned char *>(&buf); // cast char* buffer to bytes
-               recv = *reinterpret_cast<double *>(bytes); // cast bytes to double
+               recv = *reinterpret_cast<double *>(bytes);       // cast bytes to double
 
                if (i < 10) // first ten doubles are SiPM simulator parameters
                {
@@ -102,45 +100,44 @@ int main(void)
              }
 
              // create SiPM
-             SiPM sipm(sipmSettingsVector);
+             SiPM *sipm = new SiPM(sipmSettingsVector);
 
              // cout parameters so I can tell when someone does something stupid which breaks the server
              auto start = chrono::system_clock::now();
              time_t start_time = chrono::system_clock::to_time_t(start);
-             cout << "Started computation at " << ctime(&start_time) << endl;
-             cout << "dt " << (sipm.dt) << endl;
-             cout << "NumMicrocells " << ((double)sipm.numMicrocell) << endl;
-             cout << "vBias " << (sipm.vBias) << endl;
-             cout << "vBreakdown " << (sipm.vBr) << endl;
-             cout << "TauRecovery " << (sipm.tauRecovery) << endl;
-             cout << "PDEMax " << (sipm.pdeMax) << endl;
-             cout << "vChrPDE " << (sipm.vChr) << endl;
-             cout << "CCell " << (sipm.cCell) << endl;
-             cout << "TauPulseFWHM " << (sipm.tauFwhm) << endl;
-             cout << "DigitalThreshold " << (sipm.digitalThreshold) << endl;
+             cout << "Started computation at\t" << ctime(&start_time) << endl;
+             cout << "dt\t\t\t" << (sipm->dt) << " s" << endl;
+             cout << "NumMicrocells\t\t" << ((double)sipm->numMicrocell) << endl;
+             cout << "vBias\t\t\t" << (sipm->vBias) << " V" << endl;
+             cout << "vBreakdown\t\t" << (sipm->vBr) << " V" << endl;
+             cout << "TauRecovery\t\t" << (sipm->tauRecovery) << " s" << endl;
+             cout << "PDEMax\t\t\t" << (sipm->pdeMax) << endl;
+             cout << "vChrPDE\t\t\t" << (sipm->vChr) << " V" << endl;
+             cout << "CCell\t\t\t" << (sipm->cCell) << " F" << endl;
+             cout << "TauPulseFWHM\t\t" << (sipm->tauFwhm) << " s" << endl;
+             cout << "DigitalThreshold\t" << (sipm->digitalThreshold) << endl;
 
              // simulate
-             vector<double> response = {};
              bool silence = true;
-             response = sipm.simulate(optical_input, silence);
+             vector<double> response = sipm->simulate(optical_input, silence);
 
              // Print Elapsed Time (allow debugging)
              auto end = chrono::system_clock::now();
              chrono::duration<double> elapsed_seconds = end-start;
-             cout << "elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
+             cout << "Elapsed Time:\t\t" << elapsed_seconds.count()*1E3 << " ms" << std::endl;
 
              // create output vector
              vector<double> sipm_output = {};
-             sipm_output.push_back(sipm.dt);
-             sipm_output.push_back((double)sipm.numMicrocell);
-             sipm_output.push_back(sipm.vBias);
-             sipm_output.push_back(sipm.vBr);
-             sipm_output.push_back(sipm.tauRecovery);
-             sipm_output.push_back(sipm.pdeMax);
-             sipm_output.push_back(sipm.vChr);
-             sipm_output.push_back(sipm.cCell);
-             sipm_output.push_back(sipm.tauFwhm);
-             sipm_output.push_back(sipm.digitalThreshold);
+             sipm_output.push_back(sipm->dt);
+             sipm_output.push_back((double)sipm->numMicrocell);
+             sipm_output.push_back(sipm->vBias);
+             sipm_output.push_back(sipm->vBr);
+             sipm_output.push_back(sipm->tauRecovery);
+             sipm_output.push_back(sipm->pdeMax);
+             sipm_output.push_back(sipm->vChr);
+             sipm_output.push_back(sipm->cCell);
+             sipm_output.push_back(sipm->tauFwhm);
+             sipm_output.push_back(sipm->digitalThreshold);
 
              // concat SiPM simulation output on end of input parameters
              sipm_output.insert(sipm_output.end(), response.begin(), response.end());
@@ -150,16 +147,23 @@ int main(void)
              string outputString = "";
 
              //recycle buffer char buf[8] from earlier
-             for (int i = 0; i < (int)sipm_output.size(); i++)
+             for (unsigned long i = 0; i < (unsigned long)sipm_output.size(); i++)
              {
                memcpy(&buf, &sipm_output[i], sizeof(buf));
                for (int j = 0; j < 8; j++){
                 outputString.push_back(buf[j]);
                }
              }
-             cout << "==================== GOODBYE  ====================" << endl;
 
-             res.set_content(outputString, "text/plain"); });
+             cout << "Sending Result" << endl;
+             res.set_content(outputString, "text/plain");
+
+             // Clean up - make 100% sure large variables are deleted
+             delete sipm;
+             // large vars:
+             // bytes data recv optical_input response outputString sipm_output
+
+             cout << "==================== GOODBYE  ====================" << endl; });
 
   srv.listen("127.0.0.1", 33232);
 }

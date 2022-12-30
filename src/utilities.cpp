@@ -112,6 +112,7 @@ vector<double> conv1d(vector<double> inputVec, vector<double> kernel)
     }
 
     vector<double> outputVec = {};
+    outputVec.reserve(inputVec.size());
     int innerPosition;
 
     for (int i = 0; i < (int)inputVec.size(); i++)
@@ -141,6 +142,8 @@ vector<double> get_gaussian(double dt, double tauFwhm)
     int gaussianNumberOfPoints = (int)ceil(numSigma * sigma);
 
     vector<double> kernel = {};
+    kernel.reserve(gaussianNumberOfPoints * 2);
+
     if (gaussianNumberOfPoints == 1)
     {
         kernel.push_back(1);
@@ -229,6 +232,7 @@ vector<double> linspace(double start_in, double end_in, int num_in)
 {
 
     vector<double> linspaced;
+    linspaced.reserve(num_in);
 
     double start = static_cast<double>(start_in);
     double end = static_cast<double>(end_in);
@@ -287,6 +291,7 @@ double trapezoidal(vector<double> f, double dx)
     {
         s += 2 * f[i]; // Trapezoidal Integration
     }
+
     return dx * s / 2;
 }
 
@@ -294,9 +299,11 @@ double trapezoidal(vector<double> f, double dx)
 // with integration limits lower and upper with n points
 vector<double> cum_trapezoidal(double (*f)(double), double lower, double upper, int n)
 {
+    vector<double> result;
+    result.reserve(n);
+
     double dx = (upper - lower) / n;
     double s = f(lower) * dx / 2; // Beginning add to formula
-    vector<double> result;
     result.push_back(s);
 
     for (int i = 1; i < (n - 1); i++)
@@ -306,15 +313,19 @@ vector<double> cum_trapezoidal(double (*f)(double), double lower, double upper, 
     }
     s += f(upper) * dx / 2; // End add to formula
     result.push_back(s);
+
     return result;
 }
 
 // Cumunulatively trapezoidally integrate vector f with spacing dx
 vector<double> cum_trapezoidal(vector<double> f, double dx)
 {
-    double s = f[0] * dx / 2; // Beginning and end add to formula
     vector<double> result;
+    result.reserve(f.size());
+
+    double s = f[0] * dx / 2; // Beginning and end add to formula
     result.push_back(s);
+
     for (int i = 1; i < (int)(f.size() - 1); i++)
     {
         s += 2 * f[i] * dx / 2;
@@ -322,5 +333,6 @@ vector<double> cum_trapezoidal(vector<double> f, double dx)
     }
     s += f[f.size() - 1] * dx / 2; // End add to formula
     result.push_back(s);
+
     return result;
 }
