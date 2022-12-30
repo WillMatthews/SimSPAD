@@ -42,31 +42,31 @@
 
 int main(void)
 {
-  std::cout << "SimSPAD Server Running" << std::endl;
+    std::cout << "SimSPAD Server Running" << std::endl;
 
-  using namespace httplib;
+    using namespace httplib;
 
-  Server srv; // HTTP
-  // SSLServer srv; // HTTPS
+    Server srv; // HTTP
+    // SSLServer srv; // HTTPS
 
-  // Limit Number of active threads - default 12
-  srv.new_task_queue = []
-  { return new ThreadPool(4); };
+    // Limit Number of active threads - default 12
+    srv.new_task_queue = []
+    { return new ThreadPool(4); };
 
-  // max payload size is 128 MB
-  srv.set_payload_max_length(1024 * 1024 * 128);
+    // max payload size is 128 MB
+    srv.set_payload_max_length(1024 * 1024 * 128);
 
-  srv.Get("/", [](const Request &, Response &res)
-          { res.set_content(welcome(), "text/html"); });
+    srv.Get("/", [](const Request &, Response &res)
+            { res.set_content(welcome(), "text/html"); });
 
-  srv.Get("/stop", [&](const Request &req, Response &res)
-          {
+    srv.Get("/stop", [&](const Request &req, Response &res)
+            {
             (void) req;
             (void) res;
             srv.stop(); });
 
-  srv.Post("/simspad", [](const Request &req, Response &res)
-           {
+    srv.Post("/simspad", [](const Request &req, Response &res)
+             {
              using namespace std;
              cout << "==================== GOT POST ====================" << endl;
              auto data = req.body;
@@ -160,10 +160,9 @@ int main(void)
 
              // Clean up - make 100% sure large variables are deleted
              delete sipm;
-             // large vars:
-             // bytes data recv optical_input response outputString sipm_output
+             // large vars:  bytes data recv optical_input response outputString sipm_output
 
              cout << "==================== GOODBYE  ====================" << endl; });
 
-  srv.listen("127.0.0.1", 33232);
+    srv.listen("127.0.0.1", 33232);
 }
