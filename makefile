@@ -36,7 +36,8 @@ build:
 
 configure:
 	@mkdir -p $(LIB_DIR)
-	git clone https://github.com/yhirose/cpp-httplib ./lib/cpp-httplib
+	git submodule init
+	git submodule update
 
 debug: CXXFLAGS += -DDEBUG -g
 debug: all
