@@ -47,10 +47,11 @@ This is an **experimental work in progress**, and more documentation will follow
 
 1. [PRIME 2022: The negative impact of anode resistance on SiPMs as VLC receivers](https://doi.org/10.1109/PRIME55000.2022.9816749)
 2. [MDPI Photonics: An experimental and numerical study of the impact of ambient light of SiPMs in VLC receivers](https://doi.org/10.3390/photonics9120888)
-3. Upcoming Paper (Written... Parameter variation based)
-4. Upcoming Paper (Pending... Equaliser based)
-5. Upcoming Paper (Pending... OFDM based)
-6. My Thesis (Pending...)
+3. [MDPI Sensors: A Roadmap for Gigabit to Terabit Optical Wireless Communications Receivers](https://doi.org/10.3390/s23031101)
+4. Upcoming Paper (Pending..? Equaliser based)
+5. Upcoming Paper (Pending.?? OFDM based)
+6. Upcoming Paper (Pending..? From an ex-colleague)
+7. My Thesis (Pending...)
 
 ## How to Reference:
 
