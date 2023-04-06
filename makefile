@@ -36,7 +36,8 @@ build:
 
 configure:
 	@mkdir -p $(LIB_DIR)
-	git clone https://github.com/yhirose/cpp-httplib ./lib/cpp-httplib
+	git submodule init
+	git submodule update
 
 debug: CXXFLAGS += -DDEBUG -g
 debug: all
@@ -59,8 +60,8 @@ test: ./test/test.cpp ./test/performance.hpp ./test/current_accuracy.hpp ./src/s
 	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/$(TARGET_TEST) ./test/test.cpp ./src/sipm.cpp ./src/utilities.cpp
 	./build/apps/test
 
-server: ./src/server.cpp ./src/sipm.cpp ./src/utilities.cpp
-	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/$(TARGET_SERVER) ./src/server.cpp ./src/sipm.cpp ./src/utilities.cpp
+server: ./src/server.cpp ./src/sipm.cpp ./src/utilities.cpp ./src/pages.cpp ./src/ramlog.cpp
+	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/$(TARGET_SERVER) ./src/server.cpp ./src/sipm.cpp ./src/utilities.cpp ./src/pages.cpp ./src/ramlog.cpp
 
 simspad: ./src/main.cpp ./src/sipm.cpp ./src/utilities.cpp
-	$(CXX) $(CXXFLAGS) -o $(TARGET) ./src/main.cpp ./src/sipm.cpp ./src/utilities.cpp
+	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/$(TARGET) ./src/main.cpp ./src/sipm.cpp ./src/utilities.cpp

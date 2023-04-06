@@ -15,29 +15,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UTILITIES_H
-#define UTILITIES_H
-
-#include <iostream>
-#include <fstream>
-#include <vector>
 #include <string>
-#include <chrono>
-#include <ctime>
-#include <tuple>
-#include "sipm.hpp"
 
-std::tuple<std::vector<double>, SiPM> load_binary(std::string filename);
-
-void write_binary(std::string filename, SiPM sipm, std::vector<double> response);
-
-std::vector<double> conv1d(std::vector<double> inputVec, std::vector<double> kernel);
-
-std::vector<double> get_gaussian(double dt, double tauFwhm);
-
-std::tuple<std::wstring, double> exponent_val(double num);
-
-template <typename T>
-std::vector<double> linspace(T start_in, T end_in, unsigned int num_in);
-
-#endif // UTILITIES_H
+std::string welcome();
+std::string logo();
+std::string log_head();

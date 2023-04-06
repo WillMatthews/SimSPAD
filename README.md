@@ -6,8 +6,7 @@ A high performance avalanche multiplication based optical receiver simulator.
 
 [![Build](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml)
 [![Simulator Tests](https://github.com/WillMatthews/SimSPAD/actions/workflows/sim-accuracy.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/sim-accuracy.yml)
-[![version](https://img.shields.io/badge/version-0.2.1-success.svg)](https://semver.org)
-[![Spell Check](https://github.com/WillMatthews/SimSPAD/actions/workflows/spelling.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/spelling.yml)
+[![version](https://img.shields.io/badge/version-0.2.2-success.svg)](https://semver.org)
 
 
 ## About
@@ -31,7 +30,7 @@ SiPMs use a vast array of single photon avalanche diodes (SPADs) to enable singl
 For the purposes of my DPhil, I investigated using SiPMs with application of high-performance receivers for optical wireless communications.
 SiPMs consequently have turned out to be extremely good detectors as they have a high bandwidth, high gain, and large area when contrasted with other silicon based photo-detectors.
 
-SiPMs unfortunately experience recovery-time based nonlinearity, which is due to the recharge period each microcell undergoes after detection oh a photon.
+SiPMs unfortunately experience recovery-time based nonlinearity, which is due to the recharge period each microcell undergoes after detection of a photon.
 Interestingly, there are unobservable parameters inside the device as a result which dictate the shape of the output.
 These unobservable parameters include both the array average photon detection efficiency, and the mean fired charge per microcell.
 This simulation allows both simulation of SiPMs for arbitrary optical input, and observation of those unobservable parameters.
@@ -47,18 +46,19 @@ This is an **experimental work in progress**, and more documentation will follow
 
 1. [PRIME 2022: The negative impact of anode resistance on SiPMs as VLC receivers](https://doi.org/10.1109/PRIME55000.2022.9816749)
 2. [MDPI Photonics: An experimental and numerical study of the impact of ambient light of SiPMs in VLC receivers](https://doi.org/10.3390/photonics9120888)
-3. Upcoming Paper (Written... Parameter variation based)
-4. Upcoming Paper (Pending... Equaliser based)
-5. Upcoming Paper (Pending... OFDM based)
-6. My Thesis (Pending...)
+3. [MDPI Sensors: A Roadmap for Gigabit to Terabit Optical Wireless Communications Receivers](https://doi.org/10.3390/s23031101)
+4. Upcoming Paper (Pending..? Equaliser based)
+5. Upcoming Paper (Pending.?? OFDM based)
+6. Upcoming Paper (Pending..? From an ex-colleague)
+7. My Thesis (Pending...)
 
 ## How to Reference:
 
 If you have used this software for your work, please reference it as follows:
-William Matthews (2022) SimSPAD (Version 0.2.1) [Source Code]. Private Distribution
+William Matthews (2022) SimSPAD (Version 0.2.2) [Source Code]. Private Distribution
 
 Eventually, when this repo is made public, you may cite as:
-William Matthews (2022) SimSPAD (Version 0.2.1) [Source Code]. https://github.com/WillMatthews/SimSPAD
+William Matthews (2022) SimSPAD (Version 0.2.2) [Source Code]. https://github.com/WillMatthews/SimSPAD
 
 
 ## Usage
@@ -75,16 +75,24 @@ This binary file can be created using examples in the examples directory. Curren
 Once SimSPAD server is running, you are able to send a POST request to `http://localhost:33232/simspad`.
 To stop the server, access `http://localhost:33232/stop`.
 To see if the server is running, access `http://localhost:33232/` where you should see a greeting message in plain text.
+Logs (the last 512KB of output to stdout) can be seen at `http://localhost:33232/logs`.
 The reply from the server will be the result from the simulation.
 The data to and from the server is packaged as characters - see below in the Binary Format section for more details.
 
 ## Install
 
+### Tests
+Run `make build` to create the directories for the executables.
+Then run `make test` to create and run the tests.
+
 ### Standalone
-Make the executable with `make`. The executable will produced as `./build/apps/simspad`.
+Run `make build` to create the directories for the executables.
+Make the executable with `make`. The executable will be produced as `./build/apps/simspad`.
 
 ### Web Application
-Make the executable with `make server`. The executable will produced as `./build/apps/server`.
+Run `make build` to create the directories for the executables.
+Then run `make configure` to download the libraries for the web server.
+Finally, make the executable with `make server`. The executable will be produced as `./build/apps/server`.
 
 Create a new user `useradd simspad`
 <details>

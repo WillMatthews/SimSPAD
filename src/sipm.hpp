@@ -28,11 +28,14 @@
 // Progress bar defines
 #define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
 #define PBWIDTH 60
+#define VERSION "0.2.1"
+
+void cli_logo(void);
 
 class SiPM
 {
 public:
-    int numMicrocell;
+    unsigned long numMicrocell;
     double vBias;
     double vBr;
     double vOver;
@@ -44,9 +47,9 @@ public:
     double pdeMax;
     double tauFwhm;
 
-    SiPM(int numMicrocell_in, double vBias_in, double vBr_in, double tauRecovery_in, double tauFwhm_in, double digitalThreshold_in, double ccell_in, double Vchr_in, double PDE_max_in);
+    SiPM(unsigned long numMicrocell_in, double vBias_in, double vBr_in, double tauRecovery_in, double tauFwhm_in, double digitalThreshold_in, double ccell_in, double Vchr_in, double PDE_max_in);
 
-    SiPM(int numMicrocell_in, double vBias_in, double vBr_in, double tauRecovery_in, double digitalThreshold_in, double ccell_in, double Vchr_in, double PDE_max_in);
+    SiPM(unsigned long numMicrocell_in, double vBias_in, double vBr_in, double tauRecovery_in, double digitalThreshold_in, double ccell_in, double Vchr_in, double PDE_max_in);
 
     SiPM(std::vector<double> svars);
 
@@ -76,7 +79,7 @@ private:
 
     double unif_rand_double(double a, double b);
 
-    int unif_rand_int(int a, int b);
+    unsigned long unif_rand_int(unsigned long a, unsigned long b);
 
     void init_spads(std::vector<double> light);
 
@@ -88,7 +91,7 @@ private:
 
     void input_sanitation(void);
 
-    int LUTSize;
+    unsigned int LUTSize;
     double *tVecLUT;
     double *pdeVecLUT;
     double *vVecLUT;
@@ -101,7 +104,16 @@ private:
 
     double LUT(double x, double *workingVector) const;
 
-    double trapezoidal(double (SiPM::*f)(double), double lower, double upper, int n);
+    // trapezoidal integrations over a function
+    double trapezoidal(double (SiPM::*f)(double), double lower, double upper, unsigned long n);
+    std::vector<double> cum_trapezoidal(double (SiPM::*f)(double), double lower, double upper, unsigned long n);
+
+    // trapezoidal integrations over a vector
+    double trapezoidal(std::vector<double>, double);
+    std::vector<double> cum_trapezoidal(std::vector<double>, double);
 };
+
+
+
 
 #endif // SIPM_H
