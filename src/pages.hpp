@@ -19,3 +19,4 @@
 
 std::string welcome();
 std::string logo();
+std::string log_head();

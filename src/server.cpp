@@ -37,8 +37,10 @@
 #include "../lib/cpp-httplib/httplib.h"
 #include "sipm.hpp"
 #include "pages.hpp"
+#include "ramlog.hpp"
 #include <chrono>
 #include <ctime>
+#include <sstream>
 
 #define COL_GREEN "\033[32;1m"
 #define COL_RED "\033[31;1m"
@@ -46,36 +48,48 @@
 
 std::string current_time(void)
 {
-    using namespace std;
-    auto time = chrono::system_clock::now();
-    time_t time_t = chrono::system_clock::to_time_t(time);
-    string timestr = ctime(&time_t);
-    return timestr;
+  using namespace std;
+  auto time = chrono::system_clock::now();
+  time_t time_t = chrono::system_clock::to_time_t(time);
+  string timestr = ctime(&time_t);
+  return timestr;
 }
+
+void message_print_log(std::ostringstream &message)
+{
+  RamLog::getInstance().log(current_time() + "   " + message.str() + "<br/>");
+  std::cout << message.str() << std::endl;
+  message.str("");
+}
+
+int requests_served = 0;
+long bytes_processed = 0;
+std::string last_request_time = "";
 
 int main(void)
 {
-    cli_logo();
-    std::cout << COL_GREEN << "\t   SimSPAD Server Running" << COL_RESET << std::endl;
-    std::cout << "Started at time: " << current_time() << std::endl;
+  cli_logo();
+  std::cout << COL_GREEN << "\t   SimSPAD Server Running" << COL_RESET << std::endl;
+  std::string start_time = current_time();
+  std::cout << "Started at time: " << start_time << std::endl;
 
-    using namespace httplib;
+  using namespace httplib;
 
-    Server srv; // HTTP
-    // SSLServer srv; // HTTPS
+  Server srv; // HTTP
+  // SSLServer srv; // HTTPS
 
-    // Limit Number of active threads - default 12
-    srv.new_task_queue = []
-    { return new ThreadPool(4); };
+  // Limit Number of active threads - default 12
+  srv.new_task_queue = []
+  { return new ThreadPool(4); };
 
-    // Max payload size is 128 MB
-    srv.set_payload_max_length(1024 * 1024 * 128);
+  // Max payload size is 128 MB
+  srv.set_payload_max_length(1024 * 1024 * 128);
 
-    srv.Get("/", [](const Request &, Response &res)
-            { res.set_content(welcome(), "text/html"); });
+  srv.Get("/", [](const Request &, Response &res)
+          { res.set_content(welcome(), "text/html"); });
 
-    srv.Get("/stop", [&](const Request &req, Response &res)
-            {
+  srv.Get("/stop", [&](const Request &req, Response &res)
+          {
             (void) req;
             std::string halttime = current_time();
             std::cout << COL_RED << "\t   Server halted via http" << COL_RESET << std::endl;
@@ -83,14 +97,32 @@ int main(void)
             res.set_content("Server Halted at " + halttime, "text/plain");
             srv.stop(); });
 
-    srv.Post("/simspad", [](const Request &req, Response &res)
-             {
+  srv.Get("/logs", [&](const Request &req, Response &res)
+          {
+            (void) req;
+            std::string page_text = log_head();
+            page_text += "Start Time: " + start_time + "<br/>";
+            page_text += "Current Time: " + current_time() + "<br/>";
+            page_text += last_request_time;
+            page_text += "Requests Served: " + std::to_string(requests_served) + "<br/>";
+            page_text += "Bytes Processed: " + std::to_string(bytes_processed) + "<br/><br/>";
+            page_text += RamLog::getInstance().getLog();
+            page_text += "</body></html>";
+            res.set_content(page_text, "text/html"); });
+
+  srv.Post("/simspad", [](const Request &req, Response &res)
+           {
+             last_request_time = "Last Request At: " + current_time() + "<br/>";
+             std::ostringstream message_buf;
              using namespace std;
-             cout << "==================== GOT POST ====================" << endl;
+             message_buf << "==================== GOT POST ====================" << std::endl;
+             message_print_log(message_buf);
              auto data = req.body;
 
-             size_t numBits = data.length();
-             std::cout << "Decoding " << numBits << " bytes..." << endl;
+             size_t numBytes = data.length();
+             message_buf << "Decoding " << numBytes << " bytes..." << std::endl;
+             bytes_processed += numBytes;
+             message_print_log(message_buf);
 
              vector<double> optical_input = {};
              vector<double> sipmSettingsVector = {};
@@ -98,7 +130,7 @@ int main(void)
              double recv;           // Received double
              char buf[8];           // char buffer (incoming chars to be converted to floats)
              // Decode 8 chars to a double precision float
-             for (size_t i = 0; i < numBits / 8; i++)
+             for (size_t i = 0; i < numBytes / 8; i++)
              {
                for (int j = 0; j < 8; j++)
                {
@@ -123,17 +155,28 @@ int main(void)
              // cout parameters so I can tell when someone does something stupid which breaks the server
              auto start = chrono::system_clock::now();
              time_t start_time = chrono::system_clock::to_time_t(start);
-             cout << "Started computation at\t" << ctime(&start_time) << endl;
-             cout << "dt\t\t\t" << (sipm->dt) << " s" << endl;
-             cout << "NumMicrocells\t\t" << ((double)sipm->numMicrocell) << endl;
-             cout << "vBias\t\t\t" << (sipm->vBias) << " V" << endl;
-             cout << "vBreakdown\t\t" << (sipm->vBr) << " V" << endl;
-             cout << "TauRecovery\t\t" << (sipm->tauRecovery) << " s" << endl;
-             cout << "PDEMax\t\t\t" << (sipm->pdeMax) << endl;
-             cout << "vChrPDE\t\t\t" << (sipm->vChr) << " V" << endl;
-             cout << "CCell\t\t\t" << (sipm->cCell) << " F" << endl;
-             cout << "TauPulseFWHM\t\t" << (sipm->tauFwhm) << " s" << endl;
-             cout << "DigitalThreshold\t" << (sipm->digitalThreshold) << endl;
+             message_buf << "Started computation at\t" << ctime(&start_time);
+             message_print_log(message_buf);
+             message_buf << "dt\t\t\t" << (sipm->dt) << " s";
+             message_print_log(message_buf);
+             message_buf << "NumMicrocells\t\t" << ((double)sipm->numMicrocell);
+             message_print_log(message_buf);
+             message_buf << "vBias\t\t\t" << (sipm->vBias) << " V";
+             message_print_log(message_buf);
+             message_buf << "vBreakdown\t\t" << (sipm->vBr) << " V";
+             message_print_log(message_buf);
+             message_buf << "TauRecovery\t\t" << (sipm->tauRecovery);
+             message_print_log(message_buf);
+             message_buf << "PDEMax\t\t\t" << (sipm->pdeMax);
+             message_print_log(message_buf);
+             message_buf << "vChrPDE\t\t\t" << (sipm->vChr) << " V";
+             message_print_log(message_buf);
+             message_buf << "CCell\t\t\t" << (sipm->cCell) << " F";
+             message_print_log(message_buf);
+             message_buf << "TauPulseFWHM\t\t" << (sipm->tauFwhm) << " s";
+             message_print_log(message_buf);
+             message_buf << "DigitalThreshold\t" << (sipm->digitalThreshold);
+             message_print_log(message_buf);
 
              // Simulate
              bool silence = true;
@@ -142,7 +185,8 @@ int main(void)
              // Print Elapsed Time (allow debugging)
              auto end = chrono::system_clock::now();
              chrono::duration<double> elapsed_seconds = end-start;
-             cout << "Elapsed Time:\t\t" << elapsed_seconds.count()*1E3 << " ms" << std::endl;
+             message_buf << "Elapsed Time:\t\t" << elapsed_seconds.count()*1E3 << " ms";
+             message_print_log(message_buf);
 
              // create output vector
              vector<double> sipm_output = {};
@@ -172,15 +216,19 @@ int main(void)
                 outputString.push_back(buf[j]);
                }
              }
-
-             cout << "Sending Result" << endl;
+             numBytes = outputString.length();
+             message_buf << "Sending Result, (" << numBytes << " bytes)";
+             message_print_log(message_buf);
              res.set_content(outputString, "text/plain");
 
              // Clean up - make 100% sure large variables are deleted
              delete sipm;
              // large vars:  bytes data recv optical_input response outputString sipm_output
+             // These SHOULD be destroyed automatically when ending a transaction with the server. TODO CHECK
 
-             cout << "==================== GOODBYE  ====================" << endl; });
+             requests_served++;
+             message_buf << "==================== GOODBYE  ====================";
+             message_print_log(message_buf); });
 
-    srv.listen("127.0.0.1", 33232);
+  srv.listen("127.0.0.1", 33232);
 }
