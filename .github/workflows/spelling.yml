@@ -55,10 +55,10 @@ jobs:
           spell_check_this: check-spelling/spell-check-this@prerelease
           post_comment: 0
           experimental_apply_changes_via_bot: 1
-          dictionary_source_prefixes: '{"cspell1", "https://raw.githubusercontent.com/check-spelling/cspell-dicts/master/dictionaries/"}'
-          extra_dictionaries: cspell1:filetypes/filetypes.txt
-            cspell1:cpp/cpp.txt
-            cspell1:python/python.txt
+          dictionary_source_prefixes: '{"csp", "https://raw.githubusercontent.com/check-spelling/cspell-dicts/master/dictionaries/"}'
+          extra_dictionaries: csp:filetypes/filetypes.txt
+            csp:cpp/cpp.txt
+            csp:python/python.txt
 
   comment:
     name: Report
