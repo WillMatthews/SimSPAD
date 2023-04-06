@@ -55,6 +55,7 @@ jobs:
           spell_check_this: check-spelling/spell-check-this@prerelease
           post_comment: 0
           experimental_apply_changes_via_bot: 1
+          dictionary_source_prefixes: '{"cspell", "https://raw.githubusercontent.com/check-spelling/cspell-dicts/master/dictionaries/"}'
           extra_dictionaries: cspell:filetypes/filetypes.txt
             cspell:cpp/cpp.txt
             cspell:python/python.txt
