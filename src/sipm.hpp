@@ -104,8 +104,16 @@ private:
 
     double LUT(double x, double *workingVector) const;
 
-    double sipm_trapezoidal(double (SiPM::*f)(double), double lower, double upper, unsigned long n);
-    std::vector<double> sipm_cum_trapezoidal(double (SiPM::*f)(double), double lower, double upper, unsigned long n);
+    // trapezoidal integrations over a function
+    double trapezoidal(double (SiPM::*f)(double), double lower, double upper, unsigned long n);
+    std::vector<double> cum_trapezoidal(double (SiPM::*f)(double), double lower, double upper, unsigned long n);
+
+    // trapezoidal integrations over a vector
+    double trapezoidal(std::vector<double>, double);
+    std::vector<double> cum_trapezoidal(std::vector<double>, double);
 };
+
+
+
 
 #endif // SIPM_H

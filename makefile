@@ -64,4 +64,4 @@ server: ./src/server.cpp ./src/sipm.cpp ./src/utilities.cpp ./src/pages.cpp ./sr
 	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/$(TARGET_SERVER) ./src/server.cpp ./src/sipm.cpp ./src/utilities.cpp ./src/pages.cpp ./src/ramlog.cpp
 
 simspad: ./src/main.cpp ./src/sipm.cpp ./src/utilities.cpp
-	$(CXX) $(CXXFLAGS) -o $(TARGET) ./src/main.cpp ./src/sipm.cpp ./src/utilities.cpp
+	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/$(TARGET) ./src/main.cpp ./src/sipm.cpp ./src/utilities.cpp

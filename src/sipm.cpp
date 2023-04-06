@@ -246,7 +246,7 @@ void SiPM::init_spads(vector<double> light) // inclusion adds ~ 35ps/ucell dt in
     // p_t is the integral of the PDE from 0 to t divided by t
     // p_t(t) provides the approximation of $\frac{1}{t} \int_0^t pde(t) dt$
     // this line calculates the integral, the division is carried out in the loop on the elements that are needed
-    vector<double> p_t = sipm_cum_trapezoidal(&SiPM::pde_from_time, 0.0, t, nPDF * upsampleIntegralPDE);
+    vector<double> p_t = cum_trapezoidal(&SiPM::pde_from_time, 0.0, t, nPDF * upsampleIntegralPDE);
 
     for (unsigned long i = 0; i < nPDF; i++)
     {
@@ -506,7 +506,7 @@ double SiPM::LUT(double x, double *workingVector) const
 }
 
 // Trapezoidal integration of function f between the limits lower and upper, with n points
-double SiPM::sipm_trapezoidal(double (SiPM::*f)(double), double lower, double upper, unsigned long n)
+double SiPM::trapezoidal(double (SiPM::*f)(double), double lower, double upper, unsigned long n)
 {
     // Step size of integral
     double dx = (upper - lower) / n;
@@ -522,7 +522,7 @@ double SiPM::sipm_trapezoidal(double (SiPM::*f)(double), double lower, double up
 }
 
 // Cumunulative Trapezoidal integration of function f between the limits lower and upper, with n points
-vector<double> SiPM::sipm_cum_trapezoidal(double (SiPM::*f)(double), double lower, double upper, unsigned long n)
+vector<double> SiPM::cum_trapezoidal(double (SiPM::*f)(double), double lower, double upper, unsigned long n)
 {
 
     // create output vector
@@ -546,4 +546,36 @@ vector<double> SiPM::sipm_cum_trapezoidal(double (SiPM::*f)(double), double lowe
     output.push_back(s);
 
     return output;
+}
+
+// Trapezoidally integrate vector f with spacing dx
+double SiPM::trapezoidal(vector<double> f, double dx)
+{
+    double s = f[0] + f[f.size() - 1]; // Beginning and end add to formula
+    for (int i = 1; i < (int)(f.size() - 1); i++)
+    {
+        s += 2 * f[i]; // Trapezoidal Integration
+    }
+
+    return dx * s / 2;
+}
+
+// Cumunulatively trapezoidally integrate vector f with spacing dx
+vector<double> SiPM::cum_trapezoidal(vector<double> f, double dx)
+{
+    vector<double> result;
+    result.reserve(f.size());
+
+    double s = f[0] * dx / 2; // Beginning and end add to formula
+    result.push_back(s);
+
+    for (int i = 1; i < (int)(f.size() - 1); i++)
+    {
+        s += 2 * f[i] * dx / 2;
+        result.push_back(s);
+    }
+    s += f[f.size() - 1] * dx / 2; // End add to formula
+    result.push_back(s);
+
+    return result;
 }

@@ -31,7 +31,7 @@ SiPMs use a vast array of single photon avalanche diodes (SPADs) to enable singl
 For the purposes of my DPhil, I investigated using SiPMs with application of high-performance receivers for optical wireless communications.
 SiPMs consequently have turned out to be extremely good detectors as they have a high bandwidth, high gain, and large area when contrasted with other silicon based photo-detectors.
 
-SiPMs unfortunately experience recovery-time based nonlinearity, which is due to the recharge period each microcell undergoes after detection oh a photon.
+SiPMs unfortunately experience recovery-time based nonlinearity, which is due to the recharge period each microcell undergoes after detection of a photon.
 Interestingly, there are unobservable parameters inside the device as a result which dictate the shape of the output.
 These unobservable parameters include both the array average photon detection efficiency, and the mean fired charge per microcell.
 This simulation allows both simulation of SiPMs for arbitrary optical input, and observation of those unobservable parameters.

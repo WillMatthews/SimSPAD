@@ -184,45 +184,7 @@ tuple<wstring, double> exponent_val(double num)
     return make_tuple(prefixes[k], num * pow(10, -(k * 3 - 15)));
 }
 
-// Print end of simulation run information for user / debug
-void print_info(chrono::duration<double> elapsed, double dt, vector<double> outputVec, int numMicrocell)
-{
-    auto sysclock = chrono::system_clock::now();
-    auto tt = chrono::system_clock::to_time_t(sysclock);
-    string timeStr = ctime(&tt);
 
-    int inputSize = outputVec.size();
-
-    locale::global(locale("en_US.utf8"));
-    wcout.imbue(locale());
-
-    cout << "Simulation Run at: " << timeStr << endl;
-
-    wstring prefix;
-    double val;
-    tie(prefix, val) = exponent_val(elapsed.count());
-    wcout << "Elapsed Time:\t\t" << val << " " << prefix << "s" << endl;
-    tie(prefix, val) = exponent_val(dt * inputSize);
-    wcout << "Simulated Time:\t\t" << val << " " << prefix << "s" << endl;
-    tie(prefix, val) = exponent_val(dt);
-    wcout << "Simulation dt:\t\t" << val << " " << prefix << "s" << endl;
-    cout << "Time Steps:\t\t" << inputSize << " "
-         << "Sa" << endl;
-    double time_per_iter = ((double)elapsed.count()) / ((double)inputSize);
-    tie(prefix, val) = exponent_val(time_per_iter);
-    wcout << "Compute Per Step:\t" << val << " " << prefix << "s" << endl;
-    tie(prefix, val) = exponent_val(time_per_iter / numMicrocell);
-    wcout << "Compute Per uCell Step: " << val << " " << prefix << "s" << endl;
-
-    double sumOut = 0; // Sum of all the charge from the SiPM from the experiment
-    if (!outputVec.empty())
-    {
-        sumOut = reduce(outputVec.begin(), outputVec.end()); // Sum all responses
-    }
-    double Ibias = sumOut / (inputSize * dt); // Calculate the bias current
-    tie(prefix, val) = exponent_val(Ibias);
-    wcout << "Simulated Ibias:\t" << val << " " << prefix << "A" << endl;
-}
 
 // Linearly space num_in points between values start_in and end_in
 // Template removed as I am stupid and keep getting undefined reference errors.
@@ -259,80 +221,4 @@ vector<double> linspace(double start_in, double end_in, int num_in)
     return linspaced;
 }
 
-// Prints a vector to stdout
-void print_vector(vector<double> vec)
-{
-    cout << "size: " << vec.size() << endl;
-    for (double d : vec)
-        cout << d << " ";
-    cout << endl;
-}
 
-// Trapezoidally integrate function f which takes a single double type argument
-// Between lower and upper with n points
-/* double trapezoidal(double (*f)(double), double lower, double upper, int n)
-{
-    double dx = (upper - lower) / n;
-    double s = f(lower) + f(upper); // beginning and end add to formula
-
-    for (int i = 1; i < (n - 1); i++)
-    {
-        s += 2 * f(lower + i * dx);
-    }
-    return dx * s / 2;
-}
-*/
-
-// Trapezoidally integrate vector f with spacing dx
-double trapezoidal(vector<double> f, double dx)
-{
-    double s = f[0] + f[f.size() - 1]; // Beginning and end add to formula
-    for (int i = 1; i < (int)(f.size() - 1); i++)
-    {
-        s += 2 * f[i]; // Trapezoidal Integration
-    }
-
-    return dx * s / 2;
-}
-
-// Cumunulatively trapezoidally integrate function f which takes a single double type argument
-// with integration limits lower and upper with n points
-vector<double> cum_trapezoidal(double (*f)(double), double lower, double upper, int n)
-{
-    vector<double> result;
-    result.reserve(n);
-
-    double dx = (upper - lower) / n;
-    double s = f(lower) * dx / 2; // Beginning add to formula
-    result.push_back(s);
-
-    for (int i = 1; i < (n - 1); i++)
-    {
-        s += 2 * f(lower + i * dx) * dx / 2; // Trapezoidal Integration
-        result.push_back(s);
-    }
-    s += f(upper) * dx / 2; // End add to formula
-    result.push_back(s);
-
-    return result;
-}
-
-// Cumunulatively trapezoidally integrate vector f with spacing dx
-vector<double> cum_trapezoidal(vector<double> f, double dx)
-{
-    vector<double> result;
-    result.reserve(f.size());
-
-    double s = f[0] * dx / 2; // Beginning and end add to formula
-    result.push_back(s);
-
-    for (int i = 1; i < (int)(f.size() - 1); i++)
-    {
-        s += 2 * f[i] * dx / 2;
-        result.push_back(s);
-    }
-    s += f[f.size() - 1] * dx / 2; // End add to formula
-    result.push_back(s);
-
-    return result;
-}

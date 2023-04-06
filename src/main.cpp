@@ -28,6 +28,49 @@
 
 using namespace std;
 
+
+// Print end of simulation run information for user / debug
+void print_info(chrono::duration<double> elapsed, SiPM sipm, vector<double> outputVec)
+{
+    int numMicrocell = sipm.numMicrocell;
+    double dt = sipm.dt;
+    auto sysclock = chrono::system_clock::now();
+    auto tt = chrono::system_clock::to_time_t(sysclock);
+    string timeStr = ctime(&tt);
+
+    int inputSize = outputVec.size();
+
+    locale::global(locale("en_US.utf8"));
+    wcout.imbue(locale());
+
+    cout << "Simulation Run at: " << timeStr << endl;
+
+    wstring prefix;
+    double val;
+    tie(prefix, val) = exponent_val(elapsed.count());
+    wcout << "Elapsed Time:\t\t" << val << " " << prefix << "s" << endl;
+    tie(prefix, val) = exponent_val(dt * inputSize);
+    wcout << "Simulated Time:\t\t" << val << " " << prefix << "s" << endl;
+    tie(prefix, val) = exponent_val(dt);
+    wcout << "Simulation dt:\t\t" << val << " " << prefix << "s" << endl;
+    cout << "Time Steps:\t\t" << inputSize << " "
+         << "Sa" << endl;
+    double time_per_iter = ((double)elapsed.count()) / ((double)inputSize);
+    tie(prefix, val) = exponent_val(time_per_iter);
+    wcout << "Compute Per Step:\t" << val << " " << prefix << "s" << endl;
+    tie(prefix, val) = exponent_val(time_per_iter / numMicrocell);
+    wcout << "Compute Per uCell Step: " << val << " " << prefix << "s" << endl;
+
+    double sumOut = 0; // Sum of all the charge from the SiPM from the experiment
+    if (!outputVec.empty())
+    {
+        sumOut = reduce(outputVec.begin(), outputVec.end()); // Sum all responses
+    }
+    double Ibias = sumOut / (inputSize * dt); // Calculate the bias current
+    tie(prefix, val) = exponent_val(Ibias);
+    wcout << "Simulated Ibias:\t" << val << " " << prefix << "A" << endl;
+}
+
 // Create lambda expression for a simulation run (binary in -> binary out).
 // Might be helpful if multi-threading in the future
 void simulate(string fname_in, string fname_out, bool silence)
@@ -51,7 +94,7 @@ void simulate(string fname_in, string fname_out, bool silence)
 
     if (!silence)
     {
-        print_info(elapsed, sipm.dt, out, sipm.numMicrocell);
+        print_info(elapsed, sipm, out);
     }
 }
 
