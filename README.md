@@ -82,11 +82,18 @@ The data to and from the server is packaged as characters - see below in the Bin
 
 ## Install
 
+### Tests
+Run `make build` to create the directories for the executables.
+Then run `make test` to create and run the tests.
+
 ### Standalone
-Make the executable with `make`. The executable will produced as `./build/apps/simspad`.
+Run `make build` to create the directories for the executables.
+Make the executable with `make`. The executable will be produced as `./build/apps/simspad`.
 
 ### Web Application
-Make the executable with `make server`. The executable will produced as `./build/apps/server`.
+Run `make build` to create the directories for the executables.
+Then run `make configure` to download the libraries for the web server.
+Finally, make the executable with `make server`. The executable will be produced as `./build/apps/server`.
 
 Create a new user `useradd simspad`
 <details>
