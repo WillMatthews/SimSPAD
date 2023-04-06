@@ -6,7 +6,7 @@ A high performance avalanche multiplication based optical receiver simulator.
 
 [![Build](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/makefile.yml)
 [![Simulator Tests](https://github.com/WillMatthews/SimSPAD/actions/workflows/sim-accuracy.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/sim-accuracy.yml)
-[![version](https://img.shields.io/badge/version-0.2.1-success.svg)](https://semver.org)
+[![version](https://img.shields.io/badge/version-0.2.2-success.svg)](https://semver.org)
 [![Spell Check](https://github.com/WillMatthews/SimSPAD/actions/workflows/spelling.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/spelling.yml)
 
 
@@ -56,10 +56,10 @@ This is an **experimental work in progress**, and more documentation will follow
 ## How to Reference:
 
 If you have used this software for your work, please reference it as follows:
-William Matthews (2022) SimSPAD (Version 0.2.1) [Source Code]. Private Distribution
+William Matthews (2022) SimSPAD (Version 0.2.2) [Source Code]. Private Distribution
 
 Eventually, when this repo is made public, you may cite as:
-William Matthews (2022) SimSPAD (Version 0.2.1) [Source Code]. https://github.com/WillMatthews/SimSPAD
+William Matthews (2022) SimSPAD (Version 0.2.2) [Source Code]. https://github.com/WillMatthews/SimSPAD
 
 
 ## Usage
@@ -76,6 +76,7 @@ This binary file can be created using examples in the examples directory. Curren
 Once SimSPAD server is running, you are able to send a POST request to `http://localhost:33232/simspad`.
 To stop the server, access `http://localhost:33232/stop`.
 To see if the server is running, access `http://localhost:33232/` where you should see a greeting message in plain text.
+Logs (the last 512KB of output to stdout) can be seen at `http://localhost:33232/logs`.
 The reply from the server will be the result from the simulation.
 The data to and from the server is packaged as characters - see below in the Binary Format section for more details.
 
