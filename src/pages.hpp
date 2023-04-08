@@ -17,6 +17,9 @@
 
 #include <string>
 
-std::string welcome();
-std::string logo();
-std::string log_head();
+std::string page_welcome();
+std::string page_logo();
+std::string page_menu();
+std::string page_header();
+std::string page_footer();
+std::string page_css();

@@ -57,7 +57,7 @@ std::string current_time(void)
 
 void message_print_log(std::ostringstream &message)
 {
-  RamLog::getInstance().log(current_time() + "   " + message.str() + "<br/>");
+  RamLog::getInstance().log("<div class='time'>" + current_time() + "</div>   " + message.str() + "<br/>");
   std::cout << message.str() << std::endl;
   message.str("");
 }
@@ -86,7 +86,7 @@ int main(void)
   srv.set_payload_max_length(1024 * 1024 * 128);
 
   srv.Get("/", [](const Request &, Response &res)
-          { res.set_content(welcome(), "text/html"); });
+          { res.set_content(page_welcome(), "text/html"); });
 
   srv.Get("/stop", [&](const Request &req, Response &res)
           {
@@ -95,20 +95,24 @@ int main(void)
             std::cout << COL_RED << "\t   Server halted via http" << COL_RESET << std::endl;
             std::cout << "Halted at time: " << halttime << std::endl;
             res.set_content("Server Halted at " + halttime, "text/plain");
-            srv.stop(); });
+            srv.stop();
+          });
 
   srv.Get("/logs", [&](const Request &req, Response &res)
           {
             (void) req;
-            std::string page_text = log_head();
+            std::string page_text = page_header();
+            page_text += "<div class='logs'>";
             page_text += "Start Time: " + start_time + "<br/>";
             page_text += "Current Time: " + current_time() + "<br/>";
             page_text += last_request_time;
             page_text += "Requests Served: " + std::to_string(requests_served) + "<br/>";
             page_text += "Bytes Processed: " + std::to_string(bytes_processed) + "<br/><br/>";
             page_text += RamLog::getInstance().getLog();
-            page_text += "</body></html>";
-            res.set_content(page_text, "text/html"); });
+            page_text += "</div>";
+            page_text += page_footer();
+            res.set_content(page_text, "text/html");
+          });
 
   srv.Post("/simspad", [](const Request &req, Response &res)
            {
@@ -185,7 +189,7 @@ int main(void)
              // Print Elapsed Time (allow debugging)
              auto end = chrono::system_clock::now();
              chrono::duration<double> elapsed_seconds = end-start;
-             message_buf << "Elapsed Time:\t\t" << elapsed_seconds.count()*1E3 << " ms";
+             message_buf << "Elapsed Time\t\t" << elapsed_seconds.count()*1E3 << " ms";
              message_print_log(message_buf);
 
              // create output vector
@@ -217,7 +221,7 @@ int main(void)
                }
              }
              numBytes = outputString.length();
-             message_buf << "Sending Result, (" << numBytes << " bytes)";
+             message_buf << "Sending Result (" << numBytes << " bytes)";
              message_print_log(message_buf);
              res.set_content(outputString, "text/plain");
 
@@ -228,7 +232,8 @@ int main(void)
 
              requests_served++;
              message_buf << "==================== GOODBYE  ====================";
-             message_print_log(message_buf); });
+             message_print_log(message_buf);
+           });
 
   srv.listen("127.0.0.1", 33232);
 }
