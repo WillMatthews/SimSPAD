@@ -57,14 +57,14 @@ std::string current_time(void)
 
 void message_print_log(std::ostringstream &message)
 {
-  RamLog::getInstance().log("<div class='time'>" + current_time() + "</div>   " + message.str() + "<br/>");
+  RamLog::getInstance().log("<tr><td class='time'>" + current_time() + "</td><td class='message'>" + message.str() + "</td></tr>");
   std::cout << message.str() << std::endl;
   message.str("");
 }
 
 int requests_served = 0;
 long bytes_processed = 0;
-std::string last_request_time = "";
+std::string last_request_time = "None";
 
 int main(void)
 {
@@ -75,19 +75,22 @@ int main(void)
 
   using namespace httplib;
 
+  // Manage SSL in nginx -> this server is intended to be used locally anyhow
   Server srv; // HTTP
   // SSLServer srv; // HTTPS
 
-  // Limit Number of active threads - default 12
+  // Limit Number of active threads - default to 12 if unset
   srv.new_task_queue = []
   { return new ThreadPool(4); };
 
   // Max payload size is 128 MB
   srv.set_payload_max_length(1024 * 1024 * 128);
 
+  // Landing page with basic instructions
   srv.Get("/", [](const Request &, Response &res)
           { res.set_content(page_welcome(), "text/html"); });
 
+  // Halt the server
   srv.Get("/stop", [&](const Request &req, Response &res)
           {
             (void) req;
@@ -95,29 +98,41 @@ int main(void)
             std::cout << COL_RED << "\t   Server halted via http" << COL_RESET << std::endl;
             std::cout << "Halted at time: " << halttime << std::endl;
             res.set_content("Server Halted at " + halttime, "text/plain");
-            srv.stop();
-          });
+            srv.stop(); });
 
+  // Present a user with logs of what the server has recently done
   srv.Get("/logs", [&](const Request &req, Response &res)
           {
             (void) req;
             std::string page_text = page_header("Logs");
-            page_text += page_menu();
             page_text += "<div class='logs'>";
-            page_text += "Start Time: " + start_time + "<br/>";
-            page_text += "Current Time: " + current_time() + "<br/>";
-            page_text += last_request_time;
-            page_text += "Requests Served: " + std::to_string(requests_served) + "<br/>";
-            page_text += "Bytes Processed: " + std::to_string(bytes_processed) + "<br/><br/>";
-            page_text += RamLog::getInstance().getLog();
-            page_text += "</div>";
-            page_text += page_footer();
-            res.set_content(page_text, "text/html");
-          });
 
+            auto row_lambda = [](std::string a, std::string b) {return "<tr><td class='info-name'>" + a + "</td><td>" + b + "</td></tr>"; };
+
+            page_text += "<table>";
+            page_text += row_lambda("Start Time:", start_time);
+            page_text += row_lambda("Current Time:", current_time());
+            page_text += row_lambda("Last Request At:", last_request_time);
+            page_text += row_lambda("Requests Served:", std::to_string(requests_served));
+            page_text += row_lambda("Bytes Processed:", std::to_string(bytes_processed));
+            page_text += "</table><br/><br/>";
+
+            std::string log_text = RamLog::getInstance().getLog();
+
+            if (log_text.length() > 0)
+            {
+                page_text += "<table class='log-data'><tr><th>Time</th><th>Data</th></tr>";
+                page_text += log_text;
+                page_text += "</table>";
+            }
+
+            page_text += "</div>" + page_footer();
+            res.set_content(page_text, "text/html"); });
+
+  // Run a Simulation from a POST request
   srv.Post("/simspad", [](const Request &req, Response &res)
            {
-             last_request_time = "Last Request At: " + current_time() + "<br/>";
+             last_request_time = current_time();
              std::ostringstream message_buf;
              using namespace std;
              message_buf << "==================== GOT POST ====================" << std::endl;
@@ -233,8 +248,7 @@ int main(void)
 
              requests_served++;
              message_buf << "==================== GOODBYE  ====================";
-             message_print_log(message_buf);
-           });
+             message_print_log(message_buf); });
 
   srv.listen("127.0.0.1", 33232);
 }

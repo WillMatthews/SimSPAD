@@ -20,6 +20,6 @@
 std::string page_welcome();
 std::string page_logo();
 std::string page_menu();
-std::string page_header();
+std::string page_header(std::string);
 std::string page_footer();
 std::string page_css();

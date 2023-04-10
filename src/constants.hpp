@@ -43,4 +43,3 @@ const double Joule2eV = 1.0 / eV2Joule;
 const double elementaryCharge = 1.60217663e-19;
 
 #endif
-
