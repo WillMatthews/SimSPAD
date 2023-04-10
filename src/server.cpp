@@ -122,6 +122,9 @@ int main(void)
   // Max payload size is 128 MB
   srv.set_payload_max_length(1024 * 1024 * 128);
 
+  // srv.set_logger([](const auto &req, const auto &res)
+  //                { log_access(req, res.status); });
+
   // If an error occurs (e.g. 404 -> redirect a user here)
   srv.set_error_handler([](const auto &req, auto &res)
                         {
