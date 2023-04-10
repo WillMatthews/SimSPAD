@@ -41,19 +41,20 @@ std::string page_menu()
 // CSS Styles for the SimSPAD web page
 std::string page_css()
 {
-    std::string style_str = "<style>"
-                            "body{font-family: sans; background: gainsboro;}"
-                            ".logo{display: block; margin: auto; width: 50%; max-width: 35em;}"
-                            ".logs{font-family: mono; font-size: small;}"
-                            ".time{color: steelblue; padding-left: 2em; padding-right: 2em;}"
-                            ".info-name{padding-left: 2em; padding-right: 2em;}"
-                            ".message{color: black; white-space: pre;}"
-                            ".menu-el{width: 25%; height: 2em; text-align: center;}"
-                            ".menu-row{height: 2em}"
-                            ".menu{width: 400px; height: 2em; border-collapse: collapse; margin-left: auto; margin-right: auto;}"
-                            "</style>";
-
-    return style_str;
+    return "<style>"
+           "body{font-family: sans; background: gainsboro;}"
+           ".logo{display: block; margin: auto; width: 50%; max-width: 35em;}"
+           ".logs{font-family: mono; font-size: small; padding-left: 1em; padding-right: 1em;}"
+           ".time{color: midnightblue; padding-left: 1em; padding-right: 1em;}"
+           ".info-name{padding-left: 2em; padding-right: 2em;}"
+           ".sequence{color: crimson; padding-left: 1em; padding-right: 1em; text-align: right;}"
+           ".message{white-space: pre;}"
+           ".message-error{color: red;}"
+           ".menu-el{width: 25%; height: 2em; text-align: center;}"
+           ".menu-row{height: 2em}"
+           ".menu{width: 400px; height: 2em; border-collapse: collapse; margin-left: auto; margin-right: auto;}"
+           ".error{font-size: 3em; font-weight: bold; text-align:center;}"
+           "</style>";
 }
 
 // HTML Header for SimSPAD web page
