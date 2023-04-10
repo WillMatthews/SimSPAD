@@ -64,7 +64,8 @@ void message_print_log(std::ostringstream &message)
   message_sequence++;
   std::string msg = message.str();
 
-  if (!(msg.contains("[INFO]") || msg.contains("[ERROR]") || msg.contains("[WARN]")))
+  
+  if (!((msg.find("[INFO]") != std::string::npos) || (msg.find("[ERROR]") != std::string::npos) || (msg.find("[WARN]") != std::string::npos)))
   {
     msg = "[INFO]  " + msg;
   }
@@ -72,7 +73,7 @@ void message_print_log(std::ostringstream &message)
   std::string message_class = "";
   std::string COL_START = "";
   std::string COL_STOP = "";
-  if (msg.contains("[ERROR]"))
+  if (msg.find("[ERROR]") != std::string::npos)
   {
     message_class = " message-error";
     COL_START = COL_RED;

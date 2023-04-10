@@ -1,5 +1,5 @@
 CXX		 := g++
-CXXFLAGS := -pedantic-errors -Wall -Wextra -Werror --std=c++23 -O3 -ffast-math -funsafe-math-optimizations -msse4.2 -pthread
+CXXFLAGS := -pedantic-errors -Wall -Wextra -Werror --std=c++17 -O3 -ffast-math -funsafe-math-optimizations -msse4.2 -pthread
 LDFLAGS	 := -L/usr/lib -lstdc++ -lm
 BUILD	 := ./build
 OBJ_DIR	 := $(BUILD)/objects
