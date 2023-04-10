@@ -73,11 +73,13 @@ This binary file can be created using examples in the examples directory. Curren
 ### Web Application
 
 Once SimSPAD server is running, you are able to send a POST request to `http://localhost:33232/simspad`.
+The reply from the server will be the result from the simulation.
+The data to and from the server is packaged as characters - see below in the Binary Format section for more details.
+
 To stop the server, access `http://localhost:33232/stop`.
 To see if the server is running, access `http://localhost:33232/` where you should see a greeting message in plain text.
 Logs (the last 512KB of output to stdout) can be seen at `http://localhost:33232/logs`.
-The reply from the server will be the result from the simulation.
-The data to and from the server is packaged as characters - see below in the Binary Format section for more details.
+
 
 ## Install
 
