@@ -28,7 +28,6 @@
 
 using namespace std;
 
-
 // Print end of simulation run information for user / debug
 void print_info(chrono::duration<double> elapsed, SiPM sipm, vector<double> outputVec)
 {

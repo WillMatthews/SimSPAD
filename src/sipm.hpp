@@ -113,7 +113,4 @@ private:
     std::vector<double> cum_trapezoidal(std::vector<double>, double);
 };
 
-
-
-
 #endif // SIPM_H

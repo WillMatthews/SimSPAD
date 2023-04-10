@@ -184,8 +184,6 @@ tuple<wstring, double> exponent_val(double num)
     return make_tuple(prefixes[k], num * pow(10, -(k * 3 - 15)));
 }
 
-
-
 // Linearly space num_in points between values start_in and end_in
 // Template removed as I am stupid and keep getting undefined reference errors.
 // template <typename T>
@@ -220,5 +218,3 @@ vector<double> linspace(double start_in, double end_in, int num_in)
                               // are exactly the same as the input
     return linspaced;
 }
-
-
