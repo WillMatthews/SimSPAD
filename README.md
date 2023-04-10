@@ -116,13 +116,18 @@ WantedBy=multi-user.target
 ```
 </details>
 
+The following steps may be omitted if you are not planning on sharing the server over a network with multiple users.
+
 <details>
 <summary>Edit Nginx sites-available to proxy pass to the simspad server </summary>
+
+This process means that users are not required to memorise the port number for the server, all you need to do is point your software at the link you define here.
+This action also means that you are able to add SSL encryption quite easily with a service like 'lets encrypt'.
 
 Add the following location:
 
 ```
-    location /sim/ {
+    location /whatever-you-want/ {
         # proxy_buffering off;
         proxy_pass http://127.0.0.1:33232/;
     }
