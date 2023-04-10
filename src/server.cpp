@@ -101,7 +101,8 @@ int main(void)
   srv.Get("/logs", [&](const Request &req, Response &res)
           {
             (void) req;
-            std::string page_text = page_header();
+            std::string page_text = page_header("Logs");
+            page_text += page_menu();
             page_text += "<div class='logs'>";
             page_text += "Start Time: " + start_time + "<br/>";
             page_text += "Current Time: " + current_time() + "<br/>";

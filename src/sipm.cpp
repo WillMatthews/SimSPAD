@@ -124,7 +124,6 @@ SiPM::SiPM() {}
 
 SiPM::~SiPM()
 {
-    cout << "Freed SiPM" << endl;
 } // destructor
 
 // Convert overvoltage to PDE
