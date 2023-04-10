@@ -83,7 +83,6 @@ std::string page_footer()
 std::string page_welcome()
 {
     std::string pageContents = page_header("Home");
-    pageContents += page_menu();
     pageContents += page_footer();
 
     return pageContents;
