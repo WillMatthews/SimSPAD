@@ -42,9 +42,10 @@
 #include <ctime>
 #include <sstream>
 
-#define COL_GREEN "\033[32;1m"
-#define COL_RED "\033[31;1m"
-#define COL_RESET "\033[0m"
+#define COL_GREEN "\033[32;1m"  // Used for server messages
+#define COL_YELLOW "\033[33;1m" // Used for Warnings
+#define COL_RED "\033[31;1m"    // Used for Errors
+#define COL_RESET "\033[0m"     // Reset colour in term
 
 // Provides the current time formatted as a string
 std::string current_time(void)
@@ -56,39 +57,56 @@ std::string current_time(void)
   return timestr;
 }
 
-long message_sequence = 0;
+long message_sequence = 0;      // message sequence number (how many messages have been logged)
 // Print a ostringstream to stdout, and also log to the circular buffer RamLog for access with /logs
 // This function adds an [INFO] tag if no other tags are present. [ERROR] tags are red in stdout.
+// [WARN] tags are yellow (orange) in stdout.
+// The logging to the circular buffer RamLog logs preformatted HTML table rows, with appropriate
+// CSS classes for the quoted log level.
 void message_print_log(std::ostringstream &message)
 {
   message_sequence++;
   std::string msg = message.str();
 
-  
+  // if no tag is defined - give the message an INFO tag.
   if (!((msg.find("[INFO]") != std::string::npos) || (msg.find("[ERROR]") != std::string::npos) || (msg.find("[WARN]") != std::string::npos)))
   {
     msg = "[INFO]  " + msg;
   }
 
-  std::string message_class = "";
-  std::string COL_START = "";
-  std::string COL_STOP = "";
+  std::string message_class = ""; // CSS class (see pages.cpp) for message
+  std::string COL_START = "";   // ANSI code for stdout
+  std::string COL_STOP  = "";   // ANSI code for stdout
   if (msg.find("[ERROR]") != std::string::npos)
   {
-    message_class = " message-error";
+    // if message has an Error tag, give it the appropriate tags
+    message_class = "message-error";
     COL_START = COL_RED;
     COL_STOP = COL_RESET;
   }
+  else if (msg.find("[WARN]") != std::string::npos)
+  {
+    // if message has an Warning tag, give it the appropriate tags
+    message_class = "message-warn";
+    COL_START = COL_YELLOW;
+    COL_STOP = COL_RESET;
+  }
+  else
+  {
+    // Otherwise, give the info tag
+    message_class = "message-info";
+  }
 
-  RamLog::getInstance().log("<tr><td class='sequence'>" + std::to_string(message_sequence) + "</td><td class='time'>" + current_time() + "</td><td class='message" + message_class + "'>" + msg + "</td></tr>");
+  RamLog::getInstance().log("<tr><td class='sequence'>" + std::to_string(message_sequence) + "</td><td class='time'>" + current_time() + "</td><td class='message " + message_class + "'>" + msg + "</td></tr>");
   message.str("");
   std::cout << COL_START << msg << COL_STOP << std::endl;
 }
 
-// log web access events
+// log web access events (IP addr and request path) as an [INFO] event
+// Test status code of the response to a request. If an error status code is thrown, log as an error.
 void log_access(httplib::Request req, int status)
 {
-  std::string log_level = "[ERROR]";
+  std::string log_level = "[WARN] ";
   if (status < 0 || status == 200)
   {
     status = 200;
@@ -99,9 +117,9 @@ void log_access(httplib::Request req, int status)
   message_print_log(message_buf);
 }
 
-int requests_served = 0;
-long bytes_processed = 0;
-std::string last_request_time = "None";
+int requests_served = 0;    // number of simulation requests served
+long bytes_processed = 0;   // number of bytes processed by server
+std::string last_request_time = "None"; // When the last request happened
 
 int main(void)
 {
@@ -160,6 +178,7 @@ int main(void)
     std::string page_text = page_header("Logs");
     page_text += "<div class='logs'>";
 
+    // define a lambda function for a HTML table row
     auto row_lambda = [](std::string a, std::string b)
     { return "<tr><td class='info-name'>" + a + "</td><td>" + b + "</td></tr>"; };
 
@@ -171,8 +190,8 @@ int main(void)
     page_text += row_lambda("Bytes Processed:", std::to_string(bytes_processed));
     page_text += "</table><br/><br/>";
 
+    // Print the log table if the table length is greater than zero.
     std::string log_text = RamLog::getInstance().getLog();
-
     if (log_text.length() > 0)
     {
       page_text += "<table class='log-data'><tr><th>Seq.</th><th>Time</th><th>Data</th></tr>";
@@ -226,7 +245,7 @@ int main(void)
     }
 
     // Create SiPM
-    SiPM *sipm = new SiPM(sipmSettingsVector);
+    SiPM *sipm = new SiPM(sipmSettingsVector); // maybe change to a unique_ptr?
 
     // cout parameters so I can tell when someone does something stupid which breaks the server
     auto start = chrono::system_clock::now();
@@ -291,7 +310,7 @@ int main(void)
     // Clean up - make 100% sure large variables are deleted
     delete sipm;
     // large vars:  bytes data recv optical_input response outputString sipm_output
-    // These SHOULD be destroyed automatically when ending a transaction with the server. TODO CHECK
+    // These are destroyed automatically when ending a transaction with the server. (not a pointer)
 
     requests_served++;
     message_buf << "==================== GOODBYE  ====================";
