@@ -76,17 +76,7 @@ void write_binary(string filename, SiPM sipm, vector<double> response)
     string timeStr = ctime(tt);
     */
 
-    vector<double> sipmParametersVector = {};
-    sipmParametersVector.push_back(sipm.dt);
-    sipmParametersVector.push_back((double)sipm.numMicrocell);
-    sipmParametersVector.push_back(sipm.vBias);
-    sipmParametersVector.push_back(sipm.vBr);
-    sipmParametersVector.push_back(sipm.tauRecovery);
-    sipmParametersVector.push_back(sipm.pdeMax);
-    sipmParametersVector.push_back(sipm.vChr);
-    sipmParametersVector.push_back(sipm.cCell);
-    sipmParametersVector.push_back(sipm.tauFwhm);
-    sipmParametersVector.push_back(sipm.digitalThreshold);
+    vector<double> sipmParametersVector = sipm.dump_configuration();
 
     // Concatenate response on the end of SiPM parameters vector
     sipmParametersVector.insert(sipmParametersVector.end(), response.begin(), response.end());

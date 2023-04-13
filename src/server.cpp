@@ -265,17 +265,7 @@ int main(void)
     message_print_log(message_buf);
 
     // create output vector
-    vector<double> sipm_output = {};
-    sipm_output.push_back(sipm->dt);
-    sipm_output.push_back((double)sipm->numMicrocell);
-    sipm_output.push_back(sipm->vBias);
-    sipm_output.push_back(sipm->vBr);
-    sipm_output.push_back(sipm->tauRecovery);
-    sipm_output.push_back(sipm->pdeMax);
-    sipm_output.push_back(sipm->vChr);
-    sipm_output.push_back(sipm->cCell);
-    sipm_output.push_back(sipm->tauFwhm);
-    sipm_output.push_back(sipm->digitalThreshold);
+    vector<double> sipm_output = sipm->dump_configuration();
 
     // concat SiPM simulation output on end of input parameters
     sipm_output.insert(sipm_output.end(), response.begin(), response.end());
