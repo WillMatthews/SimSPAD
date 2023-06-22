@@ -62,8 +62,8 @@ SiPM::SiPM(unsigned long numMicrocell_in, double vbias_in, double vBr_in, double
     vVecLUT = new double[LUTSize];   // Preallocate LUT Voltage array
 
     seed_engines();
-    precalculate_LUT();
     input_sanitation();
+    precalculate_LUT();
 }
 
 SiPM::SiPM(unsigned long numMicrocell_in, double vbias_in, double vBr_in, double tauRecovery_in,
@@ -89,8 +89,8 @@ SiPM::SiPM(unsigned long numMicrocell_in, double vbias_in, double vBr_in, double
     vVecLUT = new double[LUTSize];   // Preallocate LUT Voltage array
 
     seed_engines();
-    precalculate_LUT();
     input_sanitation();
+    precalculate_LUT();
 }
 
 SiPM::SiPM(vector<double> svars)
@@ -116,8 +116,8 @@ SiPM::SiPM(vector<double> svars)
     vVecLUT = new double[LUTSize];   // Preallocate LUT Voltage array
 
     seed_engines();
-    precalculate_LUT();
     input_sanitation();
+    precalculate_LUT();
 }
 
 SiPM::SiPM() {}
@@ -125,6 +125,24 @@ SiPM::SiPM() {}
 SiPM::~SiPM()
 {
 } // destructor
+
+// Dump SiPM Configuration (all parameters) to a vector
+// TODO change this to be a list of doubles with a fixed length.
+//
+vector<double> SiPM::dump_configuration(void){
+    vector<double> sipm_config = {};
+    sipm_config.push_back(dt);
+    sipm_config.push_back((double)numMicrocell);
+    sipm_config.push_back(vBias);
+    sipm_config.push_back(vBr);
+    sipm_config.push_back(tauRecovery);
+    sipm_config.push_back(pdeMax);
+    sipm_config.push_back(vChr);
+    sipm_config.push_back(cCell);
+    sipm_config.push_back(tauFwhm);
+    sipm_config.push_back(digitalThreshold);
+    return sipm_config;
+}
 
 // Convert overvoltage to PDE
 inline double SiPM::pde_from_volt(double overvoltage)
@@ -498,7 +516,7 @@ double SiPM::LUT(double x, double *workingVector) const
             break;
         }
     }
-    // interpolate in the region of the LUT where xs[i] <= x < xs[i+1]
+    // 1st order interpolate in the region of the LUT where xs[i] <= x < xs[i+1]
     dx = xs[i + 1] - xs[i];
     dy = ys[i + 1] - ys[i];
     return ys[i] + (x - xs[i]) * dy / dx;

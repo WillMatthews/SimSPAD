@@ -57,6 +57,8 @@ public:
 
     ~SiPM();
 
+    std::vector<double> dump_configuration(void);
+
     inline double pde_from_volt(double overvoltage);
 
     inline double pde_from_time(double time);

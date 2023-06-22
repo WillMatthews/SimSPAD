@@ -50,6 +50,8 @@ std::string page_css()
            ".sequence{color: crimson; padding-left: 1em; padding-right: 1em; text-align: right;}"
            ".message{white-space: pre;}"
            ".message-error{color: red;}"
+           ".message-warn{color: orange;}"
+           ".message-info{}"
            ".menu-el{width: 25%; height: 2em; text-align: center;}"
            ".menu-row{height: 2em}"
            ".menu{width: 400px; height: 2em; border-collapse: collapse; margin-left: auto; margin-right: auto;}"
