@@ -8,7 +8,6 @@ A high performance avalanche multiplication based optical receiver simulator.
 [![Simulator Tests](https://github.com/WillMatthews/SimSPAD/actions/workflows/sim-accuracy.yml/badge.svg)](https://github.com/WillMatthews/SimSPAD/actions/workflows/sim-accuracy.yml)
 ![version](https://img.shields.io/github/v/tag/WillMatthews/SimSPAD?label=version)
 
-
 ## About
 
 **SimSPAD** is an input output converter which takes an input of simulation parameters and an arbitrary length vector of expected number of photons striking the detector array per time step.
@@ -39,7 +38,6 @@ Simulation also allows for more complicated experiments to be performed in a con
 
 The simulation was originally written in MATLAB to interface with existing bit error rate detection code, but has since been migrated to c++ to enable the simulator to work (much, oh so much) faster.
 
-
 ## Publications involving this simulation:
 
 This is an **experimental work in progress**, and more documentation will follow. This work has been/will be published in:
@@ -54,12 +52,11 @@ This is an **experimental work in progress**, and more documentation will follow
 
 ## How to Reference:
 
-If you have used this software for your work, please reference it as follows:
-William Matthews (2022) SimSPAD (Version 0.2.2) [Source Code]. Private Distribution
+If you use this software in your work, please cite it as:
+William Matthews (2022) SimSPAD (Which version here) [Source Code]. https://github.com/WillMatthews/SimSPAD
 
-Eventually, when this repo is made public, you may cite as:
-William Matthews (2022) SimSPAD (Version 0.2.2) [Source Code]. https://github.com/WillMatthews/SimSPAD
-
+If you use the simulation in a publication, please cite the following papers at your discretion as well:
+[MDPI Photonics: An experimental and numerical study of the impact of ambient light of SiPMs in VLC receivers](https://doi.org/10.3390/photonics9120888) and [MDPI Sensors: A Roadmap for Gigabit to Terabit Optical Wireless Communications Receivers](https://doi.org/10.3390/s23031101).
 
 ## Usage
 
@@ -79,7 +76,6 @@ The data to and from the server is packaged as characters - see below in the Bin
 To stop the server, access `http://localhost:33232/stop`.
 To see if the server is running, access `http://localhost:33232/` where you should see a greeting message in plain text.
 Logs (the last 512KB of output to stdout) can be seen at `http://localhost:33232/logs`.
-
 
 ## Install
 
@@ -183,3 +179,4 @@ Pull requests are extremely welcome, as long as you obey the give key points in 
 - Ensure the output compares well to experimental data.
 - Do not use magic numbers - ground everything in device parameters and physical constants.
 - Keep SimSPAD fast (again).
+
