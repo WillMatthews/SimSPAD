@@ -28,7 +28,12 @@
 // Progress bar defines
 #define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
 #define PBWIDTH 60
-#define VERSION "0.2.1"
+
+// Version is obtained from git tag.
+// This is done by the Makefile, which replaces the string "replace_with_version" with the output of "git describe --tags --always --dirty"
+#ifndef VERSION
+#define VERSION "unknown"
+#endif
 
 void cli_logo(void);
 

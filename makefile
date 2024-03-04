@@ -11,6 +11,8 @@ TARGET_TEST	:= test
 INCLUDE	 := -Ilib/
 SRC_ALL	 := $(wildcard src/*.cpp)
 SRC		 := $(filter-out src/server.cpp, $(SRC_ALL))
+VERSION	 := $(shell git describe --tags --always --dirty)
+CXXFLAGS += -DVERSION=\"$(VERSION)\"
 
 OBJECTS	 := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 DEPENDENCIES \
@@ -55,6 +57,7 @@ info:
 	@echo "[*] Sources:			${SRC}		   "
 	@echo "[*] Objects:			${OBJECTS}	   "
 	@echo "[*] Dependencies:	${DEPENDENCIES}"
+
 
 test: ./test/test.cpp ./test/performance.hpp ./test/current_accuracy.hpp ./src/sipm.cpp ./src/utilities.cpp
 	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/$(TARGET_TEST) ./test/test.cpp ./src/sipm.cpp ./src/utilities.cpp
