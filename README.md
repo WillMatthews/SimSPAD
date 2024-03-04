@@ -96,7 +96,7 @@ Create a new user `useradd simspad`
 <details>
 <summary>Create a systemd file to run the executable </summary>
 
-```
+```systemd
 [Unit]
 Description=SimSPAD Avalanche Photo-detector Simulator
 Requires=network-online.target
@@ -124,7 +124,7 @@ This action also means that you are able to add SSL encryption quite easily with
 
 Add the following location:
 
-```
+```nginx
     location /whatever-you-want/ {
         # proxy_buffering off;
         proxy_pass http://127.0.0.1:33232/;
@@ -138,7 +138,7 @@ Add the following location:
 
 Add the following to the end of `http{}`:
 
-```
+```nginx
     client_max_body_size 200M;
 ```
 </details>
