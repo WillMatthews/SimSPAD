@@ -41,15 +41,20 @@
 #include <chrono>
 #include <ctime>
 #include <sstream>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 #define COL_GREEN "\033[32;1m"  // Used for server messages
 #define COL_YELLOW "\033[33;1m" // Used for Warnings
 #define COL_RED "\033[31;1m"    // Used for Errors
 #define COL_RESET "\033[0m"     // Reset colour in term
 
+#define GOODBYE "==================== GOODBYE  ===================="
+#define RX_BINARY "==================== RX'D BINARY ===================="
+#define RX_JSON "==================== RX'D JSON ===================="
+
 // Provides the current time formatted as a string
-std::string current_time(void)
-{
+std::string current_time(void) {
   using namespace std;
   auto time = chrono::system_clock::now();
   time_t time_t = chrono::system_clock::to_time_t(time);
@@ -63,52 +68,38 @@ long message_sequence = 0;      // message sequence number (how many messages ha
 // [WARN] tags are yellow (orange) in stdout.
 // The logging to the circular buffer RamLog logs preformatted HTML table rows, with appropriate
 // CSS classes for the quoted log level.
-void message_print_log(std::ostringstream &message)
-{
+void message_print_log(std::ostringstream &message) {
   message_sequence++;
   std::string msg = message.str();
-
-  // if no tag is defined - give the message an INFO tag.
-  if (!((msg.find("[INFO]") != std::string::npos) || (msg.find("[ERROR]") != std::string::npos) || (msg.find("[WARN]") != std::string::npos)))
-  {
+  bool tag_present = (msg.find("[INFO]") != std::string::npos) || (msg.find("[ERROR]") != std::string::npos) || (msg.find("[WARN]") != std::string::npos);
+  if (!tag_present) {
     msg = "[INFO]  " + msg;
   }
 
   std::string message_class = ""; // CSS class (see pages.cpp) for message
-  std::string COL_START = "";   // ANSI code for stdout
-  std::string COL_STOP  = "";   // ANSI code for stdout
-  if (msg.find("[ERROR]") != std::string::npos)
-  {
-    // if message has an Error tag, give it the appropriate tags
+  std::string COL_START = "";   // ANSI code
+  std::string COL_STOP  = "";   // ANSI code
+  if (msg.find("[ERROR]") != std::string::npos) {
     message_class = "message-error";
     COL_START = COL_RED;
     COL_STOP = COL_RESET;
-  }
-  else if (msg.find("[WARN]") != std::string::npos)
-  {
-    // if message has an Warning tag, give it the appropriate tags
+  } else if (msg.find("[WARN]") != std::string::npos) {
     message_class = "message-warn";
     COL_START = COL_YELLOW;
     COL_STOP = COL_RESET;
-  }
-  else
-  {
-    // Otherwise, give the info tag
+  } else {
     message_class = "message-info";
   }
 
   RamLog::getInstance().log("<tr><td class='sequence'>" + std::to_string(message_sequence) + "</td><td class='time'>" + current_time() + "</td><td class='message " + message_class + "'>" + msg + "</td></tr>");
-  message.str("");
   std::cout << COL_START << msg << COL_STOP << std::endl;
 }
 
 // log web access events (IP addr and request path) as an [INFO] event
 // Test status code of the response to a request. If an error status code is thrown, log as an error.
-void log_access(httplib::Request req, int status)
-{
+void log_access(httplib::Request req, int status) {
   std::string log_level = "[WARN] ";
-  if (status < 0 || status == 200)
-  {
+  if (status < 0 || status == 200) {
     status = 200;
     log_level = "[INFO] ";
   }
@@ -117,137 +108,7 @@ void log_access(httplib::Request req, int status)
   message_print_log(message_buf);
 }
 
-int requests_served = 0;    // number of simulation requests served
-long bytes_processed = 0;   // number of bytes processed by server
-std::string last_request_time = "None"; // When the last request happened
-
-int main(void)
-{
-  cli_logo();
-  std::cout << COL_GREEN << "\t   SimSPAD Server Running" << COL_RESET << std::endl;
-  std::string start_time = current_time();
-  std::cout << "Started at time: " << start_time << std::endl;
-
-  using namespace httplib;
-
-  // Manage SSL in nginx -> this server is intended to be used locally anyhow
-  Server srv; // HTTP
-  // SSLServer srv; // HTTPS
-
-  // Limit Number of active threads - default to 12 if unset
-  srv.new_task_queue = []
-  { return new ThreadPool(4); };
-
-  // Max payload size is 128 MB
-  srv.set_payload_max_length(1024 * 1024 * 128);
-
-  // srv.set_logger([](const auto &req, const auto &res)
-  //                { log_access(req, res.status); });
-
-  // If an error occurs (e.g. 404 -> redirect a user here)
-  srv.set_error_handler([](const auto &req, auto &res)
-                        {
-    log_access(req, res.status);
-    std::string page_text = page_header("Logs");
-    page_text += "<p class='error'>Error Status: <span style='color:red;'>";
-    page_text += std::to_string(res.status) + "</span></p>";
-    page_text += page_footer();
-    res.set_content(page_text, "text/html"); });
-
-  // Landing page with basic instructions
-  srv.Get("/", [](const Request &req, Response &res)
-          {
-    log_access(req, res.status);
-    res.set_content(page_welcome(), "text/html"); });
-
-  // Halt the server
-  srv.Get("/stop", [&](const Request &req, Response &res)
-          {
-    std::string halttime = current_time();
-    std::cout << COL_RED << "\t   Server halted via http" << COL_RESET << std::endl;
-    std::cout << COL_RED << "\t     by: " << req.remote_addr << COL_RESET << std::endl;
-    std::cout << "Halted at time: " << halttime << std::endl;
-    res.set_content("Server Halted at " + halttime, "text/plain");
-    srv.stop(); });
-
-  // Present a user with logs of what the server has recently done
-  srv.Get("/logs", [&](const Request &req, Response &res)
-          {
-    log_access(req, res.status);
-
-    std::string page_text = page_header("Logs");
-    page_text += "<div class='logs'>";
-
-    // define a lambda function for a HTML table row
-    auto row_lambda = [](std::string a, std::string b)
-    { return "<tr><td class='info-name'>" + a + "</td><td>" + b + "</td></tr>"; };
-
-    page_text += "<table>";
-    page_text += row_lambda("Start Time:", start_time);
-    page_text += row_lambda("Current Time:", current_time());
-    page_text += row_lambda("Last Request At:", last_request_time);
-    page_text += row_lambda("Requests Served:", std::to_string(requests_served));
-    page_text += row_lambda("Bytes Processed:", std::to_string(bytes_processed));
-    page_text += "</table><br/><br/>";
-
-    // Print the log table if the table length is greater than zero.
-    std::string log_text = RamLog::getInstance().getLog();
-    if (log_text.length() > 0)
-    {
-      page_text += "<table class='log-data'><tr><th>Seq.</th><th>Time</th><th>Data</th></tr>";
-      page_text += log_text;
-      page_text += "</table>";
-    }
-
-    page_text += "</div>" + page_footer();
-    res.set_content(page_text, "text/html"); });
-
-  // Run a Simulation from a POST request
-  srv.Post("/simspad", [](const Request &req, Response &res)
-           {
-    last_request_time = current_time();
-    std::ostringstream message_buf;
-    using namespace std;
-    message_buf << "==================== GOT POST ====================" << std::endl;
-    message_print_log(message_buf);
-    auto data = req.body;
-
-    log_access(req, res.status);
-
-    size_t numBytes = data.length();
-    message_buf << "Decoding " << numBytes << " bytes..." << std::endl;
-    bytes_processed += numBytes;
-    message_print_log(message_buf);
-
-    vector<double> optical_input = {};
-    vector<double> sipmSettingsVector = {};
-    unsigned char *bytes; // uchar* buffer for intermediate step converting char* to double
-    double recv;          // Received double
-    char buf[8];          // char buffer (incoming chars to be converted to floats)
-    // Decode 8 chars to a double precision float
-    for (size_t i = 0; i < numBytes / 8; i++)
-    {
-      for (int j = 0; j < 8; j++)
-      {
-        buf[j] = data[8 * i + j]; // Create buffer of char*
-      }
-      bytes = reinterpret_cast<unsigned char *>(&buf); // cast char* buffer to bytes
-      recv = *reinterpret_cast<double *>(bytes);       // cast bytes to double
-
-      if (i < 10) // First ten doubles are SiPM simulator parameters
-      {
-        sipmSettingsVector.push_back(recv);
-      }
-      else // Remainder of values are expected number of photons per dt striking array
-      {
-        optical_input.push_back(recv);
-      }
-    }
-
-    // Create SiPM
-    SiPM *sipm = new SiPM(sipmSettingsVector); // maybe change to a unique_ptr?
-
-    // cout parameters so I can tell when someone does something stupid which breaks the server
+void logSimParams(std::ostringstream &message_buf, SiPM *sipm) {
     auto start = chrono::system_clock::now();
     time_t start_time = chrono::system_clock::to_time_t(start);
     message_buf << "Started computation at\t" << ctime(&start_time);
@@ -272,12 +133,14 @@ int main(void)
     message_print_log(message_buf);
     message_buf << "DigitalThreshold\t" << (sipm->digitalThreshold);
     message_print_log(message_buf);
+}
 
-    // Simulate
-    bool silence = true;
-    vector<double> response = sipm->simulate(optical_input, silence);
+vector<double> run_simulation(vector<double> optical_input, SiPM *sipm) {
+    logSimParams(message_buf, sipm);
+    auto start = chrono::system_clock::now();
+    vector<double> response = sipm->simulate(optical_input, true);
 
-    // Print Elapsed Time (allow debugging)
+    // Elapsed time
     auto end = chrono::system_clock::now();
     chrono::duration<double> elapsed_seconds = end - start;
     message_buf << "Elapsed Time\t\t" << elapsed_seconds.count() * 1E3 << " ms";
@@ -285,6 +148,178 @@ int main(void)
 
     // create output vector
     vector<double> sipm_output = sipm->dump_configuration();
+    return sipm_output;
+}
+
+json populate_json(SiPM *sipm) {
+    json response;
+    response["numMicrocell"] = sipm->numMicrocell;
+    response["dt"] = sipm->dt;
+    response["vBias"] = sipm->vBias;
+    response["vBr"] = sipm->vBr;
+    response["tauRecovery"] = sipm->tauRecovery;
+    response["pdeMax"] = sipm->pdeMax;
+    response["vChr"] = sipm->vChr;
+    response["cCell"] = sipm->cCell;
+    response["tFWHM"] = sipm->tauFwhm;
+    response["digitalThreshold"] = sipm->digitalThreshold;
+    return response;
+}
+
+tuple<vector<double>, vector<double>> deserialise_binary(std::string data) {
+    size_t numBytes = data.length();
+    message_buf << "Deserialising " << numBytes << " bytes..." << std::endl;
+    bytes_processed += numBytes;
+    message_print_log(message_buf);
+
+    vector<double> optical_input = {};
+    vector<double> sipmSettingsVector = {};
+    unsigned char *bytes; // uchar* buffer for intermediate step converting char* to double
+    double recv;          // Received double
+    char buf[8];          // char buffer (incoming chars to be converted to floats)
+    // Decode 8 chars to a double precision float
+    for (size_t i = 0; i < numBytes / 8; i++) {
+      for (int j = 0; j < 8; j++) {
+        buf[j] = data[8 * i + j]; // Create buffer of char*
+      }
+      bytes = reinterpret_cast<unsigned char *>(&buf); // cast char* buffer to bytes
+      recv = *reinterpret_cast<double *>(bytes);       // cast bytes to double
+
+      // First ten doubles are SiPM simulator parameters
+      if (i < 10) {
+        sipmSettingsVector.push_back(recv);
+      } else {
+        // Remainder of values are expected number of photons per dt striking array
+        optical_input.push_back(recv);
+      }
+    }
+    return make_tuple(optical_input, sipmSettingsVector);
+}
+
+int requests_served = 0;    // number of simulation requests served
+long bytes_processed = 0;   // number of bytes processed by server
+std::string last_request_time = "None"; // When the last request happened
+
+int main(void) {
+  cli_logo();
+  std::cout << COL_GREEN << "\t   SimSPAD Server Running" << COL_RESET << std::endl;
+  std::string start_time = current_time();
+  std::cout << "Started at time: " << start_time << std::endl;
+
+  using namespace httplib;
+
+  // Manage SSL in nginx -> this server is intended to be used locally anyhow
+  Server srv; // HTTP
+  // SSLServer srv; // HTTPS
+
+  // Limit Number of active threads - default to 12 if unset
+  srv.new_task_queue = []
+  { return new ThreadPool(4); };
+
+  // Max payload size is 128 MB
+  srv.set_payload_max_length(1024 * 1024 * 128);
+
+  // srv.set_logger([](const auto &req, const auto &res)
+  //                { log_access(req, res.status); });
+
+  // If an error occurs (e.g. 404 -> redirect a user here)
+  srv.set_error_handler([](const auto &req, auto &res) {
+    log_access(req, res.status);
+    std::string page_text = page_header("Logs");
+    page_text += "<p class='error'>Error Status: <span style='color:red;'>";
+    page_text += std::to_string(res.status) + "</span></p>";
+    page_text += page_footer();
+    res.set_content(page_text, "text/html");
+  });
+
+  // Landing page with basic instructions
+  srv.Get("/", [](const Request &req, Response &res) {
+    log_access(req, res.status);
+    res.set_content(page_welcome(), "text/html");
+  });
+
+  // Halt the server
+  srv.Get("/stop", [&](const Request &req, Response &res) {
+    std::string halttime = current_time();
+    std::cout << COL_RED << "\t   Server halted via http" << COL_RESET << std::endl;
+    std::cout << COL_RED << "\t     by: " << req.remote_addr << COL_RESET << std::endl;
+    std::cout << "Halted at time: " << halttime << std::endl;
+    res.set_content("Server Halted at " + halttime, "text/plain");
+    srv.stop();
+  });
+
+  // Present a user with logs of what the server has recently done
+  srv.Get("/logs", [&](const Request &req, Response &res) {
+    log_access(req, res.status);
+
+    std::string page_text = page_header("Logs");
+    page_text += "<div class='logs'>";
+
+    // define a lambda function for a HTML table row
+    auto row_lambda = [](std::string a, std::string b)
+    { return "<tr><td class='info-name'>" + a + "</td><td>" + b + "</td></tr>"; };
+
+    page_text += "<table>";
+    page_text += row_lambda("Start Time:", start_time);
+    page_text += row_lambda("Current Time:", current_time());
+    page_text += row_lambda("Last Request At:", last_request_time);
+    page_text += row_lambda("Requests Served:", std::to_string(requests_served));
+    page_text += row_lambda("Bytes Processed:", std::to_string(bytes_processed));
+    page_text += "</table><br/><br/>";
+
+    // Print the log table if the table length is greater than zero.
+    std::string log_text = RamLog::getInstance().getLog();
+    if (log_text.length() > 0) {
+      page_text += "<table class='log-data'><tr><th>Seq.</th><th>Time</th><th>Data</th></tr>";
+      page_text += log_text;
+      page_text += "</table>";
+    }
+
+    page_text += "</div>" + page_footer();
+    res.set_content(page_text, "text/html");
+  });
+
+  srv.Post("/v1/json", [](const Request &req, Response &res) {
+    last_request_time = current_time();
+    std::ostringstream message_buf;
+    using namespace std;
+    message_buf << RX_JSON << std::endl;
+    message_print_log(message_buf);
+    auto data = req.body;
+    log_access(req, res.status);
+
+    json j = json::parse(data);
+    check_json(j);
+
+    vector<double> optical_input = j["optical_input"];
+    SiPM *sipm = new SiPM(j["numMicrocell"], j["vBias"], j["vBr"], j["tauRecovery"], j["tFWHM"], j["digitalThreshold"], j["cCell"], j["vChr"], j["pdeMax"]);
+    vector<double> sipm_output = run_simulation(optical_input, sipm);
+
+    json response = populate_json(sipm);
+    response["sipm_output"] = sipm_output;
+    response["response"] = "OK";
+    res.set_content(response.dump(), "application/json");
+
+    delete sipm;
+    requests_served++;
+    message_buf << GOODBYE;
+    message_print_log(message_buf);
+  });
+
+  // Run a Simulation from a POST request
+  srv.Post("/v1/bin", [](const Request &req, Response &res) {
+    last_request_time = current_time();
+    std::ostringstream message_buf;
+    using namespace std;
+    message_buf << RX_BINARY << std::endl;
+    message_print_log(message_buf);
+    auto data = req.body;
+    log_access(req, res.status);
+    tuple<vector<double>, vector<double>> input = deserialise_binary(data);
+
+    // Create SiPM & simulate
+    SiPM *sipm = new SiPM(sipmSettingsVector); // maybe change to a unique_ptr?
+    vector<double> sipm_output = run_simulation(optical_input, sipm);
 
     // concat SiPM simulation output on end of input parameters
     sipm_output.insert(sipm_output.end(), response.begin(), response.end());
@@ -292,13 +327,10 @@ int main(void)
     // create output string. char* (in blocks of 8 for each double) are appended
     // for the output via the web response
     string outputString = "";
-
-    // recycle buffer char buf[8] from earlier
-    for (unsigned long i = 0; i < (unsigned long)sipm_output.size(); i++)
-    {
+    char buf[8];
+    for (unsigned long i = 0; i < (unsigned long)sipm_output.size(); i++) {
       memcpy(&buf, &sipm_output[i], sizeof(buf));
-      for (int j = 0; j < 8; j++)
-      {
+      for (int j = 0; j < 8; j++) {
         outputString.push_back(buf[j]);
       }
     }
@@ -307,14 +339,11 @@ int main(void)
     message_print_log(message_buf);
     res.set_content(outputString, "text/plain");
 
-    // Clean up - make 100% sure large variables are deleted
     delete sipm;
-    // large vars:  bytes data recv optical_input response outputString sipm_output
-    // These are destroyed automatically when ending a transaction with the server. (not a pointer)
-
     requests_served++;
-    message_buf << "==================== GOODBYE  ====================";
-    message_print_log(message_buf); });
+    message_buf << GOODBYE;
+    message_print_log(message_buf);
+  });
 
   srv.listen("127.0.0.1", 33232);
 }
