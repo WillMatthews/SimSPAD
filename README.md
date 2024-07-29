@@ -47,8 +47,7 @@ This is an **experimental work in progress**, and more documentation will follow
 3. [MDPI Sensors: A Roadmap for Gigabit to Terabit Optical Wireless Communications Receivers](https://doi.org/10.3390/s23031101)
 4. Upcoming Paper (Pending..? Equaliser based)
 5. Upcoming Paper (Pending.?? OFDM based)
-6. Upcoming Paper (Pending..? From an ex-colleague)
-7. My Thesis (Pending...)
+6. My Thesis: [Silicon photomultipliers as optical wireless receivers in ambient light](https://ora.ox.ac.uk/objects/uuid:1ca78608-cac4-41a0-8d1e-57fb31603103)
 
 ## How to Reference:
 
