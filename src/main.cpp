@@ -186,6 +186,5 @@ int main(int argc, char *argv[])
     }
 
     simulate(source, destination, silence);
-
     return EXIT_SUCCESS;
 }

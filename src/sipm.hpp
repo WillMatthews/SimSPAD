@@ -33,7 +33,7 @@
 // This is done by the Makefile, which replaces the string "replace_with_version" with the output of "git describe --tags --always --dirty"
 #ifndef VERSION
 #define VERSION "unknown"
-#endif
+#endif // #ifndef VERSION
 
 void cli_logo(void);
 
@@ -93,8 +93,6 @@ private:
     double simulate_microcells(double T, double photonsPerDt);
 
     void print_progress(double percentage) const;
-
-    // void test_rand_funcs();
 
     void input_sanitation(void);
 

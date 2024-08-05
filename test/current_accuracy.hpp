@@ -32,7 +32,7 @@ using namespace std;
 
 double ibias_check(SiPM sipm, double photonsPerDt)
 {
-    int testSamples = 20000;
+    int testSamples = 20000; // TODO magic number - make this go away
     vector<double> in(testSamples, photonsPerDt); // DC light source
 
     vector<double> out = {};
@@ -74,7 +74,7 @@ bool TEST_currents()
 
     double photonsPerDt; // Photons per time step
     double current;      // SiPM bias current
-    // Tolerance ratios for test Pass
+    // Tolerance ratio multipliers for test Pass
     const double bounds[2] = {0.75, 1.25};
     // Photon Energy
     const double ePhoton = (speedOfLight * hPlanck) / 405E-9;

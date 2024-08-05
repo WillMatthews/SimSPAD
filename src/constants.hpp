@@ -42,4 +42,4 @@ const double Joule2eV = 1.0 / eV2Joule;
 // Elementary Charge (single Electron) in C
 const double elementaryCharge = 1.60217663e-19;
 
-#endif
+#endif // #ifndef CONSTANTS_H

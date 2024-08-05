@@ -53,12 +53,12 @@ tuple<vector<double>, SiPM> load_binary(string filename)
         if (i < 10)
         {
             sipmParametersVector.push_back(read);
+            ++i;
         }
         else
         {
             optical_input.push_back(read);
         }
-        ++i;
     }
 
     return make_tuple(optical_input, SiPM(sipmParametersVector));
@@ -68,14 +68,6 @@ tuple<vector<double>, SiPM> load_binary(string filename)
 void write_binary(string filename, SiPM sipm, vector<double> response)
 {
     ofstream fout(filename, ios::out | ios::binary);
-
-    /*
-    chrono::system_clock::time_point currentTime = chrono::system_clock::now();
-    time_t tt;
-    tt = chrono::system_clock::to_time_t(currentTime);
-    string timeStr = ctime(tt);
-    */
-
     vector<double> sipmParametersVector = sipm.dump_configuration();
 
     // Concatenate response on the end of SiPM parameters vector
@@ -88,14 +80,12 @@ void write_binary(string filename, SiPM sipm, vector<double> response)
 // Output convolve to pulse shape using a gaussian approximation
 vector<double> conv1d(vector<double> inputVec, vector<double> kernel)
 {
-
     if (kernel.size() <= 1)
     {
         return inputVec;
     }
 
     int kernelSize = (int)kernel.size();
-
     if (kernelSize == 1)
     {
         return inputVec;
@@ -180,7 +170,6 @@ tuple<wstring, double> exponent_val(double num)
 // vector<double> linspace(T start_in, T end_in, int num_in)
 vector<double> linspace(double start_in, double end_in, int num_in)
 {
-
     vector<double> linspaced;
     linspaced.reserve(num_in);
 

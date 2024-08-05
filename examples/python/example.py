@@ -22,16 +22,15 @@ j30020 = simspad.SiPM(dt, numMicrocell, vBias, vBr, tauRecovery,
 samples = 10000
 optical_input = [10 * (abs(x-samples/2)/samples/2) for x in range(samples)]
 simulator_url = "http://localhost:33232/simspad"
+N = 200
 
 for i in range(10):
     optical_input = [1000 for x in range(samples)]
     response = j30020.simulate_web(simulator_url, optical_input)
-    N = 200
 
+    # Convolve (Moving Avg.)
     response = np.convolve(response, np.ones(N)/N, mode='valid')
-
     time = np.arange(0, (len(response)) * j30020.dt, j30020.dt)
-
     plt.plot(time, response)
 
 

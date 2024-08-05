@@ -36,7 +36,7 @@ double speed_measure(double photonsPerDt)
     SiPM sipm(14410, 27.5, 24.5, 2.2 * 14e-9, 0.0, 4.6e-14, 2.04, 0.46);
     sipm.dt = 2.0e-10;
 
-    int speedTestSamples = 10000;
+    int speedTestSamples = 10000; // TODO make magic number go away
     vector<double> in(speedTestSamples, photonsPerDt); // DC light source
     vector<double> out = {};
 
