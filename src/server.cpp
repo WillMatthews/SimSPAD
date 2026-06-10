@@ -107,6 +107,40 @@ void message_print_log(std::ostringstream &message)
   std::cout << COL_START << msg << COL_STOP << std::endl;
 }
 
+// HTML-escape a string so attacker-controlled, request-derived data (e.g. req.path,
+// req.remote_addr) cannot inject markup when the log buffer is rendered as text/html at /logs.
+// Guards against stored XSS (GHSA-mvgv-c4rv-99ch).
+std::string html_escape(const std::string &in)
+{
+  std::string out;
+  out.reserve(in.size());
+  for (char c : in)
+  {
+    switch (c)
+    {
+    case '&':
+      out += "&amp;";
+      break;
+    case '<':
+      out += "&lt;";
+      break;
+    case '>':
+      out += "&gt;";
+      break;
+    case '"':
+      out += "&quot;";
+      break;
+    case '\'':
+      out += "&#x27;";
+      break;
+    default:
+      out += c;
+      break;
+    }
+  }
+  return out;
+}
+
 // log web access events (IP addr and request path) as an [INFO] event
 // Test status code of the response to a request. If an error status code is thrown, log as an error.
 void log_access(httplib::Request req, int status)
@@ -118,7 +152,9 @@ void log_access(httplib::Request req, int status)
     log_level = "[INFO] ";
   }
   std::ostringstream message_buf;
-  message_buf << log_level << " " << req.remote_addr << " has accessed '" << req.path << "' \t Status: " << status;
+  // req.remote_addr and req.path are attacker-controlled and end up in an HTML page (/logs);
+  // escape them before they reach the RamLog buffer.
+  message_buf << log_level << " " << html_escape(req.remote_addr) << " has accessed '" << html_escape(req.path) << "' \t Status: " << status;
   message_print_log(message_buf);
 }
 
@@ -145,6 +181,12 @@ int main(void)
 
   // Max payload size is 128 MB
   srv.set_payload_max_length(1024 * 1024 * 128);
+
+  // Defense-in-depth against XSS: a restrictive Content-Security-Policy on every response
+  // so any markup that slips into a rendered page cannot execute script (GHSA-mvgv-c4rv-99ch).
+  srv.set_post_routing_handler([](const auto & /*req*/, auto &res)
+                               { res.set_header("Content-Security-Policy",
+                                                "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"); });
 
   // srv.set_logger([](const auto &req, const auto &res)
   //                { log_access(req, res.status); });
