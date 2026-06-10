@@ -23,13 +23,14 @@
 #include <random>
 #include <chrono>
 #include <ctime>
+#include <cstdio>
 #include "sipm.hpp"
 #include "utilities.hpp"
 
 using namespace std;
 
 // Print end of simulation run information for user / debug
-void print_info(chrono::duration<double> elapsed, SiPM sipm, vector<double> outputVec)
+void print_info(chrono::duration<double> elapsed, SiPM &sipm, size_t inputSize, double sumOut)
 {
     int numMicrocell = sipm.numMicrocell;
     double dt = sipm.dt;
@@ -37,7 +38,10 @@ void print_info(chrono::duration<double> elapsed, SiPM sipm, vector<double> outp
     auto tt = chrono::system_clock::to_time_t(sysclock);
     string timeStr = ctime(&tt);
 
-    int inputSize = outputVec.size();
+    if (inputSize == 0)
+    {
+        return;
+    }
 
     locale::global(locale("en_US.utf8"));
     wcout.imbue(locale());
@@ -48,7 +52,7 @@ void print_info(chrono::duration<double> elapsed, SiPM sipm, vector<double> outp
     double val;
     tie(prefix, val) = exponent_val(elapsed.count());
     wcout << "Elapsed Time:\t\t" << val << " " << prefix << "s" << endl;
-    tie(prefix, val) = exponent_val(dt * inputSize);
+    tie(prefix, val) = exponent_val(dt * (double)inputSize);
     wcout << "Simulated Time:\t\t" << val << " " << prefix << "s" << endl;
     tie(prefix, val) = exponent_val(dt);
     wcout << "Simulation dt:\t\t" << val << " " << prefix << "s" << endl;
@@ -60,40 +64,76 @@ void print_info(chrono::duration<double> elapsed, SiPM sipm, vector<double> outp
     tie(prefix, val) = exponent_val(time_per_iter / numMicrocell);
     wcout << "Compute Per uCell Step: " << val << " " << prefix << "s" << endl;
 
-    double sumOut = 0; // Sum of all the charge from the SiPM from the experiment
-    if (!outputVec.empty())
-    {
-        sumOut = reduce(outputVec.begin(), outputVec.end()); // Sum all responses
-    }
-    double Ibias = sumOut / (inputSize * dt); // Calculate the bias current
+    double Ibias = sumOut / ((double)inputSize * dt); // Calculate the bias current
     tie(prefix, val) = exponent_val(Ibias);
     wcout << "Simulated Ibias:\t" << val << " " << prefix << "A" << endl;
 }
 
-// Create lambda expression for a simulation run (binary in -> binary out).
-// Might be helpful if multi-threading in the future
-void simulate(string fname_in, string fname_out, bool silence)
+// Run a simulation streaming a .npy waveform through the SiPM in bounded
+// memory: JSON device parameters + .npy light in -> .npy charge out. The
+// transform is length-preserving, so the output header is written before its
+// body. Two passes over the (paged) input: one to seed the initial microcell
+// age distribution from the mean light level, one to simulate.
+void simulate(string params_file, string fname_in, string fname_out, bool silence)
 {
-    vector<double> out = {};
-    vector<double> in = {};
-    SiPM sipm;
+    const size_t chunk = 1u << 16; // 65536 samples per block
 
-    tie(in, sipm) = load_binary(fname_in);
+    SiPM sipm = load_params_json(params_file);
+    NpyReader reader(fname_in);
+    size_t N = reader.count();
+    NpyWriter writer(fname_out, N);
+
+    // Pass 1: mean photons/dt over the whole trace (raw, matching the old
+    // in-memory init_spads) to seed the initial age distribution.
+    double rawSum = 0.0;
+    {
+        vector<double> buf(chunk);
+        size_t got;
+        while ((got = reader.read(buf.data(), chunk)) > 0)
+        {
+            for (size_t i = 0; i < got; i++)
+            {
+                rawSum += buf[i];
+            }
+        }
+    }
+    double mean = N ? rawSum / (double)N : 0.0;
+    sipm.init_state(mean, (unsigned long)N);
+
+    // Pass 2: stream the simulation, writing each output block as it is made.
+    reader.rewind();
     auto start = chrono::steady_clock::now();
-
-    out = sipm.simulate(in, silence);
-
+    double outSum = 0.0;
+    {
+        vector<double> inbuf(chunk), outbuf(chunk);
+        size_t got, done = 0;
+        while ((got = reader.read(inbuf.data(), chunk)) > 0)
+        {
+            sipm.simulate_chunk(inbuf.data(), outbuf.data(), got);
+            writer.write(outbuf.data(), got);
+            for (size_t i = 0; i < got; i++)
+            {
+                outSum += outbuf[i];
+            }
+            done += got;
+            if (!silence && N)
+            {
+                fprintf(stderr, "\r  simulating... %5.1f%%", 100.0 * (double)done / (double)N);
+            }
+        }
+        if (!silence && N)
+        {
+            fprintf(stderr, "\r  simulating... done   \n");
+        }
+    }
+    writer.close();
     auto end = chrono::steady_clock::now();
-
-    // vector<double> out2 = sipm.shape_output(out);
 
     chrono::duration<double> elapsed = end - start;
 
-    write_binary(fname_out, sipm, out);
-
     if (!silence)
     {
-        print_info(elapsed, sipm, out);
+        print_info(elapsed, sipm, N, outSum);
     }
 }
 
@@ -106,13 +146,17 @@ static void print_version()
 // Print help text
 static void show_usage(string name)
 {
-    cerr << "Usage: " << name << " <option(s)> INPUT "
+    cerr << "Usage: " << name << " -p PARAMS.json -i LIGHT.npy -o OUT.npy <option(s)>\n"
+         << "Reads device parameters from a flat JSON file and the optical input\n"
+         << "from a 1-D float64 .npy file, streams the simulation, and writes the\n"
+         << "charge-per-step response to a 1-D float64 .npy file.\n\n"
          << "Options:\n"
          << "\t-h,--help\t\tShow this help message\n"
          << "\t-s,--silent\t\tSilence output\n"
          << "\t-v,--version\t\tPrint SimSPAD version number\n"
-         // << "\t-c,--csv\t\tOutput in CSV format\n"
-         << "\t-o,--output DESTINATION\tSpecify the destination path"
+         << "\t-p,--params PARAMS\tDevice parameters (.json) [required]\n"
+         << "\t-i,--input INPUT\tOptical input waveform (.npy) [required]\n"
+         << "\t-o,--output OUTPUT\tResponse output path (.npy) [required]"
          << endl;
 }
 
@@ -143,9 +187,21 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    string params = "";
     string source = "";
     string destination = "";
     bool silence = false;
+
+    // Small helper to consume an option's argument.
+    auto take_arg = [&](int &i, const char *opt) -> const char * {
+        if (i + 1 < argc)
+        {
+            return argv[++i]; // consume and skip the value
+        }
+        cerr << opt << " option requires one argument." << endl;
+        return nullptr;
+    };
+
     for (int i = 1; i < argc; ++i)
     {
         arg = argv[i];
@@ -162,23 +218,38 @@ int main(int argc, char *argv[])
         {
             print_version();
         }
+        else if ((arg == "-p") || (arg == "--params"))
+        {
+            const char *a = take_arg(i, "--params");
+            if (!a)
+                return EXIT_FAILURE;
+            params = a;
+        }
+        else if ((arg == "-i") || (arg == "--input"))
+        {
+            const char *a = take_arg(i, "--input");
+            if (!a)
+                return EXIT_FAILURE;
+            source = a;
+        }
         else if ((arg == "-o") || (arg == "--output"))
         {
-            if (i + 1 < argc)
-            {                              // Make sure we aren't at the end of argv
-                destination = argv[i + 1];
-                ++i;                       // skip the argument so it isn't reparsed as the input source
-            }
-            else
-            { // No argument to the destination option.
-                cerr << "--destination option requires one argument." << endl;
+            const char *a = take_arg(i, "--output");
+            if (!a)
                 return EXIT_FAILURE;
-            }
+            destination = a;
         }
         else
         {
-            source = argv[i];
+            source = argv[i]; // bare positional argument is the input waveform
         }
+    }
+
+    if (params.empty() || source.empty() || destination.empty())
+    {
+        cerr << "error: --params, --input and --output are all required." << endl;
+        show_usage(argv[0]);
+        return EXIT_FAILURE;
     }
 
     if (!silence)
@@ -186,7 +257,15 @@ int main(int argc, char *argv[])
         cli_logo();
     }
 
-    simulate(source, destination, silence);
+    try
+    {
+        simulate(params, source, destination, silence);
+    }
+    catch (const std::exception &e)
+    {
+        cerr << "error: " << e.what() << endl;
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }

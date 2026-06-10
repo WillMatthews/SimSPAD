@@ -37,13 +37,15 @@ for i in range(10):
 
 response = j30020.simulate_web(simulator_url, optical_input)
 
-# Write a SiPM and data to a binary file
-j30020.write_binary("sipm_out.bin", response)
+# To run the same simulation from the command line, write the device parameters
+# (JSON) and the optical input (.npy), then:
+#   simspad -p sipm.json -i sipm_in.npy -o sipm_out.npy
+j30020.write_params("sipm.json")
+simspad.SiPM.write_waveform("sipm_in.npy", optical_input)
 
-# To generate a binary file to run from command line:
-j30020.write_binary("sipm_in.bin", optical_input)
-
-# Load a SiPM and response data from a binary file
-(bin_response, bin_sipm) = simspad.read_binary("sipm_out.bin")
+# Waveforms (input or response) are plain 1-D float64 .npy arrays:
+simspad.SiPM.write_waveform("sipm_out.npy", response)
+bin_response = simspad.read_waveform("sipm_out.npy")
+bin_sipm = simspad.read_params("sipm.json")
 
 plt.show()

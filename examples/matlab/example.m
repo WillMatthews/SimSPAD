@@ -19,9 +19,14 @@ opticalInput = make_calibrated_input(inputShape, config); % in expected photons 
 
 upsampled_time = 0:config.dt:(config.dt * (numel(opticalInput)-1));
 
-%% Package file and send to server
-binary_pack("demo", config, opticalInput)
-sipmOutput = simspad_server("demo");
+%% Send to server (parameters as a JSON header, waveform as an octet-stream body)
+sipmOutput = simspad_server(config, opticalInput);
+
+%% (Alternatively, run the standalone CLI on the same inputs:)
+%   binary_pack("demo", config, opticalInput);
+%   system("../../build/apps/simspad -p binary/demo.json -i binary/demo.npy -o binary/demo_out.npy");
+%   sipmOutput = binary_unpack("demo_out")';
+
 sipmOutput_shaped = pulse_shape(sipmOutput, config);
 
 current = sum(sipmOutput(1000:end))/(config.dt * numel(sipmOutput(1000:end)));

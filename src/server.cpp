@@ -36,11 +36,16 @@
 // #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "../lib/cpp-httplib/httplib.h"
 #include "sipm.hpp"
+#include "utilities.hpp"
 #include "pages.hpp"
 #include "ramlog.hpp"
 #include <chrono>
 #include <ctime>
 #include <sstream>
+#include <memory>
+#include <vector>
+#include <map>
+#include <cstring>
 
 #define COL_GREEN "\033[32;1m"  // Used for server messages
 #define COL_YELLOW "\033[33;1m" // Used for Warnings
@@ -202,7 +207,15 @@ int main(void)
     page_text += "</div>" + page_footer();
     res.set_content(page_text, "text/html"); });
 
-  // Run a Simulation from a POST request
+  // Run a Simulation from a POST request.
+  //
+  // Protocol: device parameters arrive as a flat JSON object in the
+  // `X-SiPM-Params` request header; the request body is the raw optical-input
+  // waveform -- little-endian float64, expected photons-per-dt striking the
+  // whole array, one value per time step. The response is streamed back as
+  // `application/octet-stream`: little-endian float64 charge-per-step, the same
+  // length as the input, produced in bounded-memory chunks off the streaming
+  // core (no giant output buffer, no positional parameter header).
   srv.Post("/simspad", [](const Request &req, Response &res)
            {
     last_request_time = current_time();
@@ -210,107 +223,95 @@ int main(void)
     using namespace std;
     message_buf << "==================== GOT POST ====================" << std::endl;
     message_print_log(message_buf);
-    auto data = req.body;
 
     log_access(req, res.status);
 
-    size_t numBytes = data.length();
-    message_buf << "Decoding " << numBytes << " bytes..." << std::endl;
-    bytes_processed += numBytes;
-    message_print_log(message_buf);
-
-    vector<double> optical_input = {};
-    vector<double> sipmSettingsVector = {};
-    unsigned char *bytes; // uchar* buffer for intermediate step converting char* to double
-    double recv;          // Received double
-    char buf[8];          // char buffer (incoming chars to be converted to floats)
-    // Decode 8 chars to a double precision float
-    for (size_t i = 0; i < numBytes / 8; i++)
+    // --- device parameters (JSON header) ---
+    string paramJson = req.get_header_value("X-SiPM-Params");
+    if (paramJson.empty())
     {
-      for (int j = 0; j < 8; j++)
-      {
-        buf[j] = data[8 * i + j]; // Create buffer of char*
-      }
-      bytes = reinterpret_cast<unsigned char *>(&buf); // cast char* buffer to bytes
-      recv = *reinterpret_cast<double *>(bytes);       // cast bytes to double
-
-      if (i < 10) // First ten doubles are SiPM simulator parameters
-      {
-        sipmSettingsVector.push_back(recv);
-      }
-      else // Remainder of values are expected number of photons per dt striking array
-      {
-        optical_input.push_back(recv);
-      }
+      res.status = 400;
+      res.set_content("missing X-SiPM-Params header (JSON device parameters)", "text/plain");
+      message_buf << "[ERROR] rejected request: no X-SiPM-Params header";
+      message_print_log(message_buf);
+      return;
     }
 
-    // Create SiPM
-    SiPM *sipm = new SiPM(sipmSettingsVector); // maybe change to a unique_ptr?
-
-    // cout parameters so I can tell when someone does something stupid which breaks the server
-    auto start = chrono::system_clock::now();
-    time_t start_time = chrono::system_clock::to_time_t(start);
-    message_buf << "Started computation at\t" << ctime(&start_time);
-    message_print_log(message_buf);
-    message_buf << "dt\t\t\t" << (sipm->dt) << " s";
-    message_print_log(message_buf);
-    message_buf << "NumMicrocells\t\t" << ((double)sipm->numMicrocell);
-    message_print_log(message_buf);
-    message_buf << "vBias\t\t\t" << (sipm->vBias) << " V";
-    message_print_log(message_buf);
-    message_buf << "vBreakdown\t\t" << (sipm->vBr) << " V";
-    message_print_log(message_buf);
-    message_buf << "TauRecovery\t\t" << (sipm->tauRecovery);
-    message_print_log(message_buf);
-    message_buf << "PDEMax\t\t\t" << (sipm->pdeMax);
-    message_print_log(message_buf);
-    message_buf << "vChrPDE\t\t\t" << (sipm->vChr) << " V";
-    message_print_log(message_buf);
-    message_buf << "CCell\t\t\t" << (sipm->cCell) << " F";
-    message_print_log(message_buf);
-    message_buf << "TauPulseFWHM\t\t" << (sipm->tauFwhm) << " s";
-    message_print_log(message_buf);
-    message_buf << "DigitalThreshold\t" << (sipm->digitalThreshold);
-    message_print_log(message_buf);
-
-    // Simulate
-    bool silence = true;
-    vector<double> response = sipm->simulate(optical_input, silence);
-
-    // Print Elapsed Time (allow debugging)
-    auto end = chrono::system_clock::now();
-    chrono::duration<double> elapsed_seconds = end - start;
-    message_buf << "Elapsed Time\t\t" << elapsed_seconds.count() * 1E3 << " ms";
-    message_print_log(message_buf);
-
-    // create output vector
-    vector<double> sipm_output = sipm->dump_configuration();
-
-    // concat SiPM simulation output on end of input parameters
-    sipm_output.insert(sipm_output.end(), response.begin(), response.end());
-
-    // create output string. char* (in blocks of 8 for each double) are appended
-    // for the output via the web response
-    string outputString = "";
-
-    // recycle buffer char buf[8] from earlier
-    for (unsigned long i = 0; i < (unsigned long)sipm_output.size(); i++)
+    map<string, double> pm = parse_flat_json(paramJson);
+    static const char *keys[10] = {"dt", "numMicrocell", "vBias", "vBr", "tauRecovery",
+                                   "pdeMax", "vChr", "cCell", "tauFwhm", "digitalThreshold"};
+    vector<double> svars(10);
+    for (int i = 0; i < 10; i++)
     {
-      memcpy(&buf, &sipm_output[i], sizeof(buf));
-      for (int j = 0; j < 8; j++)
+      auto kv = pm.find(keys[i]);
+      if (kv == pm.end())
       {
-        outputString.push_back(buf[j]);
+        res.status = 400;
+        res.set_content(string("X-SiPM-Params missing key: ") + keys[i], "text/plain");
+        message_buf << "[ERROR] rejected request: params missing key " << keys[i];
+        message_print_log(message_buf);
+        return;
       }
+      svars[i] = kv->second;
     }
-    numBytes = outputString.length();
-    message_buf << "Sending Result (" << numBytes << " bytes)";
-    message_print_log(message_buf);
-    res.set_content(outputString, "text/plain");
 
-    // Clean up - make 100% sure large variables are deleted
-    delete sipm;
-    // large vars:  bytes data recv optical_input response outputString sipm_output
-    // These are destroyed automatically when ending a transaction with the server. (not a pointer)
+    // --- optical-input waveform (octet-stream body) ---
+    const string &body = req.body;
+    if (body.size() % sizeof(double) != 0)
+    {
+      res.status = 400;
+      res.set_content("body length is not a multiple of 8 (expect a float64 waveform)", "text/plain");
+      message_buf << "[ERROR] rejected request: body length " << body.size() << " not a multiple of 8";
+      message_print_log(message_buf);
+      return;
+    }
+    size_t N = body.size() / sizeof(double);
+    bytes_processed += (long)body.size();
+
+    // The chunked provider below outlives this handler call, so copy the input
+    // out of the (soon-to-be-destroyed) request and own the SiPM via shared_ptr.
+    auto input = make_shared<vector<double>>(N);
+    memcpy(input->data(), body.data(), body.size());
+    auto sipm = make_shared<SiPM>(svars);
+
+    // Seed the initial age distribution from the raw mean light level (matching
+    // the in-memory simulate()).
+    double rawSum = 0.0;
+    for (size_t i = 0; i < N; i++)
+    {
+      rawSum += (*input)[i];
+    }
+    sipm->init_state(N ? rawSum / (double)N : 0.0, (unsigned long)N);
+
+    message_buf << "Streaming " << N << " samples (" << body.size() << " bytes in)";
+    message_print_log(message_buf);
+
+    // Stream the response in bounded-memory chunks straight off the streaming
+    // core. The provider runs after this handler returns, hence the shared_ptr
+    // captures (sipm/input outlive the request; pos carries progress).
+    auto pos = make_shared<size_t>(0);
+    res.set_chunked_content_provider(
+        "application/octet-stream",
+        [sipm, input, pos, N](size_t /*offset*/, httplib::DataSink &sink) -> bool
+        {
+          const size_t chunk = 1u << 16; // 65536 samples per block
+          size_t n = (N - *pos < chunk) ? (N - *pos) : chunk;
+          if (n > 0)
+          {
+            vector<double> out(n);
+            sipm->simulate_chunk(input->data() + *pos, out.data(), n);
+            if (!sink.write(reinterpret_cast<const char *>(out.data()), n * sizeof(double)))
+            {
+              return false; // client went away
+            }
+            *pos += n;
+          }
+          if (*pos >= N)
+          {
+            sink.done();
+          }
+          return true;
+        });
 
     requests_served++;
     message_buf << "==================== GOODBYE  ====================";

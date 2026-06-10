@@ -72,10 +72,22 @@ public:
 
     std::vector<double> simulate(std::vector<double> light, bool silent);
 
+    // Streaming core. init_state() prepares the microcell ages once (given the
+    // mean photons/dt striking the whole array, used only to seed the initial
+    // age distribution) and resets the simulation clock. simulate_chunk() then
+    // advances the state by `n` samples, reading `in[0..n)` and writing
+    // `out[0..n)`, and may be called repeatedly to stream arbitrarily long
+    // traces with O(n + numMicrocell) memory. simulate(vector) is a thin
+    // wrapper over these two.
+    void init_state(double meanPhotonsPerDt, unsigned long nSteps);
+
+    void simulate_chunk(const double *in, double *out, std::size_t n);
+
     std::vector<double> shape_output(std::vector<double> inputVec);
 
 private:
     std::vector<double> microcellTimes;
+    double simClock = 0.0; // running simulation time, carried across chunks
 
     std::mt19937_64 poissonEngine;
     std::mt19937_64 unifRandomEngine;
