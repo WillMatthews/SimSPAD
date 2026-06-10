@@ -167,28 +167,23 @@ inline double SiPM::volt_from_time(double time)
 // light vector is the expected number of photons to strike the SiPM in simulation time step dt.
 vector<double> SiPM::simulate(vector<double> light, bool silent)
 {
-    vector<double> qFired = {};
-    qFired.reserve(light.size());
-    double percentDone;
-    double l;
-    double T = 0;
+    const size_t N = light.size();
+    vector<double> qFired(N, 0.0);
 
     // Separate out SiPM initialisation? Being integrated it messes with timing.
     init_spads(light);
 
-    // O(light.size()* numMicrocell)
-    for (unsigned long i = 0; i < (unsigned long)light.size(); i++)
+    // Stream the trace through the chunk engine (O(N * numMicrocell) compute,
+    // identical sample-for-sample to the old per-sample loop).
+    const size_t chunk = 1u << 16; // 65536 samples per block
+    for (size_t off = 0; off < N; off += chunk)
     {
-        if ((!silent) & (i % 10000 == 0 || i == (unsigned long)(light.size() - 1)))
+        size_t n = (N - off < chunk) ? (N - off) : chunk;
+        simulate_chunk(light.data() + off, qFired.data() + off, n);
+        if (!silent)
         {
-            percentDone = (double)i / (double)(light.size() - 1);
-            print_progress(percentDone);
+            print_progress(N > 1 ? (double)(off + n) / (double)N : 1.0);
         }
-
-        // If expected num of photons per bit is negative, set to zero
-        l = light[i] > 0.0 ? light[i] : 0.0;
-        qFired.push_back(simulate_microcells(T, l));
-        T += dt;
     }
     return qFired;
 }
@@ -232,17 +227,13 @@ unsigned long SiPM::unif_rand_int(unsigned long a, unsigned long b)
 // This is correct for constant photon arrival rates.
 // The true distribution for general input is more complicated and needs investigation.
 // This is run at simulation time.
-void SiPM::init_spads(vector<double> light) // inclusion adds ~ 35ps/ucell dt in SIM
+void SiPM::init_state(double meanInPhotonsDt, unsigned long nSteps) // inclusion adds ~ 35ps/ucell dt in SIM
 {
-    double meanInPhotonsDt = 0; // mean number of photons per time step
-    if (!light.empty())
-    {
-        meanInPhotonsDt = reduce(light.begin(), light.end()) / (double)light.size();
-    }
+    simClock = 0.0; // restart the simulation clock for a fresh streaming run
     if (meanInPhotonsDt == 0)
     {
         // prevent errors with distribution generation - assume one photon arriving?
-        meanInPhotonsDt = 1 / (double)light.size();
+        meanInPhotonsDt = 1 / (double)nSteps;
     }
 
     // Define and generate Inter-Detection distribution
@@ -296,6 +287,33 @@ void SiPM::init_spads(vector<double> light) // inclusion adds ~ 35ps/ucell dt in
     for (unsigned long i = 0; (unsigned long)i < numMicrocell; i++)
     {
         microcellTimes.push_back(-d(renewalEngine)); // negative as in the past - before simulation has begun
+    }
+}
+
+// Convenience wrapper: seed the initial microcell ages from an in-memory light
+// vector (uses its mean photons/dt and length). Kept for the vector simulate().
+void SiPM::init_spads(vector<double> light)
+{
+    double meanInPhotonsDt = 0; // mean number of photons per time step
+    if (!light.empty())
+    {
+        meanInPhotonsDt = reduce(light.begin(), light.end()) / (double)light.size();
+    }
+    init_state(meanInPhotonsDt, (unsigned long)light.size());
+}
+
+// Streaming step: advance the SiPM by n samples, reading in[0..n) and writing
+// out[0..n). State (microcell ages and the simulation clock) persists across
+// calls, so a long trace can be processed chunk-by-chunk in bounded memory.
+// init_state()/init_spads() must have been called once beforehand.
+void SiPM::simulate_chunk(const double *in, double *out, size_t n)
+{
+    for (size_t i = 0; i < n; i++)
+    {
+        // If expected num of photons per bit is negative, set to zero
+        double l = in[i] > 0.0 ? in[i] : 0.0;
+        out[i] = simulate_microcells(simClock, l);
+        simClock += dt;
     }
 }
 

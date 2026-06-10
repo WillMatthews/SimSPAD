@@ -63,14 +63,26 @@ If you use the simulation in a publication, please cite the following papers at 
 
 ![logo](https://github.com/WillMatthews/SimSPAD/blob/master/doc/img/example.gif)
 
-SimSPAD can be run as a standalone program from the command line, taking an input binary file, and producing an output binary file.
-This binary file can be created using examples in the examples directory. Currently MATLAB and Python methods exist, and a C++ method will be added in the future.
+SimSPAD reads the device parameters from a JSON file and the optical input from
+a NumPy `.npy` file, then streams the simulation and writes the response to a
+`.npy` file:
+
+```
+simspad -p params.json -i light.npy -o response.npy
+```
+
+The input files can be created using examples in the examples directory (see the
+Python helpers in `examples/python/simspad.py`). The simulation streams in
+bounded memory, so arbitrarily long traces can be run.
 
 ### Web Application
 
 Once SimSPAD server is running, you are able to send a POST request to `http://localhost:33232/simspad`.
-The reply from the server will be the result from the simulation.
-The data to and from the server is packaged as characters - see below in the Binary Format section for more details.
+The device parameters travel as a JSON object in the `X-SiPM-Params` request
+header; the request body is the raw optical-input waveform (little-endian
+float64). The reply is streamed back as `application/octet-stream`: the
+little-endian float64 charge-per-step response, the same length as the input.
+See the File Format section below for details.
 
 To stop the server, access `http://localhost:33232/stop`.
 To see if the server is running, access `http://localhost:33232/` where you should see a greeting message in plain text.
@@ -142,33 +154,46 @@ Add the following to the end of `http{}`:
 ```
 </details>
 
-## Binary Format
+## File Format
 
-The binary files used by SimSPAD are vectors of double precision floating point numbers.
+SimSPAD separates the (tiny) device parameters from the (bulk) waveform.
+
+The **device parameters** are a flat JSON object:
 <details>
-<summary>The first ten double floats are:</summary>
+<summary>The ten parameters are:</summary>
 
-    (in order)
-        dt                - Simulation time step size
-        numMicrocell      - Number of Detectors
-        vBias             - Bias Voltage
-        vBr               - Breakdown Voltage
-        tauRecovery       - Recharge time constant
-        pdeMax            - Max PDE for PDE-Vover equation
-        vChr              - Characteristic Voltage for PDE-Vover equation
-        cCell             - Capacitance per detector
-        tauFwhm           - Output pulse full width half max time
-        digitalThreshold - Detection Threshold (as a fraction of overvoltage from bias)
+    dt               - Simulation time step size
+    numMicrocell     - Number of Detectors
+    vBias            - Bias Voltage
+    vBr              - Breakdown Voltage
+    tauRecovery      - Recharge time constant
+    pdeMax           - Max PDE for PDE-Vover equation
+    vChr             - Characteristic Voltage for PDE-Vover equation
+    cCell            - Capacitance per detector
+    tauFwhm          - Output pulse full width half max time
+    digitalThreshold - Detection Threshold (as a fraction of overvoltage from bias)
 
+```json
+{
+  "dt": 5e-11, "numMicrocell": 5676, "vBias": 3.0, "vBr": 0.0,
+  "tauRecovery": 3.08e-08, "pdeMax": 0.46, "vChr": 2.04, "cCell": 1.4e-14,
+  "tauFwhm": 0.0, "digitalThreshold": 0.0
+}
+```
 </details>
 
-And the remainder of doubles in the file are the optical input in expected number of photons per time step dt striking the photo-detector.
+The **optical input** and the **response** are each a 1-D, little-endian,
+float64 NumPy `.npy` array (self-describing: dtype, shape and byte order live in
+the file header, so truncation and dtype mismatches are detected rather than
+silently misread). The optical input is the expected number of photons per time
+step `dt` striking the photo-detector; the response is the electrical charge
+output for each time step. Because the transform is length-preserving, both ends
+stream in fixed-size chunks in bounded memory.
 
-The output file is identical, with the simulation parameters taking the first ten positions of the binary file, and the remainder of binary file are the detector's response (in terms of electrical charge output) for each time step.
-
-This is *identical* to the input for the web application, except that the input and output are character encoded.
-A char is a 1 byte input, and eight bytes are needed for each double.
-This is packaged and unpackaged at either end of the process to reproduce the simulation inputs and outputs.
+For the **web application** the parameters travel as that same JSON object in the
+`X-SiPM-Params` header, and the waveform is the raw `.npy` *body* without the
+header framing: a contiguous little-endian float64 octet-stream, eight bytes per
+sample. The response is the same, streamed back chunk-by-chunk.
 
 ## Contributing:
 Pull requests are extremely welcome, as long as you obey the give key points in the design philosophy:

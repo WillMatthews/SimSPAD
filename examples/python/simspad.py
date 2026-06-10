@@ -1,69 +1,79 @@
-from array import array
+"""Python helpers for SimSPAD's self-describing IO.
+
+Local files: device parameters as a flat JSON object, the optical-input and
+response waveforms as 1-D little-endian float64 NumPy ``.npy`` arrays. Web:
+parameters as a JSON ``X-SiPM-Params`` request header, the waveform as a raw
+``application/octet-stream`` body (little-endian float64); the response is the
+same, charge-per-step, one value per time step.
+"""
+import json
+
+import numpy as np
+
+# Parameter order matches SiPM::dump_configuration() / the .json schema.
+PARAM_KEYS = [
+    "dt", "numMicrocell", "vBias", "vBr", "tauRecovery",
+    "pdeMax", "vChr", "cCell", "tauFwhm", "digitalThreshold",
+]
 
 
 class SiPM:
-    def __init__(self, *args, **kwargs):
-        if len(args) == 1:
-            self.dt = args[0][0]
-            self.numMicrocell = args[0][1]
-            self.vBias = args[0][2]
-            self.vBr = args[0][3]
-            self.tauRecovery = args[0][4]
-            self.pdeMax = args[0][5]
-            self.vChr = args[0][6]
-            self.cCell = args[0][7]
-            self.tauFwhm = args[0][8]
-            self.digitalThreshold = args[0][9]
-        else:
-            self.dt = args[0]
-            self.numMicrocell = args[1]
-            self.vBias = args[2]
-            self.vBr = args[3]
-            self.tauRecovery = args[4]
-            self.pdeMax = args[5]
-            self.vChr = args[6]
-            self.cCell = args[7]
-            self.tauFwhm = args[8]
-            self.digitalThreshold = args[9]
+    def __init__(self, *args):
+        # SiPM(seq_of_10) or SiPM(dt, numMicrocell, vBias, ...) (10 positional).
+        vals = list(args[0]) if len(args) == 1 else list(args)
+        if len(vals) != len(PARAM_KEYS):
+            raise ValueError(f"expected {len(PARAM_KEYS)} parameters, got {len(vals)}")
+        for key, val in zip(PARAM_KEYS, vals):
+            setattr(self, key, val)
 
-    def write_binary(self, filename, optical_input):
-        """simspad.SiPM.write_binary(filename, inputVector) creates a binary output file with the given file name,
-        which packages the given input vector and SiPM parameters"""
-        with open(filename, 'wb') as f:
-            sipm_settings = [self.dt, self.numMicrocell, self.vBias, self.vBr,
-                             self.tauRecovery, self.pdeMax, self.vChr, self.cCell, self.tauFwhm, self.digitalThreshold]
-            double_array = array('d', sipm_settings + optical_input)
-            double_array.tofile(f)
+    # -- parameters (JSON) --------------------------------------------------
+    def params_dict(self):
+        d = {k: getattr(self, k) for k in PARAM_KEYS}
+        d["numMicrocell"] = int(d["numMicrocell"])
+        return d
 
+    def write_params(self, filename):
+        """Write the device parameters to a flat JSON file."""
+        with open(filename, "w") as f:
+            json.dump(self.params_dict(), f, indent=2)
+
+    @classmethod
+    def from_params(cls, filename):
+        """Construct a SiPM from a JSON parameter file."""
+        with open(filename) as f:
+            d = json.load(f)
+        return cls([d[k] for k in PARAM_KEYS])
+
+    # -- waveforms (.npy) ---------------------------------------------------
+    @staticmethod
+    def write_waveform(filename, optical_input):
+        """Write an optical-input waveform as a 1-D little-endian float64 .npy."""
+        np.save(filename, np.ascontiguousarray(optical_input, dtype="<f8"))
+
+    # -- web client ---------------------------------------------------------
     def simulate_web(self, url, optical_input):
-        """simspad.SiPM.simulate_web(url, optical_input) sends a POST request to the SimSPAD Server application
-        The SiPM's response is returned as a list"""
+        """POST a waveform to a SimSPAD server; return the response as an ndarray.
+
+        Parameters travel in the ``X-SiPM-Params`` JSON header, the waveform as
+        a raw little-endian float64 octet-stream body. The response body is the
+        charge-per-step waveform (same length as the input)."""
         import requests
-        sipm_settings = [self.dt, self.numMicrocell, self.vBias, self.vBr,
-                         self.tauRecovery, self.pdeMax, self.vChr, self.cCell, self.tauFwhm, self.digitalThreshold]
-        binary_array = array('d', sipm_settings + optical_input)
-        bytes_out = binary_array.tobytes()
-        decoded_string = bytes_out.decode("ISO-8859-1")
-        string_out = r'{}'.format(decoded_string)
-        response = requests.post(url, data=string_out)
-        char_response = response.text
-        encoded_response = char_response.encode("ISO-8859-1")
-        response = array('d', encoded_response)
-        return response[10:-1].tolist()
+
+        body = np.ascontiguousarray(optical_input, dtype="<f8").tobytes()
+        headers = {
+            "X-SiPM-Params": json.dumps(self.params_dict()),
+            "Content-Type": "application/octet-stream",
+        }
+        response = requests.post(url, data=body, headers=headers)
+        response.raise_for_status()
+        return np.frombuffer(response.content, dtype="<f8")
 
 
-def read_binary(filename):
-    """simspad.read_binary(filename) reads a binary file with a given file name,
-    and returns a tuple (vector, SiPM) whose first element is the associated vector,
-    and the second element is the associated SiPM with parameters pre-configured"""
-    with open(filename, 'rb') as f:
-        numchar = len(f.read())
-        numdouble = numchar//8
-    with open(filename, 'rb') as f:
-        binary_vals = array('d')
-        binary_vals.fromfile(f, numdouble)
+def read_waveform(filename):
+    """Read a 1-D float64 .npy waveform written by SimSPAD."""
+    return np.load(filename)
 
-    settings_list = binary_vals[0:10]
-    response = binary_vals[10:-1]
 
-    return (response, SiPM(settings_list))
+def read_params(filename):
+    """Read a JSON parameter file, returning a configured SiPM."""
+    return SiPM.from_params(filename)

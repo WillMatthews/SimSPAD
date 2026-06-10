@@ -22,7 +22,16 @@
 #include <chrono>
 #include <ctime>
 #include <tuple>
+#include <cstdint>
+#include <cstring>
+#include <cstdlib>
+#include <cctype>
+#include <map>
+#include <sstream>
+#include <iomanip>
+#include <stdexcept>
 #include "sipm.hpp"
+#include "utilities.hpp"
 
 using namespace std;
 
@@ -216,4 +225,244 @@ vector<double> linspace(double start_in, double end_in, int num_in)
     linspaced.push_back(end); // I want to ensure that start and end
                               // are exactly the same as the input
     return linspaced;
+}
+
+// ===========================================================================
+// .npy waveform IO
+// ===========================================================================
+
+// Pull descr (dtype string) and the flattened element count out of a .npy
+// header dictionary, e.g. "{'descr': '<f8', 'fortran_order': False,
+// 'shape': (12345,), }".
+static void parse_npy_descr_shape(const string &hdr, string &descr, size_t &count)
+{
+    size_t d = hdr.find("descr");
+    size_t colon = hdr.find(':', d);
+    size_t q1 = hdr.find('\'', colon);
+    size_t q2 = hdr.find('\'', q1 + 1);
+    if (d == string::npos || q1 == string::npos || q2 == string::npos)
+        throw runtime_error("malformed .npy header (descr)");
+    descr = hdr.substr(q1 + 1, q2 - q1 - 1);
+
+    size_t s = hdr.find("shape");
+    size_t op = hdr.find('(', s);
+    size_t cp = hdr.find(')', op);
+    if (s == string::npos || op == string::npos || cp == string::npos)
+        throw runtime_error("malformed .npy header (shape)");
+    string inside = hdr.substr(op + 1, cp - op - 1);
+
+    // Multiply every integer in the shape tuple -> flat element count.
+    count = 1;
+    bool any = false;
+    for (size_t p = 0; p < inside.size();)
+    {
+        if (isdigit((unsigned char)inside[p]))
+        {
+            char *endp = nullptr;
+            unsigned long v = strtoul(inside.c_str() + p, &endp, 10);
+            count *= (size_t)v;
+            any = true;
+            p = (size_t)(endp - inside.c_str());
+        }
+        else
+        {
+            ++p;
+        }
+    }
+    if (!any)
+        count = 0; // shape () -> scalar / empty
+}
+
+// Build a version-1.0 .npy header for a 1-D little-endian float64 array of
+// `count` elements, padded so the total preamble is a multiple of 64 bytes.
+static string build_npy_header(size_t count)
+{
+    ostringstream dict;
+    dict << "{'descr': '<f8', 'fortran_order': False, 'shape': (" << count << ",), }";
+    string d = dict.str();
+
+    size_t unpadded = 10 + d.size() + 1; // 6 magic + 2 version + 2 len + dict + '\n'
+    size_t pad = (64 - (unpadded % 64)) % 64;
+    d.append(pad, ' ');
+    d.push_back('\n');
+
+    uint16_t len = (uint16_t)d.size();
+    string out;
+    out.push_back((char)0x93);
+    out += "NUMPY";
+    out.push_back((char)0x01); // major version
+    out.push_back((char)0x00); // minor version
+    out.push_back((char)(len & 0xff));
+    out.push_back((char)((len >> 8) & 0xff));
+    out += d;
+    return out;
+}
+
+NpyReader::NpyReader(const string &filename)
+    : fin(filename, ios::binary), nElems(0)
+{
+    if (!fin)
+        throw runtime_error("cannot open .npy file: " + filename);
+
+    char magic[6];
+    fin.read(magic, 6);
+    if (fin.gcount() != 6 || memcmp(magic, "\x93NUMPY", 6) != 0)
+        throw runtime_error("not a .npy file: " + filename);
+
+    unsigned char ver[2];
+    fin.read(reinterpret_cast<char *>(ver), 2);
+
+    size_t hlen;
+    if (ver[0] == 1)
+    {
+        unsigned char b[2];
+        fin.read(reinterpret_cast<char *>(b), 2);
+        hlen = (size_t)b[0] | ((size_t)b[1] << 8);
+    }
+    else
+    {
+        unsigned char b[4];
+        fin.read(reinterpret_cast<char *>(b), 4);
+        hlen = (size_t)b[0] | ((size_t)b[1] << 8) | ((size_t)b[2] << 16) | ((size_t)b[3] << 24);
+    }
+
+    string hdr(hlen, '\0');
+    fin.read(&hdr[0], (streamsize)hlen);
+
+    string descr;
+    size_t cnt;
+    parse_npy_descr_shape(hdr, descr, cnt);
+    if (descr.find("f8") == string::npos)
+        throw runtime_error("unsupported .npy dtype (need float64): " + descr);
+    if (!descr.empty() && descr[0] == '>')
+        throw runtime_error("unsupported .npy byte order (need little-endian): " + descr);
+
+    nElems = cnt;
+    dataStart = fin.tellg();
+}
+
+size_t NpyReader::read(double *buf, size_t n)
+{
+    fin.read(reinterpret_cast<char *>(buf), (streamsize)(n * sizeof(double)));
+    return (size_t)(fin.gcount() / (streamsize)sizeof(double));
+}
+
+void NpyReader::rewind()
+{
+    fin.clear();
+    fin.seekg(dataStart);
+}
+
+NpyWriter::NpyWriter(const string &filename, size_t count)
+    : fout(filename, ios::binary)
+{
+    if (!fout)
+        throw runtime_error("cannot open .npy file for writing: " + filename);
+    string hdr = build_npy_header(count);
+    fout.write(hdr.data(), (streamsize)hdr.size());
+}
+
+void NpyWriter::write(const double *buf, size_t n)
+{
+    fout.write(reinterpret_cast<const char *>(buf), (streamsize)(n * sizeof(double)));
+}
+
+void NpyWriter::close()
+{
+    fout.close();
+}
+
+// ===========================================================================
+// Flat-JSON device parameters
+// ===========================================================================
+
+// Minimal parser for a flat JSON object of "name": number pairs. Sufficient
+// for the fixed device-parameter schema; not a general JSON parser.
+map<string, double> parse_flat_json(const string &s)
+{
+    map<string, double> m;
+    size_t i = 0;
+    while (true)
+    {
+        size_t q1 = s.find('"', i);
+        if (q1 == string::npos)
+            break;
+        size_t q2 = s.find('"', q1 + 1);
+        if (q2 == string::npos)
+            break;
+        string key = s.substr(q1 + 1, q2 - q1 - 1);
+
+        size_t colon = s.find(':', q2 + 1);
+        if (colon == string::npos)
+            break;
+        size_t p = colon + 1;
+        while (p < s.size() && isspace((unsigned char)s[p]))
+            ++p;
+
+        const char *start = s.c_str() + p;
+        char *endp = nullptr;
+        double val = strtod(start, &endp);
+        if (endp != start)
+        {
+            m[key] = val;
+            i = p + (size_t)(endp - start);
+        }
+        else
+        {
+            i = colon + 1; // non-numeric value: skip (not expected in our schema)
+        }
+    }
+    return m;
+}
+
+// Parameter key order matches SiPM::dump_configuration().
+static const char *kParamKeys[10] = {
+    "dt", "numMicrocell", "vBias", "vBr", "tauRecovery",
+    "pdeMax", "vChr", "cCell", "tauFwhm", "digitalThreshold"};
+
+SiPM load_params_json(const string &filename)
+{
+    ifstream f(filename, ios::binary);
+    if (!f)
+        throw runtime_error("cannot open params file: " + filename);
+    stringstream ss;
+    ss << f.rdbuf();
+    map<string, double> m = parse_flat_json(ss.str());
+
+    vector<double> svars(10);
+    for (int i = 0; i < 10; i++)
+    {
+        auto it = m.find(kParamKeys[i]);
+        if (it == m.end())
+            throw runtime_error(string("params JSON missing key: ") + kParamKeys[i]);
+        svars[i] = it->second;
+    }
+    return SiPM(svars);
+}
+
+string sipm_to_json(SiPM &sipm)
+{
+    vector<double> c = sipm.dump_configuration();
+    ostringstream o;
+    o << setprecision(17);
+    o << "{\n";
+    for (int i = 0; i < 10; i++)
+    {
+        o << "  \"" << kParamKeys[i] << "\": ";
+        if (i == 1)
+            o << (unsigned long)c[i]; // numMicrocell as an integer
+        else
+            o << c[i];
+        o << (i < 9 ? ",\n" : "\n");
+    }
+    o << "}\n";
+    return o.str();
+}
+
+void save_params_json(const string &filename, SiPM &sipm)
+{
+    ofstream f(filename, ios::binary);
+    if (!f)
+        throw runtime_error("cannot open params file for writing: " + filename);
+    f << sipm_to_json(sipm);
 }
