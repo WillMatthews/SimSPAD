@@ -46,6 +46,7 @@
 #include <vector>
 #include <map>
 #include <cstring>
+#include <cstdint>
 
 #define COL_GREEN "\033[32;1m"  // Used for server messages
 #define COL_YELLOW "\033[33;1m" // Used for Warnings
@@ -161,6 +162,15 @@ void log_access(httplib::Request req, int status)
 int requests_served = 0;    // number of simulation requests served
 long bytes_processed = 0;   // number of bytes processed by server
 std::string last_request_time = "None"; // When the last request happened
+
+// Per-request DoS caps for POST /simspad. Simulation cost is O(N * numMicrocell), both
+// taken from the unauthenticated request; numMicrocell is bounded by MAX_MICROCELL in the
+// SiPM constructor, and these bound the waveform length and the total work product so a
+// crafted request cannot exhaust CPU/RAM (GHSA-f2ph-wv99-c83q). Tune to taste; the
+// canonical 5676-cell device at MAX_SAMPLES (~9.1e10) stays under MAX_WORK, so realistic
+// runs are unaffected and only pathological numMicrocell*N combinations are rejected.
+constexpr size_t MAX_SAMPLES = 16000000UL;          // ~122 MB of float64 input
+constexpr uint64_t MAX_WORK = 100000000000ULL;      // 1e11 microcell-steps per request
 
 int main(void)
 {
@@ -308,13 +318,53 @@ int main(void)
       return;
     }
     size_t N = body.size() / sizeof(double);
+
+    // Bound per-request work before allocating or simulating (GHSA-f2ph-wv99-c83q).
+    // Cap the waveform length first so we never copy an oversized body.
+    if (N > MAX_SAMPLES)
+    {
+      res.status = 413;
+      res.set_content("input waveform too long (max " + std::to_string(MAX_SAMPLES) + " samples)", "text/plain");
+      message_buf << "[ERROR] rejected request: " << N << " samples exceeds MAX_SAMPLES " << MAX_SAMPLES;
+      message_print_log(message_buf);
+      return;
+    }
     bytes_processed += (long)body.size();
 
+    // Build the device first. Invalid/out-of-range parameters throw from the SiPM
+    // constructor (length, finiteness, numMicrocell range) and become a clean 400
+    // here rather than an uncaught 500.
+    std::shared_ptr<SiPM> sipm;
+    try
+    {
+      sipm = make_shared<SiPM>(svars);
+    }
+    catch (const std::invalid_argument &e)
+    {
+      res.status = 400;
+      res.set_content(std::string("invalid device parameters: ") + e.what(), "text/plain");
+      message_buf << "[ERROR] rejected request: " << e.what();
+      message_print_log(message_buf);
+      return;
+    }
+
+    // Work-product budget. numMicrocell is already capped to MAX_MICROCELL, so this
+    // only rejects pathological numMicrocell*N combinations (e.g. a tiny body with a
+    // huge cell count) without affecting realistic simulations.
+    if ((uint64_t)sipm->numMicrocell * (uint64_t)N > MAX_WORK)
+    {
+      res.status = 413;
+      res.set_content("simulation too large (numMicrocell * samples exceeds the per-request budget)", "text/plain");
+      message_buf << "[ERROR] rejected request: work "
+                  << ((uint64_t)sipm->numMicrocell * (uint64_t)N) << " exceeds MAX_WORK " << MAX_WORK;
+      message_print_log(message_buf);
+      return;
+    }
+
     // The chunked provider below outlives this handler call, so copy the input
-    // out of the (soon-to-be-destroyed) request and own the SiPM via shared_ptr.
+    // out of the (soon-to-be-destroyed) request.
     auto input = make_shared<vector<double>>(N);
     memcpy(input->data(), body.data(), body.size());
-    auto sipm = make_shared<SiPM>(svars);
 
     // Seed the initial age distribution from the raw mean light level (matching
     // the in-memory simulate()).
