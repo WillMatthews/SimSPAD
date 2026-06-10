@@ -81,7 +81,10 @@ void write_binary(string filename, SiPM sipm, vector<double> response)
     // Concatenate response on the end of SiPM parameters vector
     sipmParametersVector.insert(sipmParametersVector.end(), response.begin(), response.end());
 
-    fout.write((char *)(&sipmParametersVector[0]), sizeof(sipmParametersVector) * sipmParametersVector.size());
+    // NOTE (sipm-eq-paper): was sizeof(sipmParametersVector) -- the size of the
+    // std::vector object (~24 B), not of an element -- so this wrote ~3x past the
+    // buffer (heap garbage tail). Must be sizeof(double).
+    fout.write((char *)(&sipmParametersVector[0]), sizeof(double) * sipmParametersVector.size());
     fout.close();
 }
 
