@@ -166,7 +166,8 @@ int main(int argc, char *argv[])
         {
             if (i + 1 < argc)
             {                              // Make sure we aren't at the end of argv
-                destination = argv[i + 1]; // Increment 'i' so we don't get the argument as the next argv[i].
+                destination = argv[i + 1];
+                ++i;                       // skip the argument so it isn't reparsed as the input source
             }
             else
             { // No argument to the destination option.
