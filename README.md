@@ -84,9 +84,23 @@ float64). The reply is streamed back as `application/octet-stream`: the
 little-endian float64 charge-per-step response, the same length as the input.
 See the File Format section below for details.
 
-To stop the server, access `http://localhost:33232/stop`.
+To stop the server, send a POST to `/stop`, e.g. `curl -X POST -d '' http://localhost:33232/stop`
+(it is a POST, not a GET, so a hostile web page cannot shut the server down with an `<img>` tag).
 To see if the server is running, access `http://localhost:33232/` where you should see a greeting message in plain text.
 Logs (the last 512KB of output to stdout) can be seen at `http://localhost:33232/logs`.
+
+#### Access control
+
+To defend against browser-driven CSRF and DNS-rebinding, the server only accepts requests whose
+`Host` header is allowlisted, and rejects state-changing requests (`POST /simspad`, `POST /stop`)
+that carry a cross-site `Origin`. The defaults cover the loopback bind, so local use needs no
+configuration. Two environment variables tune this:
+
+- `SIMSPAD_ALLOWED_HOSTS` — comma-separated `host[:port]` allowlist for the `Host` header.
+  Set this to your public hostname when running behind a reverse proxy that forwards `Host`
+  (default: `127.0.0.1:33232,localhost:33232,127.0.0.1,localhost`).
+- `SIMSPAD_API_KEY` — if set, `POST /simspad` and `POST /stop` additionally require a matching
+  `X-API-Key` header (default: unset, i.e. no key required).
 
 ## Install
 

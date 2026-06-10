@@ -27,10 +27,11 @@
  *
  *                                             READ ME!!
  *
- *    VERY EXPERIMENTAL CODE: NO INPUT SANITATION (yet), NO API KEY AUTH (yet), VERY UNSAFE CODE.
- *    DO NOT EXPOSE TO OUTSIDE WEB. It's probably a poor idea to run this code on your own server.
- *    This code needs a significant amount of effort to make it safe. I assume NO LIABILITY if you
- *    run this code. If you proceed, you acknowledge you understand the risks involved.
+ *    EXPERIMENTAL CODE. Input is now validated and there are basic CSRF / DNS-rebinding
+ *    defenses (Host allowlist + Origin check on state-changing endpoints) plus an optional
+ *    API key (SIMSPAD_API_KEY); see the README. It is still intended to run locally behind a
+ *    trusted proxy, NOT exposed directly to the open web. I assume NO LIABILITY if you run
+ *    this code. If you proceed, you acknowledge you understand the risks involved.
  */
 
 // #define CPPHTTPLIB_OPENSSL_SUPPORT
@@ -47,6 +48,8 @@
 #include <map>
 #include <cstring>
 #include <cstdint>
+#include <cstdlib>
+#include <algorithm>
 
 #define COL_GREEN "\033[32;1m"  // Used for server messages
 #define COL_YELLOW "\033[33;1m" // Used for Warnings
@@ -172,6 +175,86 @@ std::string last_request_time = "None"; // When the last request happened
 constexpr size_t MAX_SAMPLES = 16000000UL;          // ~122 MB of float64 input
 constexpr uint64_t MAX_WORK = 100000000000ULL;      // 1e11 microcell-steps per request
 
+// ---- CSRF / DNS-rebinding defenses (GHSA-x9fq-39h6-5x58) ----
+// The server binds loopback, but a browser the operator is using can still be coerced into
+// issuing requests to it (CSRF), and DNS-rebinding can make a foreign page's requests resolve
+// to 127.0.0.1. We defend with a Host allowlist (rebinding: the rebound attacker hostname
+// won't match), an Origin check on state-changing endpoints (cross-site CSRF), and an optional
+// API key. Loopback defaults work out of the box; override behind a reverse proxy.
+
+// Split a comma-separated list, trimming surrounding whitespace from each element.
+static std::vector<std::string> split_csv(const std::string &s)
+{
+  std::vector<std::string> out;
+  size_t i = 0;
+  while (i <= s.size())
+  {
+    size_t comma = s.find(',', i);
+    if (comma == std::string::npos)
+      comma = s.size();
+    size_t a = i, b = comma;
+    while (a < b && std::isspace((unsigned char)s[a]))
+      ++a;
+    while (b > a && std::isspace((unsigned char)s[b - 1]))
+      --b;
+    if (b > a)
+      out.push_back(s.substr(a, b - a));
+    i = comma + 1;
+  }
+  return out;
+}
+
+// Allowed Host header values (host[:port]). Override with SIMSPAD_ALLOWED_HOSTS
+// (comma-separated) when running behind a reverse proxy that forwards a public Host.
+static const std::vector<std::string> &allowed_hosts()
+{
+  static const std::vector<std::string> hosts = []
+  {
+    const char *env = std::getenv("SIMSPAD_ALLOWED_HOSTS");
+    return split_csv((env && *env) ? env
+                                   : "127.0.0.1:33232,localhost:33232,127.0.0.1,localhost");
+  }();
+  return hosts;
+}
+
+static bool host_allowed(const std::string &host)
+{
+  const auto &h = allowed_hosts();
+  return std::find(h.begin(), h.end(), host) != h.end();
+}
+
+// Origin is acceptable if absent (non-browser clients such as curl/requests never send it) or
+// its host[:port] is allowlisted. A cross-site browser request carries a foreign Origin.
+static bool origin_allowed(const std::string &origin)
+{
+  if (origin.empty())
+    return true;
+  size_t pos = origin.find("://");
+  std::string hostport = (pos == std::string::npos) ? origin : origin.substr(pos + 3);
+  return host_allowed(hostport);
+}
+
+// Authorise a state-changing request (/stop, /simspad). Host is already enforced globally by
+// the pre-routing handler; here we reject cross-site Origins and, if SIMSPAD_API_KEY is set,
+// require a matching X-API-Key. Returns true to proceed; otherwise sets res and returns false.
+static bool state_change_authorised(const httplib::Request &req, httplib::Response &res)
+{
+  if (!origin_allowed(req.get_header_value("Origin")))
+  {
+    res.status = 403;
+    res.set_content("forbidden: cross-origin request rejected", "text/plain");
+    return false;
+  }
+  const char *key = std::getenv("SIMSPAD_API_KEY");
+  if (key && *key && req.get_header_value("X-API-Key") != key)
+  {
+    res.status = 401;
+    res.set_content("unauthorized: missing or invalid X-API-Key", "text/plain");
+    return false;
+  }
+  return true;
+}
+
 int main(void)
 {
   cli_logo();
@@ -194,9 +277,23 @@ int main(void)
 
   // Defense-in-depth against XSS: a restrictive Content-Security-Policy on every response
   // so any markup that slips into a rendered page cannot execute script (GHSA-mvgv-c4rv-99ch).
+  // img-src allows 'self' (favicon) and data: (the embedded base64 SVG logo).
   srv.set_post_routing_handler([](const auto & /*req*/, auto &res)
                                { res.set_header("Content-Security-Policy",
-                                                "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"); });
+                                                "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'"); });
+
+  // Reject any request whose Host header is not allowlisted, before routing. This defeats
+  // DNS-rebinding (a rebound attacker hostname won't match the loopback allowlist) across
+  // every endpoint, including the read-only /logs (GHSA-x9fq-39h6-5x58).
+  srv.set_pre_routing_handler([](const Request &req, Response &res) -> Server::HandlerResponse
+                              {
+    if (!host_allowed(req.get_header_value("Host")))
+    {
+      res.status = 403;
+      res.set_content("forbidden: Host not allowlisted", "text/plain");
+      return Server::HandlerResponse::Handled;
+    }
+    return Server::HandlerResponse::Unhandled; });
 
   // srv.set_logger([](const auto &req, const auto &res)
   //                { log_access(req, res.status); });
@@ -217,9 +314,16 @@ int main(void)
     log_access(req, res.status);
     res.set_content(page_welcome(), "text/html"); });
 
-  // Halt the server
-  srv.Get("/stop", [&](const Request &req, Response &res)
+  // Halt the server. POST, not GET: a destructive state change must not be reachable by a
+  // simple <img src> / link prefetch, and is additionally gated by Origin/API-key checks
+  // (GHSA-x9fq-39h6-5x58).
+  srv.Post("/stop", [&](const Request &req, Response &res)
           {
+    if (!state_change_authorised(req, res))
+    {
+      log_access(req, res.status);
+      return;
+    }
     std::string halttime = current_time();
     std::cout << COL_RED << "\t   Server halted via http" << COL_RESET << std::endl;
     std::cout << COL_RED << "\t     by: " << req.remote_addr << COL_RESET << std::endl;
@@ -277,6 +381,15 @@ int main(void)
     message_print_log(message_buf);
 
     log_access(req, res.status);
+
+    // Reject cross-site / unauthorised requests before doing any work (GHSA-x9fq-39h6-5x58).
+    if (!state_change_authorised(req, res))
+    {
+      message_buf << "[ERROR] rejected request: failed Origin/API-key check (status "
+                  << res.status << ")";
+      message_print_log(message_buf);
+      return;
+    }
 
     // --- device parameters (JSON header) ---
     string paramJson = req.get_header_value("X-SiPM-Params");
