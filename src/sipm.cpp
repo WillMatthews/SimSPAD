@@ -482,10 +482,13 @@ void SiPM::input_sanitation() // inclusion adds ~ 10ps/ucell dt in SIM
         vOver = 0;
         invalid_argument("Overvoltage cannot be less than zero");
     }
-    if (tauRecovery < 0)
+    // Clamp to a strictly positive floor, not 0: tauRecovery is a divisor in
+    // exp(-t / tauRecovery) in precalculate_LUT() and volt_from_time(), so a value of
+    // exactly 0 poisons every voltage/PDE lookup with inf/NaN (GHSA-g76c-57rp-2x39).
+    if (tauRecovery <= 0)
     {
-        tauRecovery = 0;
-        invalid_argument("Recovery time constant cannot be less than zero");
+        tauRecovery = 1E-100;
+        invalid_argument("Recovery time constant must be strictly positive");
     }
     if (pdeMax < 0)
     {
