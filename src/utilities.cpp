@@ -156,6 +156,12 @@ vector<double> get_gaussian(double dt, double tauFwhm)
 // Given a number `num` scale to engineering notation (nearest power of three) and return the unit prefix associated with the unit
 tuple<wstring, double> exponent_val(double num)
 {
+    // NOTE (sipm-eq-paper): num <= 0 gave log10 = -inf, floor -> INT_MIN, and the
+    // loop below then indexed prefixes[-1] (out of bounds) -> bad_alloc. Guard it.
+    if (!(num > 0))
+    {
+        return make_tuple(wstring(L""), num);
+    }
     int floor_prefix = floor(log10(num));
     wstring prefixes[9] = {L"f", L"p", L"n", L"μ", L"m", L"", L"k", L"M", L"G"};
     bool triggered = false;
