@@ -253,8 +253,16 @@ double SiPM::unif_rand_double(double a, double b)
 // an eventual segfault on long runs. Clamp to b-1 to keep it in range.
 unsigned long SiPM::unif_rand_int(unsigned long a, unsigned long b)
 {
-    unsigned long r = (unsigned long)(a + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX / (b - a))));
-    return r >= b ? b - 1 : r;
+    // Proper uniform integer over [a, b). The old `RAND_MAX / (b - a)` divided by zero
+    // when (b - a) exceeded RAND_MAX or was zero (GHSA-vmrg-7xg2-m5p4);
+    // uniform_int_distribution has no such failure mode, has no modulo bias, and draws
+    // from the seeded engine rather than the global rand() state.
+    if (b <= a)
+    {
+        return a;
+    }
+    std::uniform_int_distribution<unsigned long> dist(a, b - 1);
+    return dist(unifRandomEngine);
 }
 
 //// SIMULATION METHODS
