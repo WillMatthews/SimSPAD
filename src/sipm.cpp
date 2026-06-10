@@ -216,10 +216,14 @@ double SiPM::unif_rand_double(double a, double b)
     return unif(unifRandomEngine) * (b - a) + a;
 }
 
-// Uniform random integer. Do not change - this is fast
+// Uniform random integer in [a, b). Fast.
+// NOTE (sipm-eq-paper): the original could return b when rand()==RAND_MAX (or
+// lands in the top partial bucket), giving an out-of-bounds microcell index and
+// an eventual segfault on long runs. Clamp to b-1 to keep it in range.
 unsigned long SiPM::unif_rand_int(unsigned long a, unsigned long b)
 {
-    return (unsigned long)(a + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX / (b - a))));
+    unsigned long r = (unsigned long)(a + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX / (b - a))));
+    return r >= b ? b - 1 : r;
 }
 
 //// SIMULATION METHODS
