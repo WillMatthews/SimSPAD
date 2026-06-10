@@ -123,7 +123,9 @@ vector<double> conv1d(vector<double> inputVec, vector<double> kernel)
         for (int j = 0; j < kernelSize; j++)
         {
             innerPosition = i + j - kernelSize / 2;
-            if (!(innerPosition < 0 || (innerPosition > (long)inputVec.size())))
+            // >= : valid indices are [0, size). The old `>` let innerPosition ==
+            // inputVec.size() through, reading one past the end (GHSA-px96-f638-vjfj).
+            if (!(innerPosition < 0 || (innerPosition >= (long)inputVec.size())))
             {
                 outputVec[i] += kernel[j] * inputVec[innerPosition];
             }
