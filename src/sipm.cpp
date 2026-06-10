@@ -22,6 +22,8 @@
 #include <algorithm>
 #include <random>
 #include <stdexcept>
+#include <cstdint>
+#include <cstring>
 #include "utilities.hpp"
 
 // Progress bar defines
@@ -94,6 +96,17 @@ SiPM::SiPM(unsigned long numMicrocell_in, double vbias_in, double vBr_in, double
     precalculate_LUT();
 }
 
+// Finite-ness test that survives -ffast-math / -ffinite-math-only. Those flags let the
+// compiler assume no NaN/Inf, so std::isfinite() is folded to a constant and is useless
+// for validating untrusted input. Inspect the IEEE-754 exponent bits directly instead:
+// an all-ones exponent encodes Inf or NaN. Integer/memcpy ops are unaffected by fast-math.
+static bool is_finite_double(double v)
+{
+    uint64_t bits;
+    std::memcpy(&bits, &v, sizeof(bits));
+    return ((bits >> 52) & 0x7FFULL) != 0x7FFULL;
+}
+
 SiPM::SiPM(vector<double> svars)
 {
     // Reject under-length parameter vectors before indexing. load_binary() builds this
@@ -102,6 +115,21 @@ SiPM::SiPM(vector<double> svars)
     if (svars.size() < 10)
     {
         throw invalid_argument("SiPM parameter vector must contain at least 10 doubles");
+    }
+    // Validate untrusted parameters before casting/allocating. A negative, NaN or Inf
+    // numMicrocell would otherwise cast to a gigantic unsigned value and make
+    // microcellTimes.reserve() below throw bad_alloc / exhaust memory (GHSA-c79g-qphv-xjxh).
+    for (size_t i = 0; i < 10; i++)
+    {
+        if (!is_finite_double(svars[i]))
+        {
+            throw invalid_argument("SiPM parameter " + to_string(i) + " is not finite");
+        }
+    }
+    // svars[1] is finite here, so these comparisons are well defined.
+    if (svars[1] < 1.0 || svars[1] > (double)MAX_MICROCELL)
+    {
+        throw invalid_argument("numMicrocell out of range [1, " + to_string(MAX_MICROCELL) + "]");
     }
     dt = svars[0];
     numMicrocell = (unsigned long)svars[1]; // number of microcells in SiPM
@@ -435,10 +463,19 @@ void SiPM::input_sanitation() // inclusion adds ~ 10ps/ucell dt in SIM
         dt = 1E-100;
         invalid_argument("dt cannot be less than or equal to zero");
     }
-    if (numMicrocell <= 0)
+    // A real, reachable range check: numMicrocell is unsigned, so the old `<= 0` test
+    // was dead code (only 0 could ever satisfy it). Clamp to the valid range instead
+    // (GHSA-c79g-qphv-xjxh). The vector constructor rejects out-of-range input outright;
+    // this also guards the unsigned-long constructors used internally.
+    if (numMicrocell == 0)
     {
         numMicrocell = 1;
-        invalid_argument("numMicrocell cannot be less than or equal to zero");
+        invalid_argument("numMicrocell cannot be zero");
+    }
+    else if (numMicrocell > MAX_MICROCELL)
+    {
+        numMicrocell = MAX_MICROCELL;
+        invalid_argument("numMicrocell exceeds MAX_MICROCELL");
     }
     if (vOver < 0)
     {

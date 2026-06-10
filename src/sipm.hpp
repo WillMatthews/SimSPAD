@@ -37,6 +37,12 @@
 
 void cli_logo(void);
 
+// Upper bound on the microcell count accepted from untrusted input. Real SiPMs top
+// out well below this (the largest catalogue arrays are ~1e6 cells); the cap bounds
+// the microcellTimes allocation and the O(N*numMicrocell) simulation cost so a
+// crafted parameter set cannot exhaust memory/CPU (GHSA-c79g-qphv-xjxh, GHSA-f2ph-wv99-c83q).
+constexpr unsigned long MAX_MICROCELL = 10000000UL; // 1e7
+
 class SiPM
 {
 public:
