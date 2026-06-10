@@ -21,6 +21,7 @@
 #include <cmath>
 #include <algorithm>
 #include <random>
+#include <stdexcept>
 #include "utilities.hpp"
 
 // Progress bar defines
@@ -95,6 +96,13 @@ SiPM::SiPM(unsigned long numMicrocell_in, double vbias_in, double vBr_in, double
 
 SiPM::SiPM(vector<double> svars)
 {
+    // Reject under-length parameter vectors before indexing. load_binary() builds this
+    // vector from however many doubles are present in a .bin file, so a short or truncated
+    // file would otherwise read past the end of the vector (GHSA-gghq-x4j2-3vcf).
+    if (svars.size() < 10)
+    {
+        throw invalid_argument("SiPM parameter vector must contain at least 10 doubles");
+    }
     dt = svars[0];
     numMicrocell = (unsigned long)svars[1]; // number of microcells in SiPM
     vBias = svars[2];                       // supplied SiPM bias voltage
