@@ -117,9 +117,9 @@ private:
     void input_sanitation(void);
 
     unsigned int LUTSize;
-    double *tVecLUT;
-    double *pdeVecLUT;
-    double *vVecLUT;
+    std::vector<double> tVecLUT;
+    std::vector<double> pdeVecLUT;
+    std::vector<double> vVecLUT;
 
     void precalculate_LUT(void);
 
@@ -127,7 +127,7 @@ private:
 
     double volt_LUT(double x) const;
 
-    double LUT(double x, double *workingVector) const;
+    double LUT(double x, const double *workingVector) const;
 
     // trapezoidal integrations over a function
     double trapezoidal(double (SiPM::*f)(double), double lower, double upper, unsigned long n);

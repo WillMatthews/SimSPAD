@@ -60,9 +60,9 @@ SiPM::SiPM(unsigned long numMicrocell_in, double vbias_in, double vBr_in, double
     microcellTimes.reserve(numMicrocell + 8); // Prevent issues with free()
 
     LUTSize = 20;                    // Look Up Table Size
-    tVecLUT = new double[LUTSize];   // Preallocate LUT Time array
-    pdeVecLUT = new double[LUTSize]; // Preallocate LUT PDE array
-    vVecLUT = new double[LUTSize];   // Preallocate LUT Voltage array
+    tVecLUT.assign(LUTSize, 0.0);   // Preallocate LUT Time array
+    pdeVecLUT.assign(LUTSize, 0.0); // Preallocate LUT PDE array
+    vVecLUT.assign(LUTSize, 0.0);   // Preallocate LUT Voltage array
 
     seed_engines();
     input_sanitation();
@@ -87,9 +87,9 @@ SiPM::SiPM(unsigned long numMicrocell_in, double vbias_in, double vBr_in, double
     microcellTimes.reserve(numMicrocell + 8); // Prevent issues with free()
 
     LUTSize = 20;                    // Look Up Table Size
-    tVecLUT = new double[LUTSize];   // Preallocate LUT Time array
-    pdeVecLUT = new double[LUTSize]; // Preallocate LUT PDE array
-    vVecLUT = new double[LUTSize];   // Preallocate LUT Voltage array
+    tVecLUT.assign(LUTSize, 0.0);   // Preallocate LUT Time array
+    pdeVecLUT.assign(LUTSize, 0.0); // Preallocate LUT PDE array
+    vVecLUT.assign(LUTSize, 0.0);   // Preallocate LUT Voltage array
 
     seed_engines();
     input_sanitation();
@@ -147,9 +147,9 @@ SiPM::SiPM(vector<double> svars)
     microcellTimes.reserve(numMicrocell + 8); // Prevent issues with free()
 
     LUTSize = 20;                    // Look Up Table Size
-    tVecLUT = new double[LUTSize];   // Preallocate LUT Time array
-    pdeVecLUT = new double[LUTSize]; // Preallocate LUT PDE array
-    vVecLUT = new double[LUTSize];   // Preallocate LUT Voltage array
+    tVecLUT.assign(LUTSize, 0.0);   // Preallocate LUT Time array
+    pdeVecLUT.assign(LUTSize, 0.0); // Preallocate LUT PDE array
+    vVecLUT.assign(LUTSize, 0.0);   // Preallocate LUT Voltage array
 
     seed_engines();
     input_sanitation();
@@ -552,20 +552,20 @@ void SiPM::precalculate_LUT(void)
 // Photon detection efficiency as a function of time lookup table
 double SiPM::pde_LUT(double x) const
 {
-    return LUT(x, pdeVecLUT);
+    return LUT(x, pdeVecLUT.data());
 }
 
 // ucell voltage as a function of time lookup table
 double SiPM::volt_LUT(double x) const
 {
-    return LUT(x, vVecLUT);
+    return LUT(x, vVecLUT.data());
 }
 
 // Define a generic lookup table that works on with the time vector
-double SiPM::LUT(double x, double *workingVector) const
+double SiPM::LUT(double x, const double *workingVector) const
 {
-    double *xs = tVecLUT;               // Precalculated LUT elements
-    double *ys = workingVector;         // Precalculated LUT elements
+    const double *xs = tVecLUT.data();  // Precalculated LUT elements
+    const double *ys = workingVector;   // Precalculated LUT elements
     const unsigned int count = LUTSize; // Number of elements in the array
     unsigned int i;                     // Index to iterate over
     double dx, dy;                      // Differentials
