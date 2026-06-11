@@ -59,7 +59,7 @@ info:
 	@echo "[*] Dependencies:	${DEPENDENCIES}"
 
 
-test: ./test/test.cpp ./test/performance.hpp ./test/current_accuracy.hpp ./src/sipm.cpp ./src/utilities.cpp
+test: ./test/test.cpp ./test/performance.hpp ./test/current_accuracy.hpp ./test/shaping.hpp ./src/sipm.cpp ./src/utilities.cpp
 	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/$(TARGET_TEST) ./test/test.cpp ./src/sipm.cpp ./src/utilities.cpp
 	./build/apps/test
 

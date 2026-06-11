@@ -98,6 +98,14 @@ void write_binary(string filename, SiPM sipm, vector<double> response)
 }
 
 // Output convolve to pulse shape using a gaussian approximation
+//
+// Alignment convention: same-length ("same" mode) output, with the kernel
+// centre kernel[kernelSize/2] aligned to output sample i. get_gaussian()
+// always returns an odd-length symmetric kernel, so the shaped pulse is not
+// time-shifted (for a symmetric kernel, correlation == convolution). Samples
+// that would fall outside the input are treated as zero, so up to
+// kernelSize/2 samples of kernel mass are dropped at each edge -- charge is
+// conserved everywhere except within half a kernel of the trace ends.
 vector<double> conv1d(vector<double> inputVec, vector<double> kernel)
 {
 
@@ -134,32 +142,42 @@ vector<double> conv1d(vector<double> inputVec, vector<double> kernel)
     return outputVec;
 }
 
-// Generate Gaussian kernel
-// TODO check if the pulse width is correct!
+// Generate Gaussian kernel with the requested full width at half maximum.
+// NOTE (sipm-eq-paper): the old conversion used sqrt(2 ln 2)/2 as a *divisor*,
+// making sigma ~4x too large, the loop was asymmetric (off by one at each
+// end), and the kernel was never normalised so convolution did not conserve
+// charge. Correct conversion: FWHM = 2*sqrt(2 ln 2) * sigma.
 vector<double> get_gaussian(double dt, double tauFwhm)
 {
-    const double gaussianConstant = (double)(1 / sqrt(2 * M_PI));
-    const double fwhmConversionConst = sqrt(2 * log(2)) / 2;
-    const double sigma = (tauFwhm / dt) / fwhmConversionConst;
+    const double fwhmConversionConst = 2.0 * sqrt(2.0 * log(2.0)); // FWHM / sigma
+    const double sigma = (tauFwhm / dt) / fwhmConversionConst;     // in samples
     const double numSigma = 4.0;
 
-    int gaussianNumberOfPoints = (int)ceil(numSigma * sigma);
-
-    vector<double> kernel = {};
-    kernel.reserve(gaussianNumberOfPoints * 2);
-
-    if (gaussianNumberOfPoints == 1)
+    // Degenerate widths (non-positive, or too narrow to resolve at this dt)
+    // collapse to the identity kernel.
+    if (!(tauFwhm > 0.0) || sigma < 0.3)
     {
-        kernel.push_back(1);
-        return kernel;
+        return {1.0};
     }
 
-    double gaussianPower;
+    // Symmetric support: i in [-M, +M] inclusive, M = ceil(4 sigma).
+    int M = (int)ceil(numSigma * sigma);
 
-    for (int i = -(gaussianNumberOfPoints - 1); i < (gaussianNumberOfPoints - 1); i++)
+    vector<double> kernel = {};
+    kernel.reserve(2 * M + 1);
+
+    double sum = 0.0;
+    for (int i = -M; i <= M; i++)
     {
-        gaussianPower = -pow((double)i / sigma, 2) / 2;
-        kernel.push_back(gaussianConstant * exp(gaussianPower));
+        double g = exp(-pow((double)i / sigma, 2) / 2);
+        kernel.push_back(g);
+        sum += g;
+    }
+    // Normalise so the discrete sum is exactly 1 (charge conservation); this
+    // supersedes the continuous 1/(sigma sqrt(2 pi)) normalisation constant.
+    for (int j = 0; j < (int)kernel.size(); j++)
+    {
+        kernel[j] /= sum;
     }
     return kernel;
 }
@@ -439,7 +457,20 @@ SiPM load_params_json(const string &filename)
             throw runtime_error(string("params JSON missing key: ") + kParamKeys[i]);
         svars[i] = it->second;
     }
-    return SiPM(svars);
+    SiPM sipm(svars);
+
+    // Optional fast-output load time constant; absent keys keep the default
+    // (2.0e-9 s) so existing parameter files continue to work unchanged.
+    auto tl = m.find("tauLoad");
+    if (tl != m.end())
+    {
+        if (!(tl->second > 0))
+            throw runtime_error("params JSON: tauLoad must be > 0 (seconds)");
+        if (tl->second == sipm.tauRecovery)
+            throw runtime_error("params JSON: tauLoad must differ from tauRecovery");
+        sipm.tauLoad = tl->second;
+    }
+    return sipm;
 }
 
 string sipm_to_json(SiPM &sipm)
@@ -455,8 +486,11 @@ string sipm_to_json(SiPM &sipm)
             o << (unsigned long)c[i]; // numMicrocell as an integer
         else
             o << c[i];
-        o << (i < 9 ? ",\n" : "\n");
+        o << ",\n";
     }
+    // tauLoad is appended explicitly (not via dump_configuration, whose
+    // 10-double layout the legacy .bin format depends on).
+    o << "  \"tauLoad\": " << sipm.tauLoad << "\n";
     o << "}\n";
     return o.str();
 }

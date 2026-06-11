@@ -74,9 +74,25 @@ void print_info(chrono::duration<double> elapsed, SiPM &sipm, size_t inputSize, 
 // transform is length-preserving, so the output header is written before its
 // body. Two passes over the (paged) input: one to seed the initial microcell
 // age distribution from the mean light level, one to simulate.
-void simulate(string params_file, string fname_in, string fname_out, bool silence)
+//
+// shapeMode selects optional output pulse shaping (all length-preserving):
+//   none     - bare avalanche charge train (default, unchanged behaviour)
+//   gaussian - Gaussian FIR, FWHM = tauFwhm (an idealised amplifier)
+//   fast     - bipolar fast-output kernel (AC-coupled J-Series fast terminal)
+//   bench    - fast then gaussian: the physical terminal followed by a
+//              ~Gaussian amplifier, i.e. what an oscilloscope capture of the
+//              real device looks like
+// The fast shaper is a pair of recursive one-pole filters, so it streams
+// chunk-by-chunk with its state carried across chunks. The Gaussian is a FIR
+// convolution; rather than handle inter-chunk overlap, modes that need it
+// buffer the full response vector and shape it in one pass (8 bytes per
+// sample of extra memory -- the streaming bound is given up for those modes).
+void simulate(string params_file, string fname_in, string fname_out, bool silence, string shapeMode)
 {
     const size_t chunk = 1u << 16; // 65536 samples per block
+
+    const bool wantFast = (shapeMode == "fast") || (shapeMode == "bench");
+    const bool wantGaussian = (shapeMode == "gaussian") || (shapeMode == "bench");
 
     SiPM sipm = load_params_json(params_file);
     NpyReader reader(fname_in);
@@ -100,20 +116,46 @@ void simulate(string params_file, string fname_in, string fname_out, bool silenc
     double mean = N ? rawSum / (double)N : 0.0;
     sipm.init_state(mean, (unsigned long)N);
 
-    // Pass 2: stream the simulation, writing each output block as it is made.
+    // Pass 2: stream the simulation, writing each output block as it is made
+    // (or buffering it when Gaussian shaping needs the whole trace).
     reader.rewind();
     auto start = chrono::steady_clock::now();
     double outSum = 0.0;
+    vector<double> full; // buffered response, only used when wantGaussian
+    if (wantGaussian)
     {
-        vector<double> inbuf(chunk), outbuf(chunk);
+        full.reserve(N);
+    }
+    if (wantFast)
+    {
+        sipm.reset_fast_shaper();
+    }
+    {
+        vector<double> inbuf(chunk), outbuf(chunk), shapebuf(chunk);
         size_t got, done = 0;
         while ((got = reader.read(inbuf.data(), chunk)) > 0)
         {
             sipm.simulate_chunk(inbuf.data(), outbuf.data(), got);
-            writer.write(outbuf.data(), got);
+            // outSum (-> reported Ibias) is taken before shaping: the bias
+            // current is an anode quantity, and the fast output integrates
+            // to ~zero by construction.
             for (size_t i = 0; i < got; i++)
             {
                 outSum += outbuf[i];
+            }
+            const double *res = outbuf.data();
+            if (wantFast)
+            {
+                sipm.shape_fast_chunk(outbuf.data(), shapebuf.data(), got);
+                res = shapebuf.data();
+            }
+            if (wantGaussian)
+            {
+                full.insert(full.end(), res, res + got);
+            }
+            else
+            {
+                writer.write(res, got);
             }
             done += got;
             if (!silence && N)
@@ -125,6 +167,12 @@ void simulate(string params_file, string fname_in, string fname_out, bool silenc
         {
             fprintf(stderr, "\r  simulating... done   \n");
         }
+    }
+    if (wantGaussian)
+    {
+        // Length-preserving "same" convolution; see conv1d() for alignment.
+        vector<double> shaped = conv1d(full, get_gaussian(sipm.dt, sipm.tauFwhm));
+        writer.write(shaped.data(), shaped.size());
     }
     writer.close();
     auto end = chrono::steady_clock::now();
@@ -156,7 +204,11 @@ static void show_usage(string name)
          << "\t-v,--version\t\tPrint SimSPAD version number\n"
          << "\t-p,--params PARAMS\tDevice parameters (.json) [required]\n"
          << "\t-i,--input INPUT\tOptical input waveform (.npy) [required]\n"
-         << "\t-o,--output OUTPUT\tResponse output path (.npy) [required]"
+         << "\t-o,--output OUTPUT\tResponse output path (.npy) [required]\n"
+         << "\t-S,--shape MODE\t\tOutput pulse shaping: none (default),\n"
+         << "\t\t\t\tgaussian (FWHM = tauFwhm), fast (bipolar AC-coupled\n"
+         << "\t\t\t\tfast-output terminal, tau = tauLoad), or bench\n"
+         << "\t\t\t\t(fast then gaussian, like a real scope capture)"
          << endl;
 }
 
@@ -190,6 +242,7 @@ int main(int argc, char *argv[])
     string params = "";
     string source = "";
     string destination = "";
+    string shapeMode = "none";
     bool silence = false;
 
     // Small helper to consume an option's argument.
@@ -239,6 +292,19 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             destination = a;
         }
+        else if ((arg == "-S") || (arg == "--shape"))
+        {
+            const char *a = take_arg(i, "--shape");
+            if (!a)
+                return EXIT_FAILURE;
+            shapeMode = a;
+            if (shapeMode != "none" && shapeMode != "gaussian" && shapeMode != "fast" && shapeMode != "bench")
+            {
+                cerr << "error: unknown shape mode '" << shapeMode
+                     << "' (expected none, gaussian, fast or bench)." << endl;
+                return EXIT_FAILURE;
+            }
+        }
         else
         {
             source = argv[i]; // bare positional argument is the input waveform
@@ -259,7 +325,7 @@ int main(int argc, char *argv[])
 
     try
     {
-        simulate(params, source, destination, silence);
+        simulate(params, source, destination, silence, shapeMode);
     }
     catch (const std::exception &e)
     {
