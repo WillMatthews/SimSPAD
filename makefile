@@ -10,7 +10,8 @@ TARGET_SERVER	 := server
 TARGET_TEST	:= test
 INCLUDE	 := -Ilib/
 SRC_ALL	 := $(wildcard src/*.cpp)
-SRC		 := $(filter-out src/server.cpp, $(SRC_ALL))
+SRC		 := $(filter-out src/server.cpp src/spice_kernel.cpp, $(SRC_ALL))
+TARGET_SPICE	:= spice_kernel
 VERSION	 := $(shell git describe --tags --always --dirty)
 CXXFLAGS += -DVERSION=\"$(VERSION)\"
 
@@ -30,7 +31,7 @@ $(APP_DIR)/$(TARGET): $(OBJECTS)
 
 -include $(DEPENDENCIES)
 
-.PHONY: all test build clean debug release info
+.PHONY: all test build clean debug release info spice_kernel
 
 build:
 	@mkdir -p $(APP_DIR)
@@ -68,3 +69,7 @@ server: ./src/server.cpp ./src/sipm.cpp ./src/utilities.cpp ./src/pages.cpp ./sr
 
 simspad: ./src/main.cpp ./src/sipm.cpp ./src/utilities.cpp
 	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/$(TARGET) ./src/main.cpp ./src/sipm.cpp ./src/utilities.cpp
+
+spice_kernel: ./src/spice_kernel.cpp ./src/sipm.cpp ./src/utilities.cpp
+	@mkdir -p $(APP_DIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -o $(APP_DIR)/$(TARGET_SPICE) ./src/spice_kernel.cpp ./src/sipm.cpp ./src/utilities.cpp $(LDFLAGS)

@@ -7,3 +7,4 @@ simspad
 *.vscode
 __pycache__
 spice/*_tran.txt
+sipm_fast.json
