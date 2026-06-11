@@ -17,6 +17,10 @@
 
 #include <string>
 
+// SVG SimSPAD logo, minified, base64-encoded. Defined in pages.cpp; also used
+// to build the /favicon.ico response in server.cpp.
+extern const std::string logo_svg_base64;
+
 std::string page_welcome();
 std::string page_logo();
 std::string page_menu();

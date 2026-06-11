@@ -88,6 +88,10 @@ To stop the server, send a POST to `/stop`, e.g. `curl -X POST -d '' http://loca
 (it is a POST, not a GET, so a hostile web page cannot shut the server down with an `<img>` tag).
 To see if the server is running, access `http://localhost:33232/` where you should see a greeting message in plain text.
 Logs (the last 512KB of output to stdout) can be seen at `http://localhost:33232/logs`.
+Prometheus metrics (request counters, total bytes processed, uptime, build version) are
+exposed at `http://localhost:33232/metrics`.
+A plain-text liveness check is at `http://localhost:33232/healthz` (always returns `ok`),
+and the build version alone is at `http://localhost:33232/version`.
 
 #### Access control
 

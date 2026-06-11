@@ -46,6 +46,9 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <utility>
+#include <atomic>
+#include <mutex>
 #include <cstring>
 #include <cstdint>
 #include <cstdlib>
@@ -162,9 +165,9 @@ void log_access(httplib::Request req, int status)
   message_print_log(message_buf);
 }
 
-int requests_served = 0;    // number of simulation requests served
-long bytes_processed = 0;   // number of bytes processed by server
-std::string last_request_time = "None"; // When the last request happened
+std::atomic<long long> requests_served{0}; // number of simulation requests served
+std::atomic<long long> bytes_processed{0}; // number of bytes processed by server
+std::string last_request_time = "None";    // When the last request happened
 
 // Per-request DoS caps for POST /simspad. Simulation cost is O(N * numMicrocell), both
 // taken from the unauthenticated request; numMicrocell is bounded by MAX_MICROCELL in the
@@ -255,11 +258,104 @@ static bool state_change_authorised(const httplib::Request &req, httplib::Respon
   return true;
 }
 
+// ---- Prometheus metrics (GET /metrics) ----
+
+// Map a request path to a small, fixed set of labels so that an attacker probing
+// arbitrary paths cannot create unbounded label cardinality in the counters below.
+static std::string route_label(const std::string &path)
+{
+  static const std::vector<std::string> known = {"/",        "/logs",    "/simspad", "/stop",
+                                                  "/metrics", "/healthz", "/version", "/favicon.ico"};
+  for (const auto &route : known)
+  {
+    if (path == route)
+      return route;
+  }
+  return "other";
+}
+
+// Thread-safe counters for HTTP requests by route and status code, rendered in
+// the Prometheus text exposition format.
+class HttpRequestCounters
+{
+public:
+  static HttpRequestCounters &getInstance()
+  {
+    static HttpRequestCounters instance;
+    return instance;
+  }
+
+  void increment(const std::string &route, int status)
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    counts_[{route, status}]++;
+  }
+
+  std::string render() const
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::ostringstream out;
+    out << "# HELP simspad_http_requests_total Total HTTP requests by path and status code.\n";
+    out << "# TYPE simspad_http_requests_total counter\n";
+    for (const auto &[key, count] : counts_)
+    {
+      out << "simspad_http_requests_total{path=\"" << key.first
+          << "\",status=\"" << key.second << "\"} " << count << "\n";
+    }
+    return out.str();
+  }
+
+private:
+  HttpRequestCounters() = default;
+  mutable std::mutex mutex_;
+  std::map<std::pair<std::string, int>, long long> counts_;
+};
+
+// ---- /favicon.ico ----
+
+// Minimal base64 decoder (the bundled cpp-httplib only provides an encoder),
+// used to turn logo_svg_base64 (pages.cpp) into raw SVG bytes for /favicon.ico.
+static std::string base64_decode(const std::string &in)
+{
+  static const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                   "abcdefghijklmnopqrstuvwxyz"
+                                   "0123456789+/";
+  std::vector<int> table(256, -1);
+  for (int i = 0; i < 64; i++)
+  {
+    table[(unsigned char)chars[i]] = i;
+  }
+
+  std::string out;
+  int val = 0, bits = -8;
+  for (unsigned char c : in)
+  {
+    if (table[c] == -1)
+      break;
+    val = (val << 6) + table[c];
+    bits += 6;
+    if (bits >= 0)
+    {
+      out += (char)((val >> bits) & 0xFF);
+      bits -= 8;
+    }
+  }
+  return out;
+}
+
+// Decoded once on first use and cached for the life of the process.
+static const std::string &favicon_svg()
+{
+  static const std::string svg = base64_decode(logo_svg_base64);
+  return svg;
+}
+
 int main(void)
 {
   cli_logo();
   std::cout << COL_GREEN << "\t   SimSPAD Server Running" << COL_RESET << std::endl;
   std::string start_time = current_time();
+  time_t start_time_epoch = time(nullptr);
   std::cout << "Started at time: " << start_time << std::endl;
 
   using namespace httplib;
@@ -278,9 +374,13 @@ int main(void)
   // Defense-in-depth against XSS: a restrictive Content-Security-Policy on every response
   // so any markup that slips into a rendered page cannot execute script (GHSA-mvgv-c4rv-99ch).
   // img-src allows 'self' (favicon) and data: (the embedded base64 SVG logo).
-  srv.set_post_routing_handler([](const auto & /*req*/, auto &res)
-                               { res.set_header("Content-Security-Policy",
-                                                "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'"); });
+  // Also tallies per-route, per-status request counters for GET /metrics; this runs for
+  // every response (including those short-circuited by the pre-routing handler below).
+  srv.set_post_routing_handler([](const Request &req, Response &res)
+                               {
+    res.set_header("Content-Security-Policy",
+                   "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'");
+    HttpRequestCounters::getInstance().increment(route_label(req.path), res.status); });
 
   // Reject any request whose Host header is not allowlisted, before routing. This defeats
   // DNS-rebinding (a rebound attacker hostname won't match the loopback allowlist) across
@@ -347,8 +447,8 @@ int main(void)
     page_text += row_lambda("Start Time:", start_time);
     page_text += row_lambda("Current Time:", current_time());
     page_text += row_lambda("Last Request At:", last_request_time);
-    page_text += row_lambda("Requests Served:", std::to_string(requests_served));
-    page_text += row_lambda("Bytes Processed:", std::to_string(bytes_processed));
+    page_text += row_lambda("Requests Served:", std::to_string(requests_served.load()));
+    page_text += row_lambda("Bytes Processed:", std::to_string(bytes_processed.load()));
     page_text += "</table><br/><br/>";
 
     // Print the log table if the table length is greater than zero.
@@ -362,6 +462,50 @@ int main(void)
 
     page_text += "</div>" + page_footer();
     res.set_content(page_text, "text/html"); });
+
+  // Prometheus metrics in the text exposition format
+  // (https://prometheus.io/docs/instrumenting/exposition_formats/). Read-only, so (unlike
+  // /stop and /simspad) it is not gated by state_change_authorised.
+  srv.Get("/metrics", [&](const Request & /*req*/, Response &res)
+          {
+    std::ostringstream out;
+
+    out << "# HELP simspad_up Whether the SimSPAD server process is running.\n";
+    out << "# TYPE simspad_up gauge\n";
+    out << "simspad_up 1\n";
+
+    out << "# HELP simspad_start_time_seconds Unix time the SimSPAD server started.\n";
+    out << "# TYPE simspad_start_time_seconds gauge\n";
+    out << "simspad_start_time_seconds " << start_time_epoch << "\n";
+
+    out << "# HELP simspad_build_info SimSPAD build version.\n";
+    out << "# TYPE simspad_build_info gauge\n";
+    out << "simspad_build_info{version=\"" << VERSION << "\"} 1\n";
+
+    out << "# HELP simspad_simulation_requests_total Total POST /simspad simulation requests served.\n";
+    out << "# TYPE simspad_simulation_requests_total counter\n";
+    out << "simspad_simulation_requests_total " << requests_served.load() << "\n";
+
+    out << "# HELP simspad_input_bytes_total Total bytes of optical-input waveform processed.\n";
+    out << "# TYPE simspad_input_bytes_total counter\n";
+    out << "simspad_input_bytes_total " << bytes_processed.load() << "\n";
+
+    out << HttpRequestCounters::getInstance().render();
+
+    res.set_content(out.str(), "text/plain; version=0.0.4; charset=utf-8"); });
+
+  // Liveness check for monitoring/orchestration. Deliberately not logged via
+  // log_access/RamLog, since it may be polled frequently.
+  srv.Get("/healthz", [](const Request & /*req*/, Response &res)
+          { res.set_content("ok\n", "text/plain"); });
+
+  // Build version, e.g. for deployment tracking (also in simspad_build_info on /metrics).
+  srv.Get("/version", [](const Request & /*req*/, Response &res)
+          { res.set_content(std::string(VERSION) + "\n", "text/plain"); });
+
+  // Browser favicon: the SimSPAD logo SVG (also embedded as a data: URI on the HTML pages).
+  srv.Get("/favicon.ico", [](const Request & /*req*/, Response &res)
+          { res.set_content(favicon_svg(), "image/svg+xml"); });
 
   // Run a Simulation from a POST request.
   //
