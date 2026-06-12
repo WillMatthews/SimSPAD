@@ -39,11 +39,32 @@ The two time constants map onto the circuit as:
 * `tauRecovery` — the cell's *loaded* recovery constant (array loading slows the
   bare `Rq·(Cd+Cf)`; the fit gives ≈ 24.5 ns here).
 
-So `--shape fast` is a two-pole reduction of this circuit. Issue #29 tracks the
-pipeline that runs this deck and emits the fitted `tauLoad` as a ready-to-use
-`params.json` value.
+So `--shape fast` is a two-pole reduction of this circuit.
 
-## Running it
+## Deriving the kernel (`spice_kernel`)
+
+`src/spice_kernel.cpp` is the spice → kernel pipeline. It runs this deck, fits
+the two time constants, checks the analytic kernel against the SPICE pulse, and
+writes a ready-to-run `params.json` whose `tauLoad` is calibrated to the
+circuit. Build and run from the repository root (needs `ngspice` on PATH):
+
+```
+make spice_kernel
+./build/apps/spice_kernel
+# -> sipm_fast.json
+simspad -p sipm_fast.json -i light.npy -o resp.npy --shape fast
+```
+
+`tauLoad` is read from the deck's `.param` values (`R_Lfast·N·C_f`), so it can
+never drift from the circuit. Sample run:
+
+```
+tauLoad     = R_Lfast*N*C_f =   2.500 ns
+tauRecovery = loaded fit    =  24.539 ns
+peak-normalised shape RMS error (kernel vs spice, <40 ns): 0.088   [PASS]
+```
+
+## Running the deck directly
 
 ```
 ngspice -b spice/jseries_fastout.cir      # writes spice/fastout_tran.txt
