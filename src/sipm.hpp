@@ -94,6 +94,18 @@ public:
 
     void simulate_chunk(const double *in, double *out, std::size_t n);
 
+    // Conservation-identity probe. The three-argument overload also records,
+    // per sample, the mean overvoltage over all microcells immediately after
+    // the step's avalanches, evaluated with the exact recovery curve
+    // volt_from_time() (not the linear LUT used for the fired charge). An
+    // external harness can then check the charge-conservation identity
+    //   dv/dt = (vOver - v)/tauRecovery - y/(numMicrocell*cCell)
+    // on the very same sample path that produced the charge output. Pass
+    // vmean = nullptr to skip the (O(numMicrocell) per sample) probe.
+    double mean_overvoltage(void);
+
+    void simulate_chunk(const double *in, double *out, double *vmean, std::size_t n);
+
     std::vector<double> shape_output(std::vector<double> inputVec);
 
     // Fast-output (bipolar) shaping: models the AC-coupled J-Series fast

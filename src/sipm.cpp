@@ -402,11 +402,36 @@ void SiPM::init_spads(vector<double> light)
 // init_state()/init_spads() must have been called once beforehand.
 void SiPM::simulate_chunk(const double *in, double *out, size_t n)
 {
+    simulate_chunk(in, out, nullptr, n);
+}
+
+// Conservation-identity probe: mean overvoltage over all microcells at the
+// current simulation clock, from the exact recovery curve (no LUT). Cells
+// that fired at exactly simClock have age 0 and so contribute 0 V, i.e. the
+// value is the post-avalanche state of the current step.
+double SiPM::mean_overvoltage(void)
+{
+    double sum = 0.0;
+    for (unsigned long j = 0; j < numMicrocell; j++)
+    {
+        sum += volt_from_time(simClock - microcellTimes[j]);
+    }
+    return sum / (double)numMicrocell;
+}
+
+// As simulate_chunk(in, out, n), but when vmean is non-null also record the
+// exact post-avalanche mean overvoltage for each sample (see mean_overvoltage).
+void SiPM::simulate_chunk(const double *in, double *out, double *vmean, size_t n)
+{
     for (size_t i = 0; i < n; i++)
     {
         // If expected num of photons per bit is negative, set to zero
         double l = in[i] > 0.0 ? in[i] : 0.0;
         out[i] = simulate_microcells(simClock, l);
+        if (vmean != nullptr)
+        {
+            vmean[i] = mean_overvoltage();
+        }
         simClock += dt;
     }
 }

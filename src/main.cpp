@@ -24,6 +24,7 @@
 #include <chrono>
 #include <ctime>
 #include <cstdio>
+#include <memory>
 #include "sipm.hpp"
 #include "utilities.hpp"
 
@@ -87,17 +88,26 @@ void print_info(chrono::duration<double> elapsed, SiPM &sipm, size_t inputSize, 
 // convolution; rather than handle inter-chunk overlap, modes that need it
 // buffer the full response vector and shape it in one pass (8 bytes per
 // sample of extra memory -- the streaming bound is given up for those modes).
-void simulate(string params_file, string fname_in, string fname_out, bool silence, string shapeMode)
+// fname_vmean (optional, empty = off) streams the conservation-identity probe
+// -- the exact post-avalanche mean overvoltage per step, before any shaping --
+// to a second .npy waveform alongside the charge output.
+void simulate(string params_file, string fname_in, string fname_out, bool silence, string shapeMode, string fname_vmean)
 {
     const size_t chunk = 1u << 16; // 65536 samples per block
 
     const bool wantFast = (shapeMode == "fast") || (shapeMode == "bench");
     const bool wantGaussian = (shapeMode == "gaussian") || (shapeMode == "bench");
+    const bool wantVmean = !fname_vmean.empty();
 
     SiPM sipm = load_params_json(params_file);
     NpyReader reader(fname_in);
     size_t N = reader.count();
     NpyWriter writer(fname_out, N);
+    unique_ptr<NpyWriter> vmeanWriter;
+    if (wantVmean)
+    {
+        vmeanWriter = make_unique<NpyWriter>(fname_vmean, N);
+    }
 
     // Pass 1: mean photons/dt over the whole trace (raw, matching the old
     // in-memory init_spads) to seed the initial age distribution.
@@ -131,11 +141,15 @@ void simulate(string params_file, string fname_in, string fname_out, bool silenc
         sipm.reset_fast_shaper();
     }
     {
-        vector<double> inbuf(chunk), outbuf(chunk), shapebuf(chunk);
+        vector<double> inbuf(chunk), outbuf(chunk), shapebuf(chunk), vbuf(chunk);
         size_t got, done = 0;
         while ((got = reader.read(inbuf.data(), chunk)) > 0)
         {
-            sipm.simulate_chunk(inbuf.data(), outbuf.data(), got);
+            sipm.simulate_chunk(inbuf.data(), outbuf.data(), wantVmean ? vbuf.data() : nullptr, got);
+            if (wantVmean)
+            {
+                vmeanWriter->write(vbuf.data(), got);
+            }
             // outSum (-> reported Ibias) is taken before shaping: the bias
             // current is an anode quantity, and the fast output integrates
             // to ~zero by construction.
@@ -175,6 +189,10 @@ void simulate(string params_file, string fname_in, string fname_out, bool silenc
         writer.write(shaped.data(), shaped.size());
     }
     writer.close();
+    if (wantVmean)
+    {
+        vmeanWriter->close();
+    }
     auto end = chrono::steady_clock::now();
 
     chrono::duration<double> elapsed = end - start;
@@ -208,7 +226,11 @@ static void show_usage(string name)
          << "\t-S,--shape MODE\t\tOutput pulse shaping: none (default),\n"
          << "\t\t\t\tgaussian (FWHM = tauFwhm), fast (bipolar AC-coupled\n"
          << "\t\t\t\tfast-output terminal, tau = tauLoad), or bench\n"
-         << "\t\t\t\t(fast then gaussian, like a real scope capture)"
+         << "\t\t\t\t(fast then gaussian, like a real scope capture)\n"
+         << "\t-m,--vmean VMEAN\tAlso write the exact post-avalanche mean\n"
+         << "\t\t\t\tmicrocell overvoltage per step (unshaped) to a\n"
+         << "\t\t\t\tsecond .npy waveform -- the conservation-identity\n"
+         << "\t\t\t\tprobe (slower: O(numMicrocell) extra per step)"
          << endl;
 }
 
@@ -243,6 +265,7 @@ int main(int argc, char *argv[])
     string source = "";
     string destination = "";
     string shapeMode = "none";
+    string vmeanFile = "";
     bool silence = false;
 
     // Small helper to consume an option's argument.
@@ -292,6 +315,13 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             destination = a;
         }
+        else if ((arg == "-m") || (arg == "--vmean"))
+        {
+            const char *a = take_arg(i, "--vmean");
+            if (!a)
+                return EXIT_FAILURE;
+            vmeanFile = a;
+        }
         else if ((arg == "-S") || (arg == "--shape"))
         {
             const char *a = take_arg(i, "--shape");
@@ -325,7 +355,7 @@ int main(int argc, char *argv[])
 
     try
     {
-        simulate(params, source, destination, silence, shapeMode);
+        simulate(params, source, destination, silence, shapeMode, vmeanFile);
     }
     catch (const std::exception &e)
     {
