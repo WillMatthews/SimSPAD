@@ -288,7 +288,14 @@ def main(argv=None):
           + ("  (auto)" if args.t0 is None else "  (given)"))
     print(f"  kernel       : {info['n_taps']} taps @ dt = {dt * 1e12:.1f} ps")
     print(f"  positive FWHM: {info['fwhm'] * 1e9:.3f} ns")
-    print(f"  net charge/avalanche = {info['net_charge']:+.3e}  (want ~0: AC-coupled)")
+    # Net charge tells you which terminal you built: a fast output is AC-coupled
+    # (bipolar, integrates to ~0); a standard/slow output is DC-coupled (unipolar,
+    # carries the whole avalanche charge, so ~1). A standard output landing well
+    # off 1 usually means the device cCell disagrees with the circuit's cell cap.
+    net = info["net_charge"]
+    kind = "bipolar / AC-coupled fast output, expect ~0" if abs(net) < 0.1 \
+        else "unipolar / DC-coupled standard (slow) output, expect ~1"
+    print(f"  net charge/avalanche = {net:+.3e}  [{kind}]")
     print(f"  wrote {args.kernel_out}")
 
     if args.params_out:

@@ -106,21 +106,53 @@ Single-photon checks against the datasheet (run from the deck): FWHM ≈ 1.9 ns
 into 50 Ω, positive-lobe charge ≈ `Cf·OV`, near-zero net charge (AC-coupled),
 anode charge ≈ `G·e`.
 
+## Included decks
+
+All are Onsemi J-Series (MICROJ-SERIES/D rev.7), with inputs from the datasheet
+in `docs/datasheets/microj-series-datasheet.pdf` (Tables 1–3, gain quoted at
+OV = +2.5 V). Each deck writes both the fast (`v(f)`) and standard/anode (`v(a)`)
+outputs, so one deck serves both terminals.
+
+| Deck | Device | Cells | Recharge τ | Fast cap | Provenance |
+|---|---|---|---|---|---|
+| `jseries_fastout.cir` | MicroFJ-30020 (3 mm, 20 µm) | 14410 | — | 50 pF | Bench-calibrated; the validation anchor |
+| `microfj_30035_fastout.cir` | MicroFJ-30035 (3 mm, 35 µm) | 5676 | 45 ns | 40 pF | **Datasheet** |
+| `microfj_40035_fastout.cir` | MicroFJ-40035 (4 mm, 35 µm) | 9260 | 48 ns | 70 pF | **Datasheet** |
+| `microfj_60035_fastout.cir` | MicroFJ-60035 (6 mm, 35 µm) | 22292 | 50 ns | 160 pF | **Datasheet** |
+| `template_fastout.cir` | **fast-output template** | — | — | — | Fill in datasheet inputs; internals derived |
+| `template_stdout.cir` | **standard-output template** | — | — | — | For devices with NO fast pin (e.g. Hamamatsu MPPCs) |
+
+The datasheet's own consistency is a nice check on the model: with Cμ = G·e/OV =
+185.9 fF, the array capacitance N·Cμ reproduces the datasheet anode capacitances
+to 96–100 % (60035: 4143 vs 4140 pF).
+
+### Fidelity: fast output vs standard output
+
+The **standard (anode) output** is governed by the datasheet recharge τ and is
+well-matched. The **fast output** is harder: the simple `N·Cf` fast-rail lumping
+*over-broadens* it, and the error grows with array size — the decks give FWHM
+~1.8 / 2.7 / 5.4 ns for the 30035 / 40035 / 60035 vs the datasheet's 1.5 / 1.7 /
+3.0 ns. So for an **exact fast output**, don't rely on the lumped circuit:
+**digitise the datasheet's measured pulse** (Figs. 5 and 6 give the fast and
+standard shapes for all three) and feed that curve straight to
+`pulse_to_kernel.py`. That is the whole advantage of the tabulated-kernel
+approach — a measured curve always beats a model.
+
 ## Your own device: run SPICE → kernel (the general path)
 
-For a device other than the shipped MicroFJ-30020, the recommended route is the
-source-agnostic `examples/python/pulse_to_kernel.py`, which turns *any* 1-PE
-fast-output trace (a SPICE `wrdata` dump **or** a bench oscilloscope capture)
-into a kernel. The SPICE half is just "run a deck that writes the fast node":
+For any device, the recommended route is the source-agnostic
+`examples/python/pulse_to_kernel.py`, which turns *any* 1-PE fast-output trace
+(a SPICE `wrdata` dump **or** a bench oscilloscope capture) into a kernel. The
+SPICE half is just "run a deck that writes the fast node":
 
-1. **Adapt the deck.** Copy `jseries_fastout.cir` and edit the `.param` block to
-   your device — the junction + quench capacitance `Cd`/`Cq` (set by gain and
-   overvoltage, `(Cd+Cq) = G·e/OV`), the quench resistor `Rq` (recharge τ), the
-   fast-coupling cap `Cf`, the cell count `NCELL`, and the load `RLFAST`. Keep
-   the single fired cell + lumped passive array topology and the
-   `wrdata <file> v(f)` line (the fast-output node voltage). Fire one cell with
-   the `VFIRE` switch; the exact trigger time doesn't matter (the tool
-   auto-detects the onset).
+1. **Make the deck.** Copy `template_fastout.cir` and fill in its *datasheet
+   inputs* block — gain, overvoltage, breakdown, cell count `NCELL`, recharge τ,
+   total fast capacitance, and the load `RLFAST`. Everything internal (`Cd`,
+   `Cq`, `Rq`, `Cf`) is **derived** from those via `.param` expressions, so you
+   never hand-pick a component value. Point the `wrdata <file> v(f)` line at your
+   own output path. Fire one cell with the `VFIRE` switch; the exact trigger
+   time doesn't matter (the tool auto-detects the onset). Set the `tran` window
+   to ≳ 8 × recharge τ so the AC-coupled pulse fully returns to zero.
 
 2. **Run it** and feed the dump in:
 
@@ -137,6 +169,29 @@ into a kernel. The SPICE half is just "run a deck that writes the fast node":
 SimSPAD simulates — SPICE only supplies the *terminal shape*). See
 `examples/python/README.md` for the full option list, the bench-capture path,
 and the normalisation choices.
+
+### Standard ("slow") output instead of the fast output
+
+The standard/anode output is what most SiPMs are read on (the fast terminal is a
+specialised extra pin). Every fast-output deck already writes the anode node
+`v(a)` as its second `wrdata` column, so you build a **slow kernel** from the
+*same* run — just point the tool at the anode column and load:
+
+```bash
+python examples/python/pulse_to_kernel.py \
+    --pulse spice/mydevice_tran.txt --time-col 0 --signal-col 3 \
+    --signal-units voltage --load 10 \
+    --device mydevice.json --params-out mydevice_slow.json
+```
+
+(`wrdata v(f) v(a)` lays the columns out as `t v(f) t v(a)`, so the anode is
+column 3; `--load 10` is `RLANODE`.) For a device with **no fast pin** at all,
+start from `template_stdout.cir`, which models the standard output directly
+(single `wrdata v(a)` column → `--signal-col 1`).
+
+Unlike the AC-coupled fast output (bipolar, net charge ≈ 0), the standard output
+is **DC-coupled** — unipolar, carrying the full avalanche charge, so its kernel's
+net charge ≈ 1. `pulse_to_kernel.py` reports which regime it detected.
 
 > Security note: an ngspice deck can run arbitrary shell commands (via
 > `.control` `shell`/`system`), so only run decks you trust — and never wire
