@@ -59,7 +59,9 @@ SiPM::SiPM(unsigned long numMicrocell_in, double vbias_in, double vBr_in, double
     microcellTimes = vector<double>{};        // microcell live time of last detection vector
     microcellTimes.reserve(numMicrocell + 8); // Prevent issues with free()
 
-    LUTSize = 20;                    // Look Up Table Size
+    LUTSize = 200;  // LUT size: 20 points biased the static transfer curve by up to
+                    // ~3% at deep saturation (linear-interp error in eta/V); 200 keeps
+                    // the bias below the MC noise floor (~0.1%) at negligible cost.
     tVecLUT.assign(LUTSize, 0.0);   // Preallocate LUT Time array
     pdeVecLUT.assign(LUTSize, 0.0); // Preallocate LUT PDE array
     vVecLUT.assign(LUTSize, 0.0);   // Preallocate LUT Voltage array
@@ -86,7 +88,9 @@ SiPM::SiPM(unsigned long numMicrocell_in, double vbias_in, double vBr_in, double
     microcellTimes = vector<double>{};        // microcell live time of last detection vector
     microcellTimes.reserve(numMicrocell + 8); // Prevent issues with free()
 
-    LUTSize = 20;                    // Look Up Table Size
+    LUTSize = 200;  // LUT size: 20 points biased the static transfer curve by up to
+                    // ~3% at deep saturation (linear-interp error in eta/V); 200 keeps
+                    // the bias below the MC noise floor (~0.1%) at negligible cost.
     tVecLUT.assign(LUTSize, 0.0);   // Preallocate LUT Time array
     pdeVecLUT.assign(LUTSize, 0.0); // Preallocate LUT PDE array
     vVecLUT.assign(LUTSize, 0.0);   // Preallocate LUT Voltage array
@@ -146,7 +150,9 @@ SiPM::SiPM(vector<double> svars)
     microcellTimes = vector<double>{};        // microcell live time of last detection vector
     microcellTimes.reserve(numMicrocell + 8); // Prevent issues with free()
 
-    LUTSize = 20;                    // Look Up Table Size
+    LUTSize = 200;  // LUT size: 20 points biased the static transfer curve by up to
+                    // ~3% at deep saturation (linear-interp error in eta/V); 200 keeps
+                    // the bias below the MC noise floor (~0.1%) at negligible cost.
     tVecLUT.assign(LUTSize, 0.0);   // Preallocate LUT Time array
     pdeVecLUT.assign(LUTSize, 0.0); // Preallocate LUT PDE array
     vVecLUT.assign(LUTSize, 0.0);   // Preallocate LUT Voltage array
