@@ -105,3 +105,40 @@ Tested with ngspice-45. The transient dump is a build artifact (gitignored).
 Single-photon checks against the datasheet (run from the deck): FWHM ≈ 1.9 ns
 into 50 Ω, positive-lobe charge ≈ `Cf·OV`, near-zero net charge (AC-coupled),
 anode charge ≈ `G·e`.
+
+## Your own device: run SPICE → kernel (the general path)
+
+For a device other than the shipped MicroFJ-30020, the recommended route is the
+source-agnostic `examples/python/pulse_to_kernel.py`, which turns *any* 1-PE
+fast-output trace (a SPICE `wrdata` dump **or** a bench oscilloscope capture)
+into a kernel. The SPICE half is just "run a deck that writes the fast node":
+
+1. **Adapt the deck.** Copy `jseries_fastout.cir` and edit the `.param` block to
+   your device — the junction + quench capacitance `Cd`/`Cq` (set by gain and
+   overvoltage, `(Cd+Cq) = G·e/OV`), the quench resistor `Rq` (recharge τ), the
+   fast-coupling cap `Cf`, the cell count `NCELL`, and the load `RLFAST`. Keep
+   the single fired cell + lumped passive array topology and the
+   `wrdata <file> v(f)` line (the fast-output node voltage). Fire one cell with
+   the `VFIRE` switch; the exact trigger time doesn't matter (the tool
+   auto-detects the onset).
+
+2. **Run it** and feed the dump in:
+
+   ```bash
+   ngspice -b spice/mydevice.cir            # -> writes your wrdata file
+   python examples/python/pulse_to_kernel.py \
+       --pulse spice/mydevice_tran.txt --time-col 0 --signal-col 1 \
+       --signal-units voltage --load 50 \
+       --device mydevice.json --params-out mydevice_kernel.json
+   simspad -p mydevice_kernel.json -i light.npy -o resp.npy --shape kernel
+   ```
+
+`mydevice.json` is your device's parameter file (the avalanche-model parameters
+SimSPAD simulates — SPICE only supplies the *terminal shape*). See
+`examples/python/README.md` for the full option list, the bench-capture path,
+and the normalisation choices.
+
+> Security note: an ngspice deck can run arbitrary shell commands (via
+> `.control` `shell`/`system`), so only run decks you trust — and never wire
+> "upload a deck" into the web server. The bench-capture path takes only numbers
+> and has no such surface.

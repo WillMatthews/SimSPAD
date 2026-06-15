@@ -91,10 +91,15 @@ applies a length-preserving output filter:
 `--shape kernel` is the faithful path for an arbitrary SiPM: supply the device's
 real fast-output pulse (measured, or from a SPICE deck) as a 1-D `.npy` of
 current per unit avalanche charge, point `kernelFile`/`kernelDt` at it, and the
-simulator convolves it directly rather than assuming a functional form. The
-`spice/` directory ships an ngspice equivalent circuit and the `spice_kernel`
-tool that turns any such deck into a ready-to-run kernel + params file — see
-`spice/README.md`.
+simulator convolves it directly rather than assuming a functional form.
+
+The easiest way to build that kernel is **`examples/python/pulse_to_kernel.py`**,
+which turns a single-photoelectron fast-output pulse — from a bench scope capture
+**or** a SPICE run — into the kernel `.npy` plus an augmented params file (see
+`examples/python/README.md`). For the shipped MicroFJ-30020 there is also a
+one-shot C++ tool, `spice_kernel`, that runs the bundled ngspice equivalent
+circuit and additionally fits the cheaper two-pole `fast` mode as a cross-check
+(see `spice/README.md`).
 
 ### Web Application
 
