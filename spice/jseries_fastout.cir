@@ -1,0 +1,67 @@
+* MicroFJ-30020 (Onsemi J-Series) equivalent circuit: single fired microcell
+* + lumped passive array, standard (anode) and fast outputs.
+*
+* Topology per datasheet Fig. 9 (MICROJ-SERIES/D rev.5): each microcell is an
+* APD (Cd) from cathode rail to internal node, quench resistor Rq (parallel
+* parasitic Cq) from node to anode rail, and a fast-output coupling cap Cf
+* from node to the fast-output rail.
+*
+* Component values traceable to the datasheet (MicroFJ-30020, OV = 2.5 V):
+*   gain 1.0e6 @ 2.5 V  -> (Cd+Cq) = G*e/OV       = 64 fF  (split 58.5+5.5)
+*   anode capacitance   ~ N*(Cd+Cq) = 14410*64 fF = 0.92 nF (ds: 1040 pF) ok
+*   fast capacitance      N*Cf = 50 pF            -> Cf = 3.47 fF
+*   recharge tau 15 ns  -> Rq = 15n/(Cd+Cq)       ~ 235 kOhm
+*   avalanche branch: switch + Rd in series with internal Vbr source; Rd sets
+*   the sub-ns avalanche edge (ds anode rise ~130 ps).
+*
+* The fired cell discharges by exactly OV across Cd (self-terminating), i.e.
+* avalanche charge = (Cd+Cq)*OV = G*e, then recharges through Rq.
+
+.param OV=2.5
+.param VBR=24.5
+.param NCELL=14410
+.param NPAS={NCELL-1}
+.param CD=58.5f
+.param CQ=5.5f
+.param CF=3.47f
+.param RQ=235k
+.param RD=900
+.param RLFAST=50
+.param RLANODE=10
+
+* cathode bias (AC ground)
+VBIAS k 0 DC {VBR+OV}
+
+* ---- fired microcell ----------------------------------------------------
+CD1 k nf {CD}
+S1  k  nav fire 0 SWMOD
+RD1 nav nbr {RD}
+VBR1 nbr nf DC {VBR}
+RQ1 nf a {RQ}
+CQ1 nf a {CQ}
+CF1 nf f {CF}
+
+* ---- remaining NPAS passive microcells, lumped ---------------------------
+CDP k  np {NPAS*CD}
+RQP np a {RQ/NPAS}
+CQP np a {NPAS*CQ}
+CFP np f {NPAS*CF}
+
+* ---- output loads ---------------------------------------------------------
+RLF f 0 {RLFAST}
+RLA a 0 {RLANODE}
+
+* avalanche trigger: switch closes at t=5ns for 2ns (discharge completes in
+* ~Rd*(Cd+Cq) ~ 60 ps, so the exact open time is uncritical)
+VFIRE fire 0 PULSE(0 1 5n 20p 20p 2n 1u)
+.model SWMOD SW(RON=1u ROFF=1G VT=0.5 VH=0.1)
+
+.options reltol=1e-4 abstol=1e-15 chgtol=1e-18
+
+.control
+tran 2p 120n 0 10p
+* load voltages; the python driver converts to currents via RLFAST/RLANODE
+wrdata spice/fastout_tran.txt v(f) v(a)
+quit
+.endc
+.end
