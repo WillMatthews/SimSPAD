@@ -19,6 +19,7 @@
 #include <string>
 #include "performance.hpp"
 #include "current_accuracy.hpp"
+#include "shaping.hpp"
 
 using namespace std;
 
@@ -37,8 +38,10 @@ int main()
 
     bool passed = true;
 
-    passed = passed && TEST_performance();
-    passed = passed && TEST_currents();
+    // Deterministic shaping checks first; the Monte-Carlo tests follow.
+    passed = TEST_shaping() && passed;
+    passed = TEST_performance() && passed;
+    passed = TEST_currents() && passed;
 
     if (passed)
     {

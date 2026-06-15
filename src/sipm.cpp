@@ -232,6 +232,50 @@ vector<double> SiPM::shape_output(vector<double> inputVec)
     return conv1d(inputVec, kernel);
 }
 
+// Fast-output (bipolar) shaping. The J-Series fast terminal is AC-coupled:
+// per detection a fast spike (low-passed by the fast-rail RC tauLoad)
+// followed by an opposite-sign recharge tail (time constant tauRecovery) of
+// equal charge, so the shaped train has zero net charge. The impulse
+// response per unit charge is
+//   h(t) = A * ( e^{-t/tauLoad}/tauLoad - e^{-t/tauRecovery}/tauRecovery ),
+//   A = tauRecovery / (tauRecovery - tauLoad),  integral h dt = 0.
+// Implemented as two exact charge-conserving one-pole recursions
+// (s = a*s + q[i]; out = (1-a)*s, a = e^{-dt/tau}), kept in charge-per-step
+// units so each lobe carries exactly the input charge. Multiply by
+// kappa = C_f/(C_d+C_q) and divide by dt for physical fast-terminal current.
+void SiPM::reset_fast_shaper(void)
+{
+    fastStateLoad = 0.0;
+    fastStateRec = 0.0;
+}
+
+// Shape n charge-per-step samples; filter state persists across calls.
+// States initialise to zero (a fully charged, dark device), so when the
+// simulated device starts in steady state users should discard a warm-up of
+// ~5*tauRecovery from the start of the shaped trace.
+void SiPM::shape_fast_chunk(const double *in, double *out, size_t n)
+{
+    const double aL = exp(-dt / tauLoad);
+    const double aR = exp(-dt / tauRecovery);
+    const double A = tauRecovery / (tauRecovery - tauLoad);
+    for (size_t i = 0; i < n; i++)
+    {
+        fastStateLoad = aL * fastStateLoad + in[i];
+        fastStateRec = aR * fastStateRec + in[i];
+        out[i] = A * ((1.0 - aL) * fastStateLoad - (1.0 - aR) * fastStateRec);
+    }
+}
+
+// One-shot convenience wrapper: reset the filter states and shape a whole
+// charge-per-step vector.
+vector<double> SiPM::shape_fast(vector<double> inputVec)
+{
+    vector<double> out(inputVec.size(), 0.0);
+    reset_fast_shaper();
+    shape_fast_chunk(inputVec.data(), out.data(), inputVec.size());
+    return out;
+}
+
 // Seed Random Engines
 // TODO improve this code - appears to give the same result for all runs within the same second
 void SiPM::seed_engines()
@@ -497,6 +541,14 @@ void SiPM::input_sanitation() // inclusion adds ~ 10ps/ucell dt in SIM
     {
         tauRecovery = 1E-100;
         invalid_argument("Recovery time constant must be strictly positive");
+    }
+    // tauLoad is a divisor in shape_fast_chunk(), and the bipolar gain
+    // A = tauRecovery/(tauRecovery - tauLoad) blows up if the two time
+    // constants coincide. Restore the default in either case.
+    if (tauLoad <= 0 || tauLoad == tauRecovery)
+    {
+        tauLoad = 2.0e-9;
+        invalid_argument("Fast-output load time constant must be strictly positive and differ from tauRecovery");
     }
     if (pdeMax < 0)
     {

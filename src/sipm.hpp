@@ -57,6 +57,11 @@ public:
     double vChr;
     double pdeMax;
     double tauFwhm;
+    // Fast-output rail RC time constant tau_load = R_L * N * C_f [s].
+    // Optional JSON parameter "tauLoad"; defaults to 2.0e-9 (MicroJ-Series,
+    // 50 ohm load * 40 pF fast-terminal capacitance) so existing parameter
+    // files keep working.
+    double tauLoad = 2.0e-9;
 
     SiPM(unsigned long numMicrocell_in, double vBias_in, double vBr_in, double tauRecovery_in, double tauFwhm_in, double digitalThreshold_in, double ccell_in, double Vchr_in, double PDE_max_in);
 
@@ -91,9 +96,26 @@ public:
 
     std::vector<double> shape_output(std::vector<double> inputVec);
 
+    // Fast-output (bipolar) shaping: models the AC-coupled J-Series fast
+    // terminal as two exact one-pole recursions (O(n), streaming-friendly).
+    // reset_fast_shaper() zeroes the filter states; shape_fast_chunk() then
+    // shapes `n` charge-per-step samples, carrying state across calls so
+    // chunked traces shape identically to one-shot ones. shape_fast(vector)
+    // is a reset + single-chunk convenience wrapper.
+    void reset_fast_shaper(void);
+
+    void shape_fast_chunk(const double *in, double *out, std::size_t n);
+
+    std::vector<double> shape_fast(std::vector<double> inputVec);
+
 private:
     std::vector<double> microcellTimes;
     double simClock = 0.0; // running simulation time, carried across chunks
+
+    // One-pole filter states for the fast-output shaper (charge units),
+    // carried across shape_fast_chunk() calls.
+    double fastStateLoad = 0.0;
+    double fastStateRec = 0.0;
 
     std::mt19937_64 poissonEngine;
     std::mt19937_64 unifRandomEngine;

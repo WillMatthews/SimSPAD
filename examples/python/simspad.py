@@ -16,19 +16,31 @@ PARAM_KEYS = [
     "pdeMax", "vChr", "cCell", "tauFwhm", "digitalThreshold",
 ]
 
+# Optional parameters with their defaults (absent keys keep the default on
+# both sides, so files without them remain valid). tauLoad is the fast-output
+# rail RC time constant in seconds, used by the `fast`/`bench` shape modes.
+OPTIONAL_PARAM_DEFAULTS = {
+    "tauLoad": 2.0e-9,
+}
+
 
 class SiPM:
-    def __init__(self, *args):
+    def __init__(self, *args, **optional):
         # SiPM(seq_of_10) or SiPM(dt, numMicrocell, vBias, ...) (10 positional).
         vals = list(args[0]) if len(args) == 1 else list(args)
         if len(vals) != len(PARAM_KEYS):
             raise ValueError(f"expected {len(PARAM_KEYS)} parameters, got {len(vals)}")
         for key, val in zip(PARAM_KEYS, vals):
             setattr(self, key, val)
+        for key, default in OPTIONAL_PARAM_DEFAULTS.items():
+            setattr(self, key, optional.pop(key, default))
+        if optional:
+            raise ValueError(f"unknown optional parameters: {sorted(optional)}")
 
     # -- parameters (JSON) --------------------------------------------------
     def params_dict(self):
         d = {k: getattr(self, k) for k in PARAM_KEYS}
+        d.update({k: getattr(self, k) for k in OPTIONAL_PARAM_DEFAULTS})
         d["numMicrocell"] = int(d["numMicrocell"])
         return d
 
@@ -42,7 +54,8 @@ class SiPM:
         """Construct a SiPM from a JSON parameter file."""
         with open(filename) as f:
             d = json.load(f)
-        return cls([d[k] for k in PARAM_KEYS])
+        optional = {k: d[k] for k in OPTIONAL_PARAM_DEFAULTS if k in d}
+        return cls([d[k] for k in PARAM_KEYS], **optional)
 
     # -- waveforms (.npy) ---------------------------------------------------
     @staticmethod
