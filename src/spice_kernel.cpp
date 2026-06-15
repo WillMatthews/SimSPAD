@@ -1,23 +1,29 @@
-// spice_kernel: derive the --shape fast kernel from the ngspice equivalent
-// circuit (spice/jseries_fastout.cir).
+// spice_kernel: derive the --shape kernel impulse response from the ngspice
+// equivalent circuit (spice/jseries_fastout.cir).
 //
 // This is the spice -> kernel pipeline. It runs the J-Series fast-output
-// equivalent circuit, extracts the single-photon fast-output pulse, and turns
-// it into the two time constants the fast/bench shapers consume:
+// equivalent circuit, extracts the single-photon fast-output pulse, and writes
+// it out as a *tabulated impulse response* the simulator convolves directly:
 //
-//   tauLoad     = R_Lfast * N * C_f   (fast-rail RC, from the datasheet-
-//                                      traceable circuit values, read from the
-//                                      deck so it cannot drift from the circuit)
-//   tauRecovery = loaded recovery constant, fitted on the fast tail
+//   g(t) = i_f(t) / Q_av,   Q_av = (C_d + C_q) * OV   (units 1/s)
 //
-// It then checks that the analytic kernel SimSPAD's shape_fast() implements,
+// i.e. the fast-terminal current per unit avalanche charge, resampled onto the
+// simulation dt and saved to fast_kernel.npy. The emitted parameter file points
+// at it ("kernelFile"/"kernelDt"), so
+//   simspad -p sipm_fast.json -i light.npy -o resp.npy --shape kernel
+// shapes the trace with the *actual* circuit pulse -- no two-pole fit. Drop in
+// any device's deck (or a measured pulse) and you get its real fast output.
+//
+// As a cross-check it also fits the two-pole approximation the analytic
+// shape_fast() uses,
 //   h(t) = A * ( e^{-t/tauLoad}/tauLoad - e^{-t/tauRecovery}/tauRecovery ),
 //   A = tauRecovery / (tauRecovery - tauLoad),
-// reproduces the SPICE pulse, and writes a ready-to-run parameter file whose
-// tauLoad is calibrated to the circuit, so
-//   simspad -p sipm_fast.json -i light.npy -o resp.npy --shape fast
-// gives a fast-output trace shaped by the circuit rather than a hand-picked
-// time constant.
+// and reports its RMS error against the SPICE pulse (tauLoad is also written to
+// the params file, so the cheaper --shape fast still works off the same file).
+//
+//   tauLoad     = R_Lfast * N * C_f   (fast-rail RC, read from the deck so it
+//                                      cannot drift from the circuit)
+//   tauRecovery = loaded recovery constant, fitted on the fast tail
 //
 // Prereq: ngspice on PATH (tested with ngspice-45). Run from the repository
 // root so the deck's relative wrdata path resolves:
@@ -209,10 +215,54 @@ int main(int argc, char **argv)
     const bool ok = rms < tol;
     printf("  [%s] shape RMS %.3f %s %.2f\n", ok ? "PASS" : "FAIL", rms, ok ? "<" : ">=", tol);
 
-    // 6. Emit a ready-to-run J30020 parameter file with the circuit-derived
-    //    tauLoad (remaining device parameters match examples/python/example.py).
+    // 6. Build the tabulated kernel straight from the SPICE curve. This is the
+    //    actual device pulse -- the --shape kernel mode convolves it with the
+    //    avalanche charge train, with no two-pole approximation. The kernel is
+    //    g(t) = i_f(t) / Q_av, the fast-terminal current per unit avalanche
+    //    charge (units 1/s), resampled from the (non-uniform) SPICE grid onto a
+    //    uniform grid at the simulation dt and zeroed before the avalanche (T0).
+    const double dt_sim = 1e-11;             // simulation dt (== svars[0] below)
+    const double Q_av = (CD + CQ) * OV;      // avalanche charge per fired cell [C]
+    vector<double> kernel;
+    {
+        const double tEnd = t.back() - T0;   // supported time past the avalanche
+        const size_t M = (size_t)floor(tEnd / dt_sim) + 1;
+        kernel.assign(M, 0.0);
+        size_t j = 0; // monotone cursor into the SPICE samples (tt increases)
+        for (size_t mi = 0; mi < M; mi++)
+        {
+            const double tt = (double)mi * dt_sim + T0; // absolute SPICE time
+            while (j + 1 < t.size() && t[j + 1] < tt)
+                j++;
+            if (j + 1 >= t.size())
+            {
+                kernel[mi] = i_f.back() / Q_av;
+                continue;
+            }
+            const double frac = (tt - t[j]) / (t[j + 1] - t[j]);
+            const double v = i_f[j] * (1.0 - frac) + i_f[j + 1] * frac;
+            kernel[mi] = v / Q_av;
+        }
+    }
+    double knet = 0.0;
+    for (double g : kernel)
+        knet += g;
+    knet *= dt_sim; // net charge per unit avalanche charge (want ~0: AC-coupled)
+    printf("  kernel: %zu taps @ dt = %.1f ps, net charge/avalanche = %+.3e (want ~0)\n",
+           kernel.size(), dt_sim * 1e12, knet);
+
+    const string kernel_file = "fast_kernel.npy";
+    {
+        NpyWriter kw(kernel_file, kernel.size());
+        kw.write(kernel.data(), kernel.size());
+        kw.close();
+    }
+
+    // 7. Emit a ready-to-run J30020 parameter file pointing at the kernel (the
+    //    remaining device parameters match examples/python/example.py). tauLoad
+    //    is still written so the analytic `fast` mode also works off this file.
     vector<double> svars = {
-        1e-11,           // dt
+        dt_sim,          // dt
         (double)NCELL,   // numMicrocell
         OV + 24.5,       // vBias = OV + vBr
         24.5,            // vBr
@@ -224,9 +274,11 @@ int main(int argc, char **argv)
         0.0};            // digitalThreshold
     SiPM sipm(svars);
     sipm.tauLoad = tau_load;
+    sipm.kernelFile = kernel_file;
+    sipm.kernelDt = dt_sim;
     save_params_json(out_params, sipm);
-    printf("  wrote %s (run: simspad -p %s -i light.npy -o resp.npy --shape fast)\n",
-           out_params.c_str(), out_params.c_str());
+    printf("  wrote %s + %s\n", out_params.c_str(), kernel_file.c_str());
+    printf("  run: simspad -p %s -i light.npy -o resp.npy --shape kernel\n", out_params.c_str());
 
     return ok ? 0 : 1;
 }

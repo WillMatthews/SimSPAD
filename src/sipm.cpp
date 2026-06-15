@@ -276,6 +276,73 @@ vector<double> SiPM::shape_fast(vector<double> inputVec)
     return out;
 }
 
+// Linear-resample the tabulated kernel from its native kernelDt onto a grid of
+// spacing targetDt. Returns fastKernel unchanged when the spacings already
+// match (the spice_kernel pipeline writes the kernel at the simulation dt, so
+// this is normally a no-op); the interpolation path exists so a hand-supplied
+// kernel sampled at any spacing still works.
+vector<double> SiPM::resample_kernel(double targetDt) const
+{
+    if (fastKernel.empty() || kernelDt <= 0.0 || targetDt <= 0.0)
+    {
+        return {};
+    }
+    if (fabs(kernelDt - targetDt) <= 1e-18)
+    {
+        return fastKernel;
+    }
+    const size_t K = fastKernel.size();
+    const double span = (double)(K - 1) * kernelDt; // total supported time [s]
+    const size_t M = (size_t)floor(span / targetDt) + 1;
+    vector<double> out(M, 0.0);
+    for (size_t mi = 0; mi < M; mi++)
+    {
+        const double p = ((double)mi * targetDt) / kernelDt; // position in source samples
+        const size_t k = (size_t)p;
+        if (k >= K - 1)
+        {
+            out[mi] = fastKernel[K - 1];
+        }
+        else
+        {
+            const double frac = p - (double)k;
+            out[mi] = fastKernel[k] * (1.0 - frac) + fastKernel[k + 1] * frac;
+        }
+    }
+    return out;
+}
+
+// Tabulated-kernel (FIR) shaping: out[i] = sum_k g[k] * charge[i-k], a causal
+// convolution of the avalanche charge-per-step train with the resampled
+// fast-output impulse response g (units 1/s). g already carries the AC-coupling
+// charge fraction C_f/(C_d+C_q) and the rail RC of the real terminal, so the
+// output is the physical fast-output current per step and, like the analytic
+// `fast` shaper, integrates to ~zero over the (zero-net-charge) pulse. The
+// convolution is causal (no centring): a detection at step i can only affect
+// outputs at i, i+1, ...  Returns all-zero if no kernel is loaded.
+vector<double> SiPM::shape_kernel(const vector<double> &charge)
+{
+    const vector<double> g = resample_kernel(dt);
+    const size_t N = charge.size();
+    vector<double> out(N, 0.0);
+    if (g.empty())
+    {
+        return out;
+    }
+    const size_t K = g.size();
+    for (size_t i = 0; i < N; i++)
+    {
+        double acc = 0.0;
+        const size_t kmax = (i + 1 < K) ? (i + 1) : K; // clamp: charge[i-k] needs i-k >= 0
+        for (size_t k = 0; k < kmax; k++)
+        {
+            acc += g[k] * charge[i - k];
+        }
+        out[i] = acc;
+    }
+    return out;
+}
+
 // Seed Random Engines
 // TODO improve this code - appears to give the same result for all runs within the same second
 void SiPM::seed_engines()
