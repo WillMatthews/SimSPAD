@@ -392,6 +392,26 @@ void NpyWriter::close()
     fout.close();
 }
 
+// Slurp a whole 1-D float64 .npy into a vector. Kernels are small (the J-Series
+// fast pulse is ~tens of ns / a few thousand taps), so a non-streaming read is
+// fine here.
+vector<double> read_npy_vector(const string &filename)
+{
+    NpyReader reader(filename);
+    size_t n = reader.count();
+    vector<double> v(n, 0.0);
+    size_t got = 0;
+    while (got < n)
+    {
+        size_t k = reader.read(v.data() + got, n - got);
+        if (k == 0)
+            break;
+        got += k;
+    }
+    v.resize(got);
+    return v;
+}
+
 // ===========================================================================
 // Flat-JSON device parameters
 // ===========================================================================
@@ -427,12 +447,45 @@ map<string, double> parse_flat_json(const string &s)
             m[key] = val;
             i = p + (size_t)(endp - start);
         }
+        else if (p < s.size() && s[p] == '"')
+        {
+            // Quoted string value (e.g. "kernelFile"): skip past its closing
+            // quote, otherwise the next key search lands inside the value and
+            // every key after it is misparsed -- the value string becomes a
+            // key and steals the *next* key's number ("kernelDt" was lost
+            // this way whenever it followed "kernelFile").
+            size_t close = s.find('"', p + 1);
+            i = (close == string::npos) ? s.size() : close + 1;
+        }
         else
         {
-            i = colon + 1; // non-numeric value: skip (not expected in our schema)
+            i = colon + 1; // other non-numeric value: skip
         }
     }
     return m;
+}
+
+// Extract a string value ("key": "value") from the flat JSON. Returns "" when
+// the key is absent or its value is not a quoted string (parse_flat_json only
+// handles numeric values, so string-valued keys need this companion).
+static string parse_flat_json_string(const string &s, const string &key)
+{
+    const string needle = "\"" + key + "\"";
+    size_t k = s.find(needle);
+    if (k == string::npos)
+        return "";
+    size_t colon = s.find(':', k + needle.size());
+    if (colon == string::npos)
+        return "";
+    size_t p = colon + 1;
+    while (p < s.size() && isspace((unsigned char)s[p]))
+        ++p;
+    if (p >= s.size() || s[p] != '"') // value is not a string
+        return "";
+    size_t q2 = s.find('"', p + 1);
+    if (q2 == string::npos)
+        return "";
+    return s.substr(p + 1, q2 - p - 1);
 }
 
 // Parameter key order matches SiPM::dump_configuration().
@@ -447,7 +500,8 @@ SiPM load_params_json(const string &filename)
         throw runtime_error("cannot open params file: " + filename);
     stringstream ss;
     ss << f.rdbuf();
-    map<string, double> m = parse_flat_json(ss.str());
+    const string text = ss.str();
+    map<string, double> m = parse_flat_json(text);
 
     vector<double> svars(10);
     for (int i = 0; i < 10; i++)
@@ -470,6 +524,23 @@ SiPM load_params_json(const string &filename)
             throw runtime_error("params JSON: tauLoad must differ from tauRecovery");
         sipm.tauLoad = tl->second;
     }
+
+    // Optional tabulated fast-output kernel (the `kernel` shape mode). The
+    // "kernelFile" is a path to a 1-D float64 .npy holding the fast-output
+    // impulse response per unit avalanche charge (units 1/s); "kernelDt" is its
+    // sample spacing in seconds (defaults to the simulation dt, which is what
+    // the spice_kernel pipeline writes). The path is resolved relative to the
+    // current working directory.
+    string kf = parse_flat_json_string(text, "kernelFile");
+    if (!kf.empty())
+    {
+        sipm.kernelFile = kf;
+        auto kd = m.find("kernelDt");
+        sipm.kernelDt = (kd != m.end() && kd->second > 0) ? kd->second : sipm.dt;
+        sipm.fastKernel = read_npy_vector(kf);
+        if (sipm.fastKernel.empty())
+            throw runtime_error("params JSON: kernelFile loaded no samples: " + kf);
+    }
     return sipm;
 }
 
@@ -490,8 +561,15 @@ string sipm_to_json(SiPM &sipm)
     }
     // tauLoad is appended explicitly (not via dump_configuration, whose
     // 10-double layout the legacy .bin format depends on).
-    o << "  \"tauLoad\": " << sipm.tauLoad << "\n";
-    o << "}\n";
+    o << "  \"tauLoad\": " << sipm.tauLoad;
+    // The tabulated-kernel keys are emitted only when a kernel is set, so plain
+    // device files stay unchanged.
+    if (!sipm.kernelFile.empty())
+    {
+        o << ",\n  \"kernelFile\": \"" << sipm.kernelFile << "\"";
+        o << ",\n  \"kernelDt\": " << sipm.kernelDt;
+    }
+    o << "\n}\n";
     return o.str();
 }
 

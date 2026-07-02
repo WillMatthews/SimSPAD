@@ -214,6 +214,79 @@ bool TEST_shaping()
         passed_all = passed_all & passed;
     }
 
+    // --- 9. Tabulated kernel: causal FIR, identity and two-tap ------------
+    {
+        // Identity kernel {1} reproduces the input with no time shift.
+        sipm.fastKernel = {1.0};
+        sipm.kernelDt = dt;
+        vector<double> probe = {0.0, 1.0, 2.0, 3.0, 0.5, 0.0};
+        vector<double> out = sipm.shape_kernel(probe);
+        passed = (out.size() == probe.size());
+        for (size_t i = 0; passed && i < probe.size(); i++)
+        {
+            passed = passed && (out[i] == probe[i]);
+        }
+
+        // Causal two-tap kernel {2, 3}: out[i] = 2*x[i] + 3*x[i-1].
+        sipm.fastKernel = {2.0, 3.0};
+        sipm.kernelDt = dt;
+        vector<double> out2 = sipm.shape_kernel(probe);
+        bool ok2 = (out2.size() == probe.size());
+        for (size_t i = 0; ok2 && i < probe.size(); i++)
+        {
+            double want = 2.0 * probe[i] + (i ? 3.0 * probe[i - 1] : 0.0);
+            ok2 = ok2 && (fabs(out2[i] - want) < 1e-12);
+        }
+        passed = passed && ok2;
+        cout << "Kernel FIR identity + 2-tap:  causal, no shift\t\t\t\t"
+             << (passed ? "\033[32;49;1mPASS\033[0m" : "\033[31;49;1mFAIL\033[0m") << endl;
+        passed_all = passed_all & passed;
+    }
+
+    // --- 10. Tabulated kernel: linear resampling (kernelDt != dt) ----------
+    {
+        // Source kernel {0, 10} at twice the sim dt resamples (linearly) onto
+        // the dt grid as {0, 5, 10}; feeding a unit impulse reads that back.
+        sipm.fastKernel = {0.0, 10.0};
+        sipm.kernelDt = 2.0 * dt;
+        vector<double> impulse = {1.0, 0.0, 0.0, 0.0};
+        vector<double> out = sipm.shape_kernel(impulse);
+        passed = (out.size() == impulse.size()) && (fabs(out[0] - 0.0) < 1e-12) &&
+                 (fabs(out[1] - 5.0) < 1e-12) && (fabs(out[2] - 10.0) < 1e-12);
+        cout << "Kernel resample 2*dt -> dt:   {0,10} -> {0,5,10}\t\t\t"
+             << (passed ? "\033[32;49;1mPASS\033[0m" : "\033[31;49;1mFAIL\033[0m") << endl;
+        passed_all = passed_all & passed;
+    }
+
+    // --- 11. Tabulated kernel reproduces the analytic fast shaper ----------
+    // Sampling the analytic bipolar response h(t) at dt and using it as the
+    // kernel should reproduce shape_fast() (which is the same h binned by a
+    // one-pole pair) to within the discretisation difference. Ties the new
+    // faithful path back to the validated analytic one.
+    {
+        const double A = tauRecovery / (tauRecovery - tauLoad);
+        vector<double> g(n, 0.0);
+        for (int i = 0; i < n; i++)
+        {
+            double t = (i + 0.5) * dt; // bin midpoint, matching the one-pole binning
+            g[i] = A * (exp(-t / tauLoad) / tauLoad - exp(-t / tauRecovery) / tauRecovery) * dt;
+        }
+        sipm.fastKernel = g;
+        sipm.kernelDt = dt;
+        vector<double> kshaped = sipm.shape_kernel(q); // q is the unit impulse from above
+        double hMax = 0.0, errMax = 0.0;
+        for (int i = 0; i < n; i++)
+        {
+            hMax = max(hMax, fabs(shaped[i]));
+            errMax = max(errMax, fabs(kshaped[i] - shaped[i]));
+        }
+        double relErr = errMax / hMax;
+        passed = relErr < 1e-3;
+        cout << "Kernel vs analytic fast:      max rel err " << relErr << " (want < 1e-3)\t"
+             << (passed ? "\033[32;49;1mPASS\033[0m" : "\033[31;49;1mFAIL\033[0m") << endl;
+        passed_all = passed_all & passed;
+    }
+
     string prefix = passed_all ? "\033[32;49;1m" : "\033[31;49;1m";
     string outStatus = passed_all ? "PASS\n" : "FAIL\a\n";
     cout << prefix << BAR_STRING << endl;

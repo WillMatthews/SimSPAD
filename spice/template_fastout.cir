@@ -1,0 +1,83 @@
+* SiPM fast-output equivalent circuit -- PARAMETERISED TEMPLATE.
+*
+* Copy this file, edit the "datasheet inputs" block for your device, and run it
+* to get a 1-PE fast-output pulse, then feed that into
+* examples/python/pulse_to_kernel.py to build a SimSPAD `--shape kernel` kernel.
+* Everything below the inputs block is DERIVED, so you only ever supply numbers
+* you can read off a datasheet -- nothing is hand-picked.
+*
+* Topology (one fired microcell + lumped passive array), per the Onsemi
+* C-/J-Series fast-output structure, datasheet Fig. 9 (MICROJ-SERIES/D rev.5):
+* each microcell is an APD junction capacitance Cd from the cathode rail to an
+* internal node, a quench resistor Rq (with parasitic Cq) from that node to the
+* anode rail, and a fast-output coupling cap Cf from the node to the fast rail.
+* The fired cell self-terminates at exactly the overvoltage OV, so its avalanche
+* charge is (Cd+Cq)*OV = G*e, then it recharges through Rq.
+*
+* NOTE: this models devices that HAVE a dedicated fast output (Onsemi C-/J-Series
+* style). Devices without one (e.g. most Hamamatsu MPPCs) have no `f` node --
+* read the standard/anode output v(a) instead.
+*
+* =====================  DATASHEET INPUTS (edit these)  =====================
+.param GAIN  = 1.0e6     ; microcell gain at OV (datasheet)
+.param OV    = 2.5       ; overvoltage [V] the gain is quoted at (datasheet)
+.param VBR   = 24.5      ; breakdown voltage [V] (datasheet)
+.param NCELL = 14410     ; number of microcells (datasheet)
+.param TAU_RECHARGE = 15n ; microcell recharge time constant [s] (datasheet)
+.param CF_TOTAL = 50p    ; total fast-output capacitance N*Cf [F] (datasheet, or
+*                          ~ a few % of the terminal capacitance Ct)
+.param RLFAST  = 50      ; fast-output load [ohm] (your readout, often 50)
+.param RLANODE = 10      ; anode/standard-output load [ohm] (your readout)
+* --- second-order knobs (defaults are fine for most devices) ---
+.param FQ = 0.086        ; quench parasitic Cq as a fraction of (Cd+Cq)
+.param RD = 900          ; avalanche series R; sets the sub-ns rise edge
+* ==========================================================================
+*
+* ----------------------------  DERIVED  -----------------------------------
+.param E      = 1.602176634e-19           ; electron charge [C]
+.param CMICRO = {GAIN*E/OV}               ; total microcell cap Cd+Cq = G*e/OV
+.param CQ     = {FQ*CMICRO}               ; quench parasitic capacitance
+.param CD     = {CMICRO-CQ}               ; junction capacitance
+.param RQ     = {TAU_RECHARGE/CMICRO}     ; quench resistor (recharge tau / cap)
+.param CF     = {CF_TOTAL/NCELL}          ; per-cell fast coupling cap
+.param NPAS   = {NCELL-1}                 ; the remaining passive cells, lumped
+
+* cathode bias (AC ground)
+VBIAS k 0 DC {VBR+OV}
+
+* ---- fired microcell ----------------------------------------------------
+CD1 k nf {CD}
+S1  k  nav fire 0 SWMOD
+RD1 nav nbr {RD}
+VBR1 nbr nf DC {VBR}
+RQ1 nf a {RQ}
+CQ1 nf a {CQ}
+CF1 nf f {CF}
+
+* ---- remaining NPAS passive microcells, lumped ---------------------------
+CDP k  np {NPAS*CD}
+RQP np a {RQ/NPAS}
+CQP np a {NPAS*CQ}
+CFP np f {NPAS*CF}
+
+* ---- output loads ---------------------------------------------------------
+RLF f 0 {RLFAST}
+RLA a 0 {RLANODE}
+
+* avalanche trigger: fire one cell at t = 5 ns (the exact time is uncritical;
+* the discharge completes in ~Rd*(Cd+Cq), and pulse_to_kernel auto-detects the
+* onset).
+VFIRE fire 0 PULSE(0 1 5n 20p 20p 2n 1u)
+.model SWMOD SW(RON=1u ROFF=1G VT=0.5 VH=0.1)
+
+.options reltol=1e-4 abstol=1e-15 chgtol=1e-18
+
+.control
+* Run for >= ~8 * TAU_RECHARGE so the AC-coupled fast pulse fully returns to
+* zero (a short window leaves a small net-charge residual in the kernel).
+tran 2p 120n 0 10p
+* load-node voltages; pulse_to_kernel converts to currents via the load R.
+wrdata spice/template_tran.txt v(f) v(a)
+quit
+.endc
+.end
