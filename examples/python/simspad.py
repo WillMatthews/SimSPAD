@@ -19,8 +19,14 @@ PARAM_KEYS = [
 # Optional parameters with their defaults (absent keys keep the default on
 # both sides, so files without them remain valid). tauLoad is the fast-output
 # rail RC time constant in seconds, used by the `fast`/`bench` shape modes.
+# kernelFile/kernelDt point the `kernel` shape mode at a tabulated fast-output
+# impulse response (a 1-D .npy of current per unit avalanche charge, units 1/s,
+# sampled every kernelDt seconds); both default to None and are emitted only
+# when set, so plain device files are unchanged.
 OPTIONAL_PARAM_DEFAULTS = {
     "tauLoad": 2.0e-9,
+    "kernelFile": None,
+    "kernelDt": None,
 }
 
 
@@ -40,7 +46,12 @@ class SiPM:
     # -- parameters (JSON) --------------------------------------------------
     def params_dict(self):
         d = {k: getattr(self, k) for k in PARAM_KEYS}
-        d.update({k: getattr(self, k) for k in OPTIONAL_PARAM_DEFAULTS})
+        # Optional keys are emitted only when set (None -> omitted), so device
+        # files without a kernel stay byte-for-byte as before.
+        for k in OPTIONAL_PARAM_DEFAULTS:
+            v = getattr(self, k)
+            if v is not None:
+                d[k] = v
         d["numMicrocell"] = int(d["numMicrocell"])
         return d
 

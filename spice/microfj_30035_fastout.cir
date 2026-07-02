@@ -1,0 +1,74 @@
+* MicroFJ-30035 (Onsemi J-Series, 3 mm, 35 um) fast-output equivalent circuit.
+* Same topology as template_fastout.cir / jseries_fastout.cir.
+*
+* ALL INPUTS BELOW ARE FROM THE J-SERIES DATASHEET (MICROJ-SERIES/D rev.7,
+* docs/datasheets/microj-series-datasheet.pdf), Tables 1-3, at OV = +2.5 V:
+*   NCELL   = 5676           (Table 2, 3 mm 35 um)
+*   GAIN    = 2.9e6          (Table 3, anode-cathode, +2.5 V)
+*   VBR     = 24.5           (Table 1, 24.2-24.7 V)
+*   TAU_RECHARGE = 45 ns     (Table 3, microcell recharge time constant)
+*   CF_TOTAL = 40 pF         (Table 3, fast-output capacitance)
+*   anode capacitance 1070 pF (Table 3) -- reproduced as N*(Cd+Cq): the deck's
+*     Cmicro = G*e/OV = 185.9 fF gives N*Cmicro = 1055 pF (99% of datasheet),
+*     an independent check that gain/cells/capacitance are mutually consistent.
+* Datasheet sanity targets: fast-output FWHM 1.5 ns, anode rise time 90 ps.
+*
+* MODEL FIDELITY: the standard (anode) output is set by the datasheet recharge
+* tau and is well-matched. The lumped N*Cf fast-rail over-broadens the FAST
+* output -- this deck gives ~1.8 ns FWHM vs the datasheet 1.5 ns (the error
+* grows with array size). For an exact fast output, digitise the datasheet's
+* MEASURED pulse (Fig. 5/6) and feed it to pulse_to_kernel.py instead.
+*
+* =====================  DATASHEET INPUTS  =====================
+.param GAIN  = 2.9e6     ; Table 3, anode-cathode gain at +2.5 V
+.param OV    = 2.5       ; overvoltage the gain is quoted at
+.param VBR   = 24.5      ; Table 1 (24.2-24.7 V)
+.param NCELL = 5676      ; Table 2 (3 mm, 35 um)
+.param TAU_RECHARGE = 45n ; Table 3, microcell recharge time constant
+.param CF_TOTAL = 40p    ; Table 3, fast-output capacitance (N*Cf)
+.param RLFAST  = 50
+.param RLANODE = 10
+.param FQ = 0.086        ; Cq/(Cd+Cq), from the 30020 deck's 5.5/64 split
+.param RD = 900          ; avalanche series R; sets the sub-ns rise edge
+* =============================================================
+*
+.param E      = 1.602176634e-19
+.param CMICRO = {GAIN*E/OV}
+.param CQ     = {FQ*CMICRO}
+.param CD     = {CMICRO-CQ}
+.param RQ     = {TAU_RECHARGE/CMICRO}
+.param CF     = {CF_TOTAL/NCELL}
+.param NPAS   = {NCELL-1}
+
+VBIAS k 0 DC {VBR+OV}
+
+CD1 k nf {CD}
+S1  k  nav fire 0 SWMOD
+RD1 nav nbr {RD}
+VBR1 nbr nf DC {VBR}
+RQ1 nf a {RQ}
+CQ1 nf a {CQ}
+CF1 nf f {CF}
+
+CDP k  np {NPAS*CD}
+RQP np a {RQ/NPAS}
+CQP np a {NPAS*CQ}
+CFP np f {NPAS*CF}
+
+RLF f 0 {RLFAST}
+RLA a 0 {RLANODE}
+
+VFIRE fire 0 PULSE(0 1 5n 20p 20p 2n 1u)
+.model SWMOD SW(RON=1u ROFF=1G VT=0.5 VH=0.1)
+
+.options reltol=1e-4 abstol=1e-15 chgtol=1e-18
+
+.control
+* >= ~8 * TAU_RECHARGE so the AC-coupled fast pulse fully returns to zero.
+tran 2p 600n 0 10p
+* fast (v(f)) and standard/anode (v(a)) outputs; pulse_to_kernel converts to
+* current via the load R (RLFAST for v(f), RLANODE for v(a)).
+wrdata spice/microfj_30035_tran.txt v(f) v(a)
+quit
+.endc
+.end

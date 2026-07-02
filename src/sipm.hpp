@@ -63,6 +63,18 @@ public:
     // files keep working.
     double tauLoad = 2.0e-9;
 
+    // Tabulated fast-output impulse response (the `kernel` shape mode). This is
+    // the device's actual single-photon fast-output current per unit avalanche
+    // charge (units 1/s), sampled uniformly at `kernelDt` seconds. Convolving
+    // it causally with the avalanche charge-per-step train reproduces the real
+    // terminal shape directly, with no two-pole (`fast`) approximation -- so
+    // any device whose fast pulse can be measured or SPICE-simulated can be
+    // dropped in. Populated from the JSON "kernelFile"/"kernelDt"; empty
+    // otherwise, in which case the `fast`/`bench`/`gaussian` modes are unaffected.
+    std::vector<double> fastKernel;
+    double kernelDt = 0.0;          // sample spacing of fastKernel [s]; 0 => unset
+    std::string kernelFile;         // source .npy path, round-tripped through the JSON
+
     SiPM(unsigned long numMicrocell_in, double vBias_in, double vBr_in, double tauRecovery_in, double tauFwhm_in, double digitalThreshold_in, double ccell_in, double Vchr_in, double PDE_max_in);
 
     SiPM(unsigned long numMicrocell_in, double vBias_in, double vBr_in, double tauRecovery_in, double digitalThreshold_in, double ccell_in, double Vchr_in, double PDE_max_in);
@@ -120,6 +132,13 @@ public:
 
     std::vector<double> shape_fast(std::vector<double> inputVec);
 
+    // Tabulated-kernel shaping (the `kernel` mode): causal FIR convolution of
+    // the avalanche charge-per-step train with fastKernel, resampled from its
+    // native kernelDt onto the simulation dt. Returns the physical fast-output
+    // current per step; length-preserving. Returns all-zero if no kernel is
+    // loaded. O(N * kernelTaps), so unlike `fast` it buffers the whole trace.
+    std::vector<double> shape_kernel(const std::vector<double> &charge);
+
 private:
     std::vector<double> microcellTimes;
     double simClock = 0.0; // running simulation time, carried across chunks
@@ -135,6 +154,10 @@ private:
     std::uniform_real_distribution<double> unif;
 
     void seed_engines(void);
+
+    // Linear-resample fastKernel from kernelDt onto a grid of spacing targetDt
+    // (a copy when the two already match, as the spice_kernel pipeline writes).
+    std::vector<double> resample_kernel(double targetDt) const;
 
     double unif_rand_double(double a, double b);
 

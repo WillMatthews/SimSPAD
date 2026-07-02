@@ -74,6 +74,11 @@ SiPM load_params_json(const std::string &filename);
 std::string sipm_to_json(SiPM &sipm);
 void save_params_json(const std::string &filename, SiPM &sipm);
 
+// Read a whole 1-D little-endian float64 .npy file into a vector (used for the
+// small tabulated kernels of the `kernel` shape mode; for bulk waveforms use
+// the streaming NpyReader above).
+std::vector<double> read_npy_vector(const std::string &filename);
+
 std::vector<double> conv1d(std::vector<double> inputVec, std::vector<double> kernel);
 
 std::vector<double> get_gaussian(double dt, double tauFwhm);

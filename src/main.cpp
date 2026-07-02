@@ -83,11 +83,15 @@ void print_info(chrono::duration<double> elapsed, SiPM &sipm, size_t inputSize, 
 //   bench    - fast then gaussian: the physical terminal followed by a
 //              ~Gaussian amplifier, i.e. what an oscilloscope capture of the
 //              real device looks like
+//   kernel   - tabulated fast-output kernel: convolve with the actual measured
+//              or SPICE-derived impulse response named by "kernelFile" in the
+//              params JSON (the real device pulse, not a two-pole fit)
 // The fast shaper is a pair of recursive one-pole filters, so it streams
-// chunk-by-chunk with its state carried across chunks. The Gaussian is a FIR
-// convolution; rather than handle inter-chunk overlap, modes that need it
-// buffer the full response vector and shape it in one pass (8 bytes per
-// sample of extra memory -- the streaming bound is given up for those modes).
+// chunk-by-chunk with its state carried across chunks. The Gaussian and the
+// tabulated kernel are FIR convolutions; rather than handle inter-chunk
+// overlap, modes that need them buffer the full response vector and shape it in
+// one pass (8 bytes per sample of extra memory -- the streaming bound is given
+// up for those modes).
 // fname_vmean (optional, empty = off) streams the conservation-identity probe
 // -- the exact post-avalanche mean overvoltage per step, before any shaping --
 // to a second .npy waveform alongside the charge output.
@@ -98,8 +102,11 @@ void simulate(string params_file, string fname_in, string fname_out, bool silenc
     const bool wantFast = (shapeMode == "fast") || (shapeMode == "bench");
     const bool wantGaussian = (shapeMode == "gaussian") || (shapeMode == "bench");
     const bool wantVmean = !fname_vmean.empty();
+    const bool wantKernel = (shapeMode == "kernel");
 
     SiPM sipm = load_params_json(params_file);
+    if (wantKernel && sipm.fastKernel.empty())
+        throw runtime_error("--shape kernel requires a \"kernelFile\" in the params JSON");
     NpyReader reader(fname_in);
     size_t N = reader.count();
     NpyWriter writer(fname_out, N);
@@ -131,8 +138,8 @@ void simulate(string params_file, string fname_in, string fname_out, bool silenc
     reader.rewind();
     auto start = chrono::steady_clock::now();
     double outSum = 0.0;
-    vector<double> full; // buffered response, only used when wantGaussian
-    if (wantGaussian)
+    vector<double> full; // buffered response, used by the FIR modes (gaussian/kernel)
+    if (wantGaussian || wantKernel)
     {
         full.reserve(N);
     }
@@ -163,7 +170,7 @@ void simulate(string params_file, string fname_in, string fname_out, bool silenc
                 sipm.shape_fast_chunk(outbuf.data(), shapebuf.data(), got);
                 res = shapebuf.data();
             }
-            if (wantGaussian)
+            if (wantGaussian || wantKernel)
             {
                 full.insert(full.end(), res, res + got);
             }
@@ -186,6 +193,12 @@ void simulate(string params_file, string fname_in, string fname_out, bool silenc
     {
         // Length-preserving "same" convolution; see conv1d() for alignment.
         vector<double> shaped = conv1d(full, get_gaussian(sipm.dt, sipm.tauFwhm));
+        writer.write(shaped.data(), shaped.size());
+    }
+    else if (wantKernel)
+    {
+        // Causal FIR with the tabulated fast-output impulse response.
+        vector<double> shaped = sipm.shape_kernel(full);
         writer.write(shaped.data(), shaped.size());
     }
     writer.close();
@@ -225,8 +238,10 @@ static void show_usage(string name)
          << "\t-o,--output OUTPUT\tResponse output path (.npy) [required]\n"
          << "\t-S,--shape MODE\t\tOutput pulse shaping: none (default),\n"
          << "\t\t\t\tgaussian (FWHM = tauFwhm), fast (bipolar AC-coupled\n"
-         << "\t\t\t\tfast-output terminal, tau = tauLoad), or bench\n"
-         << "\t\t\t\t(fast then gaussian, like a real scope capture)\n"
+         << "\t\t\t\tfast-output terminal, tau = tauLoad), bench\n"
+         << "\t\t\t\t(fast then gaussian, like a real scope capture), or\n"
+         << "\t\t\t\tkernel (convolve with the tabulated impulse response\n"
+         << "\t\t\t\tin the params' kernelFile, e.g. a SPICE-derived pulse)\n"
          << "\t-m,--vmean VMEAN\tAlso write the exact post-avalanche mean\n"
          << "\t\t\t\tmicrocell overvoltage per step (unshaped) to a\n"
          << "\t\t\t\tsecond .npy waveform -- the conservation-identity\n"
@@ -328,10 +343,11 @@ int main(int argc, char *argv[])
             if (!a)
                 return EXIT_FAILURE;
             shapeMode = a;
-            if (shapeMode != "none" && shapeMode != "gaussian" && shapeMode != "fast" && shapeMode != "bench")
+            if (shapeMode != "none" && shapeMode != "gaussian" && shapeMode != "fast" &&
+                shapeMode != "bench" && shapeMode != "kernel")
             {
                 cerr << "error: unknown shape mode '" << shapeMode
-                     << "' (expected none, gaussian, fast or bench)." << endl;
+                     << "' (expected none, gaussian, fast, bench or kernel)." << endl;
                 return EXIT_FAILURE;
             }
         }
