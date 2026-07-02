@@ -447,9 +447,19 @@ map<string, double> parse_flat_json(const string &s)
             m[key] = val;
             i = p + (size_t)(endp - start);
         }
+        else if (p < s.size() && s[p] == '"')
+        {
+            // Quoted string value (e.g. "kernelFile"): skip past its closing
+            // quote, otherwise the next key search lands inside the value and
+            // every key after it is misparsed -- the value string becomes a
+            // key and steals the *next* key's number ("kernelDt" was lost
+            // this way whenever it followed "kernelFile").
+            size_t close = s.find('"', p + 1);
+            i = (close == string::npos) ? s.size() : close + 1;
+        }
         else
         {
-            i = colon + 1; // non-numeric value: skip (not expected in our schema)
+            i = colon + 1; // other non-numeric value: skip
         }
     }
     return m;
